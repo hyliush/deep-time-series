@@ -6,11 +6,11 @@ sys.path.append("d:\\IDEA\\Spatial-temporal\\deep-time-series")
 from layers.embed import TokenEmbedding
 
 class Encoder(nn.Module):
-    def __init__(self, input_dim, emb_dim, hid_dim, dropout):
+    def __init__(self, enc_in, emb_dim, hid_dim, dropout):
         super().__init__()
 
         self.hid_dim = hid_dim
-        self.embedding = TokenEmbedding(c_in=input_dim, d_model=emb_dim)
+        self.embedding = TokenEmbedding(c_in=enc_in, d_model=emb_dim)
         self.rnn = nn.GRU(emb_dim, hid_dim, batch_first=True)
         self.dropout = nn.Dropout(dropout)
         
@@ -31,16 +31,16 @@ class Encoder(nn.Module):
         
         return hidden
 class Decoder(nn.Module):
-    def __init__(self, input_dim, emb_dim, hid_dim, dropout):
+    def __init__(self, dec_in, emb_dim, hid_dim, dropout):
         super().__init__()
 
         self.hid_dim = hid_dim
         
-        self.embedding = TokenEmbedding(c_in=input_dim, d_model=emb_dim)
+        self.embedding = TokenEmbedding(c_in=dec_in, d_model=emb_dim)
         
         self.rnn = nn.GRU(emb_dim + hid_dim, hid_dim, batch_first=True)
         
-        self.fc_out = nn.Linear(emb_dim + hid_dim * 2, input_dim)
+        self.fc_out = nn.Linear(emb_dim + hid_dim * 2, dec_in)
         
         self.dropout = nn.Dropout(dropout)
         
@@ -100,9 +100,9 @@ class BenchmarkGru(nn.Module):
         #teacher_forcing_ratio is probability to use teacher forcing
         #e.g. if teacher_forcing_ratio is 0.75 we use ground-truth inputs 75% of the time
         
-        batch_size, x_dec_len, input_dim = x_dec.shape
+        batch_size, x_dec_len, dec_in = x_dec.shape
         #tensor to store decoder outputs
-        outputs = torch.zeros(batch_size, x_dec_len-1, input_dim).to(self.device)
+        outputs = torch.zeros(batch_size, x_dec_len-1, dec_in).to(self.device)
         
         #last hidden state of the encoder is the context
         context = self.encoder(x_enc)
@@ -134,14 +134,14 @@ class BenchmarkGru(nn.Module):
 
 if __name__ == '__main__':
 
-    input_dim, emb_dim, hid_dim, n_layers = 45, 512, 64, 2
+    enc_in, dec_in, emb_dim, hid_dim, n_layers = 45, 45, 512, 64, 2
     batch_size, seq_len = 32, 10
-    x = torch.randn(batch_size, seq_len, input_dim)
-    model1 = Encoder(input_dim, emb_dim, hid_dim, 0.2)
+    x = torch.randn(batch_size, seq_len, enc_in)
+    model1 = Encoder(enc_in, emb_dim, hid_dim, 0.2)
     # hidden, cell = model1(x)
-    model2 = Decoder(input_dim, emb_dim, hid_dim, 0.2)
+    model2 = Decoder(dec_in, emb_dim, hid_dim, 0.2)
     # model2(x, hidden, cell)
-    y = torch.randn(batch_size, 10, input_dim)
+    y = torch.randn(batch_size, 10, dec_in)
     model = BenchmarkGru(model1, model2, torch.device("cuda"))
     output = model(x, y)
     print("")

@@ -40,11 +40,11 @@ parser.add_argument('--checkpoints', type=str, default='./checkpoints/', help='l
 # Informer decoder input: concat[start token series(label_len), zero padding series(pred_len)]
 parser.add_argument('--do_predict', action='store_true', help='whether to predict unseen future data')
 parser.add_argument('--des', type=str, default='test',help='exp description')
-
-# informer
+# seq2seq
+parser.add_argument('--enc_in', type=int, default=45, help='encoder input size')
+parser.add_argument('--dec_in', type=int, default=45, help='decoder input size')
+## informer
 parser.add_argument('--embed', type=str, default='timeF', help='time features encoding, options:[timeF, fixed, learned]')
-parser.add_argument('--enc_in', type=int, default=7, help='encoder input size')
-parser.add_argument('--dec_in', type=int, default=7, help='decoder input size')
 parser.add_argument('--d_model', type=int, default=512, help='dimension of model')
 parser.add_argument('--n_heads', type=int, default=8, help='num of heads')
 parser.add_argument('--e_layers', type=int, default=2, help='num of encoder layers')

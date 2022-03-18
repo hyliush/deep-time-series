@@ -2,30 +2,30 @@ import torch.nn as nn
 import random
 import torch
 import torch.nn.functional as F
+import sys
+sys.path.append("d:\\IDEA\\Spatial-temporal\\deep-time-series")
+from layers.embed import TokenEmbedding
 
 class Encoder(nn.Module):
-    def __init__(self, input_dim, emb_dim, enc_hid_dim, dec_hid_dim, dropout):
+    def __init__(self, enc_in, emb_dim, enc_hid_dim, dec_hid_dim, dropout):
         super().__init__()
         
-        self.embedding = nn.Embedding(input_dim, emb_dim)
-        
-        self.rnn = nn.GRU(emb_dim, enc_hid_dim, bidirectional = True)
-        
+        self.embedding = TokenEmbedding(c_in=enc_in, d_model=emb_dim)
+        self.rnn = nn.GRU(emb_dim, enc_hid_dim, bidirectional = True, batch_first=True)
         self.fc = nn.Linear(enc_hid_dim * 2, dec_hid_dim)
-        
         self.dropout = nn.Dropout(dropout)
         
-    def forward(self, src):
+    def forward(self, x_enc):
         
-        #src = [src len, batch size]
+        #x_enc = [x_enc len, batch size]
         
-        embedded = self.dropout(self.embedding(src))
+        embedded = self.dropout(self.embedding(x_enc))
         
-        #embedded = [src len, batch size, emb dim]
+        #embedded = [x_enc len, batch size, emb dim]
         
         outputs, hidden = self.rnn(embedded)
                 
-        #outputs = [src len, batch size, hid dim * num directions]
+        #outputs = [x_enc len, batch size, hid dim * num directions]
         #hidden = [n layers * num directions, batch size, hid dim]
         
         #hidden is stacked [forward_1, backward_1, forward_2, backward_2, ...]
@@ -38,7 +38,7 @@ class Encoder(nn.Module):
         #  encoder RNNs fed through a linear layer
         hidden = torch.tanh(self.fc(torch.cat((hidden[-2,:,:], hidden[-1,:,:]), dim = 1)))
         
-        #outputs = [src len, batch size, enc hid dim * 2]
+        #outputs = [x_enc len, batch size, enc hid dim * 2]
         #hidden = [batch size, dec hid dim]
         
         return outputs, hidden
@@ -55,82 +55,66 @@ class Attention(nn.Module):
     def forward(self, hidden, encoder_outputs):
         
         #hidden = [batch size, dec hid dim]
-        #encoder_outputs = [src len, batch size, enc hid dim * 2]
+        #encoder_outputs = [batch size, x_enc len, enc hid dim * 2]
         
-        batch_size = encoder_outputs.shape[1]
-        src_len = encoder_outputs.shape[0]
+        batch_size, x_enc_len = encoder_outputs.shape[0], encoder_outputs.shape[1]
         
-        #repeat decoder hidden state src_len times
-        hidden = hidden.unsqueeze(1).repeat(1, src_len, 1)
+        #repeat decoder hidden state x_enc_len times
+        hidden = hidden.unsqueeze(1).repeat(1, x_enc_len, 1)
         
-        encoder_outputs = encoder_outputs.permute(1, 0, 2)
-        
-        #hidden = [batch size, src len, dec hid dim]
-        #encoder_outputs = [batch size, src len, enc hid dim * 2]
+        #hidden = [batch size, x_enc len, dec hid dim]
         
         energy = torch.tanh(self.attn(torch.cat((hidden, encoder_outputs), dim = 2))) 
         
-        #energy = [batch size, src len, dec hid dim]
+        #energy = [batch size, x_enc len, dec hid dim]
 
         attention = self.v(energy).squeeze(2)
         
-        #attention= [batch size, src len]
+        #attention= [batch size, x_enc len]
         
         return F.softmax(attention, dim=1)
 
 
 class Decoder(nn.Module):
-    def __init__(self, output_dim, emb_dim, enc_hid_dim, dec_hid_dim, dropout, attention):
+    def __init__(self, dec_in, emb_dim, enc_hid_dim, dec_hid_dim, dropout, attention):
         super().__init__()
 
-        self.output_dim = output_dim
         self.attention = attention
         
-        self.embedding = nn.Embedding(output_dim, emb_dim)
+        self.embedding = TokenEmbedding(c_in=dec_in, d_model=emb_dim)
         
-        self.rnn = nn.GRU((enc_hid_dim * 2) + emb_dim, dec_hid_dim)
+        self.rnn = nn.GRU((enc_hid_dim * 2) + emb_dim, dec_hid_dim, batch_first=True)
         
-        self.fc_out = nn.Linear((enc_hid_dim * 2) + dec_hid_dim + emb_dim, output_dim)
+        self.fc_out = nn.Linear((enc_hid_dim * 2) + dec_hid_dim + emb_dim, dec_in)
         
         self.dropout = nn.Dropout(dropout)
         
     def forward(self, input, hidden, encoder_outputs):
              
-        #input = [batch size]
         #hidden = [batch size, dec hid dim]
-        #encoder_outputs = [src len, batch size, enc hid dim * 2]
-        
-        input = input.unsqueeze(0)
+        #encoder_outputs = [batch size, x_enc len, enc hid dim * 2]
         
         #input = [1, batch size]
         
         embedded = self.dropout(self.embedding(input))
         
-        #embedded = [1, batch size, emb dim]
+        #embedded = [batch size, 1, emb dim]
         
         a = self.attention(hidden, encoder_outputs)
                 
-        #a = [batch size, src len]
+        #a = [batch size, x_enc len]
         
         a = a.unsqueeze(1)
         
-        #a = [batch size, 1, src len]
-        
-        encoder_outputs = encoder_outputs.permute(1, 0, 2)
-        
-        #encoder_outputs = [batch size, src len, enc hid dim * 2]
+        #a = [batch size, 1, x_enc len]
         
         weighted = torch.bmm(a, encoder_outputs)
         
         #weighted = [batch size, 1, enc hid dim * 2]
         
-        weighted = weighted.permute(1, 0, 2)
-        
-        #weighted = [1, batch size, enc hid dim * 2]
-        
         rnn_input = torch.cat((embedded, weighted), dim = 2)
         
-        #rnn_input = [1, batch size, (enc hid dim * 2) + emb dim]
+        #rnn_input = [batch size, 1, (enc hid dim * 2) + emb dim]
             
         output, hidden = self.rnn(rnn_input, hidden.unsqueeze(0))
         
@@ -138,21 +122,16 @@ class Decoder(nn.Module):
         #hidden = [n layers * n directions, batch size, dec hid dim]
         
         #seq len, n layers and n directions will always be 1 in this decoder, therefore:
-        #output = [1, batch size, dec hid dim]
+        #output = [batch size, 1, dec hid dim]
         #hidden = [1, batch size, dec hid dim]
         #this also means that output == hidden
-        assert (output == hidden).all()
+        assert (output == hidden.transpose(1, 0)).all()
+        prediction = self.fc_out(torch.cat((output, weighted, embedded), dim = 2))
         
-        embedded = embedded.squeeze(0)
-        output = output.squeeze(0)
-        weighted = weighted.squeeze(0)
-        
-        prediction = self.fc_out(torch.cat((output, weighted, embedded), dim = 1))
-        
-        #prediction = [batch size, output dim]
-        
+        #prediction = [batch size, seq_len, output dim]
         return prediction, hidden.squeeze(0)
-class Seq2Seq(nn.Module):
+
+class GruAttention(nn.Module):
     def __init__(self, encoder, decoder, device):
         super().__init__()
         
@@ -160,44 +139,50 @@ class Seq2Seq(nn.Module):
         self.decoder = decoder
         self.device = device
         
-    def forward(self, src, trg, teacher_forcing_ratio = 0.5):
+    def forward(self, x_enc, x_dec, teacher_forcing_ratio = 0.5):
         
-        #src = [src len, batch size]
-        #trg = [trg len, batch size]
+        #x_enc = [x_enc len, batch size, n_features]
+        #x_dec = [x_dec len, batch size, n_features]
         #teacher_forcing_ratio is probability to use teacher forcing
-        #e.g. if teacher_forcing_ratio is 0.75 we use teacher forcing 75% of the time
+        #e.g. if teacher_forcing_ratio is 0.75 we use ground-truth inputs 75% of the time
         
-        batch_size = src.shape[1]
-        trg_len = trg.shape[0]
-        trg_vocab_size = self.decoder.output_dim
-        
+        batch_size, x_dec_len, dec_in = x_dec.shape
         #tensor to store decoder outputs
-        outputs = torch.zeros(trg_len, batch_size, trg_vocab_size).to(self.device)
+        outputs = torch.zeros(batch_size, x_dec_len-1, dec_in).to(self.device)
         
-        #encoder_outputs is all hidden states of the input sequence, back and forwards
-        #hidden is the final forward and backward hidden states, passed through a linear layer
-        encoder_outputs, hidden = self.encoder(src)
-                
+        #last hidden state of the encoder is the context
+        encoder_outputs, hidden = self.encoder(x_enc)
+        
         #first input to the decoder is the <sos> tokens
-        input = trg[0,:]
+        input = x_dec[:, 0, :].unsqueeze(dim=1)
         
-        for t in range(1, trg_len):
+        for t in range(1, x_dec_len):
             
-            #insert input token embedding, previous hidden state and all encoder hidden states
+            #insert input token embedding, previous hidden state and the context state
             #receive output tensor (predictions) and new hidden state
             output, hidden = self.decoder(input, hidden, encoder_outputs)
             
             #place predictions in a tensor holding predictions for each token
-            outputs[t] = output
+            outputs[:, t-1, :] = output.squeeze()
             
             #decide if we are going to use teacher forcing or not
             teacher_force = random.random() < teacher_forcing_ratio
             
-            #get the highest predicted token from our predictions
-            top1 = output.argmax(1) 
-            
             #if teacher forcing, use actual next token as next input
             #if not, use predicted token
-            input = trg[t] if teacher_force else top1
+            input = x_dec[:, t, :].unsqueeze(dim=1) if teacher_force else output
 
         return outputs
+if __name__ == '__main__':
+    enc_in, dec_in, emb_dim, enc_hid_dim, dec_hid_dim = 45, 45, 512, 512, 512
+    batch_size, seq_len = 32, 10
+    x = torch.randn(batch_size, seq_len, enc_in)
+    model1 = Encoder(enc_in, emb_dim, enc_hid_dim, dec_hid_dim, 0.2)
+    # hidden, cell = model1(x)
+    atten = Attention(enc_hid_dim, dec_hid_dim)
+    model2 = Decoder(dec_in, emb_dim, enc_hid_dim, dec_hid_dim, 0.2,atten)
+    # model2(x, hidden, cell)
+    y = torch.randn(batch_size, 10, dec_in)
+    model = GruAttention(model1, model2, torch.device("cuda"))
+    output = model(x, y)
+    print("")
