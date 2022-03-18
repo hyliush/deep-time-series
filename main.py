@@ -14,6 +14,10 @@ data_parser = {
     'root_path':'D:/News_topics/RV-predictability/save_file/volatility_tmp',
     'freq':'b', 'T':'rv','M':[45,45,45],'S':[1,1,1],'MS':[45,45,1],
     'seq_len':10, 'label_len':5, "pred_len":1},
+    'Ubiquant':{'data':'D:/IDEA/Spatial-temporal/ubiquant/ubiquantSeg',
+    'root_path':'D:/IDEA/Spatial-temporal/ubiquant/ubiquantSeg',
+    'freq':'b', 'T':'target','M':[45,45,45],'S':[1,1,1],'MS':[45,45,1],
+    'seq_len':25, 'label_len':0, "pred_len":1}
 }
 if args.data in data_parser.keys():
     data_info = data_parser[args.data]

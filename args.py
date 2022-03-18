@@ -3,22 +3,22 @@ import torch
 parser = argparse.ArgumentParser(description='[Informer] Long Sequences Forecasting')
 
 # basic
-parser.add_argument('--model', type=str, default='tcn',help='model of experiment, options: [lstm, \
+parser.add_argument('--model', type=str, default='tpa',help='model of experiment, options: [lstm, \
 mlp, tpa, tcn, trans, gated, informerstack, informerlight(TBD)]')
-parser.add_argument('--data', type=str, default='Volatility', help='data, [ETTh1]')
+parser.add_argument('--data', type=str, default='Volatility', help='data, [ETTh1, Ubiquant, Volatility]')
 parser.add_argument('--root_path', type=str, default='./data/ETT/', help='root path of the data file')
 parser.add_argument('--data_path', type=str, default='ETTh1.csv', help='data file')    
 parser.add_argument('--features', type=str, default='MS', help='forecasting task, options:[M, S, MS]; M:multivariate predict multivariate, S:univariate predict univariate, MS:multivariate predict univariate')
+parser.add_argument('--criterion', type=str, default='mse', help='loss function')    
 
 # data
 parser.add_argument('--target', type=str, default='OT', help='target feature in S or MS task')
 parser.add_argument('--freq', type=str, default='h', help='freq for time features encoding, options:[s:secondly, t:minutely, h:hourly, d:daily, b:business days, w:weekly, m:monthly], you can also use more detailed freq like 15min or 3h')
-parser.add_argument('--input_size', type=int, default=45, help='input features dim')
+parser.add_argument('--input_size', type=int, default=300, help='input features dim')
 parser.add_argument('--seq_len', type=int, default=96, help='input sequence length of Informer encoder')
 parser.add_argument('--label_len', type=int, default=48, help='start token length of Informer decoder')
 parser.add_argument('--pred_len', type=int, default=24, help='prediction sequence length')
 parser.add_argument('--out_size', type=int, default=7, help='output features size')
-parser.add_argument('--embed', type=str, default='timeF', help='time features encoding, options:[timeF, fixed, learned]')
 parser.add_argument('--cols', type=str, nargs='+', help='certain cols from the data files as the input features')
 parser.add_argument('--inverse', action='store_true', help='inverse output data', default=False)
 
@@ -42,6 +42,7 @@ parser.add_argument('--do_predict', action='store_true', help='whether to predic
 parser.add_argument('--des', type=str, default='test',help='exp description')
 
 # informer
+parser.add_argument('--embed', type=str, default='timeF', help='time features encoding, options:[timeF, fixed, learned]')
 parser.add_argument('--enc_in', type=int, default=7, help='encoder input size')
 parser.add_argument('--dec_in', type=int, default=7, help='decoder input size')
 parser.add_argument('--d_model', type=int, default=512, help='dimension of model')
@@ -86,6 +87,17 @@ parser.add_argument('--gdnn_embed_size', type=int, default=512, help='gdnn_embed
 parser.add_argument('--gdnn_hidden_size1', type=int, default=150, help='lstm hidden size')
 parser.add_argument('--gdnn_hidden_size2', type=int, default=50, help=' combined model hidden size')
 parser.add_argument('--gdnn_out_size', type=int, default=100, help='lstm output size')
+
+# deepar
+parser.add_argument('--dataset', default='elect', help='Name of the dataset')
+parser.add_argument('--data-folder', default='../timeseries-data', help='Parent dir of the dataset')
+parser.add_argument('--model-name', default='base_model', help='Directory containing params.json')
+parser.add_argument('--relative-metrics', action='store_true', help='Whether to normalize the metrics by label scales')
+parser.add_argument('--sampling', action='store_true', help='Whether to sample during evaluation')
+parser.add_argument('--save-best', action='store_true', help='Whether to save best ND to param_search.txt')
+parser.add_argument('--restore-file', default=None,
+                    help='Optional, name of the file in --model_dir containing weights to reload before \
+                    training')  # 'best' or 'epoch_#'
 
 # GPU
 parser.add_argument('--use_gpu', type=bool, default=True, help='use gpu')
