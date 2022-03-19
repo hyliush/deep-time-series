@@ -46,10 +46,10 @@ class Exp_Basic(object):
             'Solar':Dataset_Custom,
             'custom':Dataset_Custom,
             'Volatility':VolatilityDataSetNoraml,
-            'VolatilityInformer':VolatilityDataSet,
+            'VolatilitySeq2Seq':VolatilityDataSet,
             'Ubiquant':UbiquantDataSetNoraml
         }
-        Data = data_dict[self.args.data+"Informer"] if "informer" in self.args.model else data_dict[self.args.data]
+        Data = data_dict[self.args.data+"Seq2Seq"] if "former" in self.args.model else data_dict[self.args.data]
         timeenc = 0 if args.embed!='timeF' else 1
 
         if flag == 'test':

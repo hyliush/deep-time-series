@@ -26,14 +26,20 @@ class PositionalEncoding(nn.Module):
 
 class Trans(nn.Module):
 
-    def __init__(self, input_size, trans_hidden_size, trans_kernel_size, 
-                 seq_len, n_trans_head, _trans_n_layers, out_size):
+    def __init__(self, args):
         super(Trans, self).__init__()
+        input_size = args.input_size
+        trans_hidden_size = args.trans_hidden_size
+        trans_kernel_size = args.trans_kernel_size
+        seq_len = args.seq_len
+        n_trans_head = args.trans_n_heads
+        trans_n_layers = args.trans_n_layers
+        out_size = args.out_size
 
         self.conv = nn.Conv1d(input_size, trans_hidden_size, kernel_size=trans_kernel_size)
         self.pos_encoder = PositionalEncoding(trans_hidden_size, max_len=seq_len)
         self.transformer_layer = nn.TransformerEncoderLayer(d_model=trans_hidden_size, nhead=n_trans_head)
-        self.transformer = nn.TransformerEncoder(self.transformer_layer, num_layers=_trans_n_layers)
+        self.transformer = nn.TransformerEncoder(self.transformer_layer, num_layers=trans_n_layers)
         self.fc = nn.Linear(trans_hidden_size, out_size)
 
         self.kernel_size = trans_kernel_size
@@ -52,9 +58,9 @@ if __name__ == "__main__":
     batch_size, seq_len, input_size = 32, 10, 45
     x = torch.randn(batch_size, seq_len, input_size)
     input_size, trans_hidden_size, trans_kernel_size\
-        , seq_len, n_trans_head, _trans_n_layers = input_size, 256, 6, seq_len, 8, 3
+        , seq_len, n_trans_head, trans_n_layers = input_size, 256, 6, seq_len, 8, 3
     out_size = 1
-    trans = Trans(input_size, trans_hidden_size, trans_kernel_size, seq_len, n_trans_head, _trans_n_layers, out_size)
+    trans = Trans(input_size, trans_hidden_size, trans_kernel_size, seq_len, n_trans_head, trans_n_layers, out_size)
     
     out = trans(x)
     

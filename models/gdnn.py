@@ -2,13 +2,13 @@ import torch.nn as nn
 from models.activation import Swish
 from models.informer.embed import SpatialEmbedding, TemporalEmbedding, TokenEmbedding, FixedEmbedding
 
-class gdnn(nn.Module):
-    def __init__(self, c_in=146, gdnn_embed_size=512, embed_type='fixed', freq='h',
+class Gdnn(nn.Module):
+    def __init__(self, n_spatial=146, gdnn_embed_size=512, embed_type='fixed', freq='h',
                 input_size=45, gdnn_hidden_size1=150, gdnn_out_size=100, num_layers=3,
                 gdnn_hidden_size2=50, out_size=1):
         '''
         Args:
-            c_in（int): num of spatial
+            n_spatial): num of spatial
             gdnn_embed_size (int): embedding dimension
             gdnn_hidden_size1 (int): lstm hidden dimension
             gdnn_out_size (int): lstm output dimension
@@ -17,9 +17,9 @@ class gdnn(nn.Module):
             gdnn_hidden_size2 (int): combined net hidden dimension
 
         '''
-        super(gdnn, self).__init__()
+        super(Gdnn, self).__init__()
         # st_net
-        self.st_net = St_net(c_in, gdnn_embed_size, embed_type, freq)
+        self.st_net = St_net(n_spatial, gdnn_embed_size, embed_type, freq)
 
         # lstm
         self.lstm1 = Lstm(input_size, gdnn_hidden_size1, gdnn_out_size, num_layers)
@@ -49,10 +49,10 @@ class gdnn(nn.Module):
         return out
     
 class St_net(nn.Module):
-    def __init__(self, c_in, gdnn_embed_size, embed_type, freq) -> None:
+    def __init__(self, n_spatial, gdnn_embed_size, embed_type, freq) -> None:
         super().__init__()
         # st_net
-        self.spa_embed = SpatialEmbedding(c_in, gdnn_embed_size)
+        self.spa_embed = SpatialEmbedding(n_spatial, gdnn_embed_size)
         self.tmp_embed = TemporalEmbedding(gdnn_embed_size, embed_type, freq)
         self.swish = Swish()
 
@@ -94,7 +94,7 @@ if __name__ == '__main__':
     x_spatial = torch.randint(0, 100, (batch_size, seq_len, 1))
     # fix = FixedEmbedding(200, 128)
     # fix(x_spatial)
-    gatednn = gdnn(c_in=146, gdnn_embed_size=512, embed_type='fixed', freq='h',
+    gatednn = Gdnn(n_spatial=146, gdnn_embed_size=512, embed_type='fixed', freq='h',
                 input_size=45, gdnn_hidden_size1=150, gdnn_out_size=100, num_layers=3,
                 gdnn_hidden_size2=50, out_size=1)
     out = gatednn(x, x_temporal, x_spatial)

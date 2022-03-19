@@ -3,7 +3,7 @@ import random
 import torch
 import sys
 sys.path.append("d:\\IDEA\\Spatial-temporal\\deep-time-series")
-from layers.embed import TokenEmbedding
+from layers.Embed import TokenEmbedding
 
 class Encoder(nn.Module):
     def __init__(self, enc_in, emb_dim, hid_dim, n_layers, dropout):
@@ -81,21 +81,27 @@ class Decoder(nn.Module):
         return prediction, hidden, cell
 
 
-class BenchmarkLstm(nn.Module):
-    def __init__(self, encoder, decoder, device):
+class Lstm(nn.Module):
+    def __init__(self, args):
         super().__init__()
+
+        enc_in, dec_in, emb_dim, hid_dim, n_layers, dropout = \
+        args.enc_in, args.dec_in, args.emb_dim, args.hid_dim, args.n_layers, args.dropout
+        self.teacher_forcing_ratio = args.teacher_forcing_ratio
+
+        self.encoder = Encoder(enc_in, emb_dim, hid_dim, n_layers, dropout)
+        self.decoder = Decoder(dec_in, emb_dim, hid_dim, n_layers, dropout)
         
-        self.encoder = encoder
-        self.decoder = decoder
-        self.device = device
-        
-        assert encoder.hid_dim == decoder.hid_dim, \
+        assert self.encoder.hid_dim == self.decoder.hid_dim, \
             "Hidden dimensions of encoder and decoder must be equal!"
-        assert encoder.n_layers == decoder.n_layers, \
+        assert self.encoder.n_layers == self.decoder.n_layers, \
             "Encoder and decoder must have equal number of layers!"
         
-    def forward(self, x_enc, x_dec, teacher_forcing_ratio = 0.5):
-        
+    def forward(self, x_enc, x_dec):
+        if self.training:
+            teacher_forcing_ratio = self.teacher_forcing_ratio
+        else:
+            teacher_forcing_ratio = 0
         #x_enc = [x_enc len, batch size, n_features]
         #x_dec = [x_dec len, batch size, n_features]
         #teacher_forcing_ratio is probability to use teacher forcing
@@ -103,7 +109,7 @@ class BenchmarkLstm(nn.Module):
         
         batch_size, x_dec_len, dec_in = x_dec.shape
         #tensor to store decoder outputs
-        outputs = torch.zeros(batch_size, x_dec_len-1, dec_in).to(self.device)
+        outputs = torch.zeros(batch_size, x_dec_len-1, dec_in).to(x_enc.device)
         
         #last hidden state of the encoder is used as the initial hidden state of the decoder
         hidden, cell = self.encoder(x_enc)
@@ -139,5 +145,5 @@ if __name__ == '__main__':
     model2 = Decoder(dec_in, emb_dim, hid_dim, n_layers, 0.2)
     # model2(x, hidden, cell)
     y = torch.randn(batch_size, 10, dec_in)
-    model = BenchmarkLstm(model1, model2, torch.device("cuda"))
+    model = Lstm(model1, model2, torch.device("cuda"))
     output = model(x, y)

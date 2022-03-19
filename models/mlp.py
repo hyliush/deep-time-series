@@ -2,8 +2,9 @@ from turtle import forward
 import torch.nn as nn
 
 class BenchmarkMlp(nn.Module):
-    def __init__(self, input_size, hidden_size, out_size, **kwargs):
-        super().__init__(**kwargs)
+    def __init__(self, args):
+        super().__init__()
+        input_size, hidden_size, out_size = args.input_size, args.mlp_hidden_size, args.out_size
         self.net = nn.Sequential(
             nn.Linear(input_size, hidden_size),
             nn.Sigmoid(),

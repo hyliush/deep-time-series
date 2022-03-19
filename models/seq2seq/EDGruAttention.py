@@ -4,7 +4,7 @@ import torch
 import torch.nn.functional as F
 import sys
 sys.path.append("d:\\IDEA\\Spatial-temporal\\deep-time-series")
-from layers.embed import TokenEmbedding
+from layers.Embed import TokenEmbedding
 
 class Encoder(nn.Module):
     def __init__(self, enc_in, emb_dim, enc_hid_dim, dec_hid_dim, dropout):
@@ -132,23 +132,26 @@ class Decoder(nn.Module):
         return prediction, hidden.squeeze(0)
 
 class GruAttention(nn.Module):
-    def __init__(self, encoder, decoder, device):
+    def __init__(self, args):
         super().__init__()
+        enc_in, dec_in, emb_dim, enc_hid_dim, dec_hid_dim, dropout, attention = \
+        args
+        self.encoder = Encoder(enc_in, emb_dim, enc_hid_dim, dec_hid_dim, dropout)
+        self.decoder = Decoder(dec_in, emb_dim, enc_hid_dim, dec_hid_dim, dropout, attention)
         
-        self.encoder = encoder
-        self.decoder = decoder
-        self.device = device
-        
-    def forward(self, x_enc, x_dec, teacher_forcing_ratio = 0.5):
+    def forward(self, x_enc, x_dec):
         
         #x_enc = [x_enc len, batch size, n_features]
         #x_dec = [x_dec len, batch size, n_features]
         #teacher_forcing_ratio is probability to use teacher forcing
         #e.g. if teacher_forcing_ratio is 0.75 we use ground-truth inputs 75% of the time
-        
+        if self.training:
+            teacher_forcing_ratio = self.teacher_forcing_ratio
+        else:
+            teacher_forcing_ratio = 0
         batch_size, x_dec_len, dec_in = x_dec.shape
         #tensor to store decoder outputs
-        outputs = torch.zeros(batch_size, x_dec_len-1, dec_in).to(self.device)
+        outputs = torch.zeros(batch_size, x_dec_len-1, dec_in).to(x_enc.device)
         
         #last hidden state of the encoder is the context
         encoder_outputs, hidden = self.encoder(x_enc)

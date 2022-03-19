@@ -34,8 +34,8 @@ if args.data in data_parser.keys():
 args.detail_freq = args.freq
 args.freq = args.freq[-1:]
 
-from exp.exp import Exp_model
-args.model = "informer"
+from exp.exp_main import Exp_model
+args.model = "autoformer"
 for ii in range(args.itr):
     # setting record of experiments
     setting = '{}_{}_ft{}__sl{}_ll{}_pl{}_id{}_co{}_{}_{}'.format(args.model, args.data, args.features, 

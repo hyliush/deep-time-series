@@ -1,6 +1,6 @@
 import torch.nn as nn
 
-class BenchmarkLSTM(nn.Module):
+class BenchmarkLstm(nn.Module):
     """Example network for solving Oze datachallenge.
 
     Attributes
@@ -11,7 +11,7 @@ class BenchmarkLSTM(nn.Module):
         Fully connected layer.
     """
 
-    def __init__(self, input_size=37, hidden_size=100, out_size=8, num_layers=3, **kwargs):
+    def __init__(self, args):
         """Defines LSTM and Linear layers.
 
         Parameters
@@ -25,8 +25,8 @@ class BenchmarkLSTM(nn.Module):
         num_layers: int, optional
             Number of LSTM layers. Default is 3.
         """
-        super().__init__(**kwargs)
-
+        super().__init__()
+        input_size, hidden_size, out_size, num_layers = args.input_size, args.lstm_hidden_size, args.out_size, args.lstm_n_layers
         self.lstm = nn.LSTM(input_size, hidden_size, num_layers=num_layers, batch_first=True)
         self.dropout = nn.Dropout(0.2)
         self.linear = nn.Linear(hidden_size, out_size)
