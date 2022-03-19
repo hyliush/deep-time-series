@@ -215,7 +215,7 @@ class Exp_Basic(object):
             mae, mse, rmse, mape, mspe = metric(preds, trues)
             print('mse:{}, mae:{}'.format(mse, mae))
 
-            if file_path is  None:
+            if file_path is not None:
                 np.save(f'{file_path}_metrics.npy', np.array([mae, mse, rmse, mape, mspe]))
                 np.save(f'{file_path}_pred.npy', preds)
                 np.save(f'{file_path}_true.npy', trues)
