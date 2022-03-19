@@ -36,7 +36,7 @@ bash ./scripts/ILI_script/Autoformer.sh
 **To run on your customized data**, a `DataSet` class must be provided in `dataloader.py`, then add the `Dataset` to `Exp_Basic.py`. Need to be noted that elements ejected from the `DataSet` class must conform to the model's requirement.
 ## Usage
 <span id="colablink">Colab Examples:</span> We provide google colabs to help reproducing and customing our repo, which includes `experiments(train and test)`, `forecasting`, `visualization` and `custom data`.
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1_X7O2BkFLvqyCdZzDZvV2MB0aAvYALLC)
+<!-- [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1_X7O2BkFLvqyCdZzDZvV2MB0aAvYALLC) -->
 
 Commands for training and testing the model with *ProbSparse* self-attention on Dataset ETTh1, ETTh2 and ETTm1 respectively:
 
