@@ -1,2 +1,8 @@
 /checkpoints
 /data
+/exp/__pycache__
+/layer/__pycache__
+/models/__pycache__
+/models/seq2seq/__pycache__
+/utils/__pycache__
+/__pycache__
