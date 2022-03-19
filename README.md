@@ -3,7 +3,7 @@
 
 This repo mainly focuses on the progress of time series forecasting using deep learning. It was originally [a collection of models](#models-currently-supported) (transformers, attention models, GRUs) that I used in financial market forecasting, which has been organized into a unified framework for easier use.
 
-For beginners, we recommend you read this [paper](https://arxiv.org/abs/2004.13408) or [the brief introduction](/) we provided to learn about time series forecasting.
+For beginners, we recommend you read this [paper](https://arxiv.org/abs/2004.13408) or [the brief introduction](/What%20you%20need%20know%20before%20starting%20the%20project.pdf) we provided to learn about time series forecasting.
 
 
 ## Requirements
@@ -70,7 +70,7 @@ python -u main_informer.py --model <model> --data <data>
 ```
 
 ### Models currently supported
-
+We will keep adding series forecasting models to expand this repo.
 | Year | Models |Tasks|
 | --- | --- |---|
 |---|Vanilla Lstm|many to one|
