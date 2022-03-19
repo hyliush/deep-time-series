@@ -6,14 +6,28 @@ from mylogger import logger
 from utils.tools import EarlyStopping, adjust_learning_rate
 from tqdm import tqdm
 import time
-from data.data_loader import Dataset_ETT_hour, Dataset_ETT_minute, Dataset_Custom, Dataset_Pred, VolatilityDataSet, VolatilityDataSetNoraml
+from data.data_loader import Dataset_ETT_hour, Dataset_ETT_minute, Dataset_Custom, Dataset_Pred, UbiquantDataSetNoraml, VolatilityDataSet, VolatilityDataSetNoraml
 from torch.utils.data import DataLoader
+from torch import optim
+from utils.loss import Normal_loss
+import torch.nn as nn
 
 class Exp_Basic(object):
     def __init__(self, args):
         self.args = args
         self.device = self._acquire_device()
         self.model = self._build_model().to(self.device)
+
+    def _select_optimizer(self):
+        model_optim = optim.Adam(self.model.parameters(), lr=self.args.learning_rate)
+        return model_optim
+    
+    def _select_criterion(self):
+        if self.args.criterion == "mse":
+            criterion =  nn.MSELoss()
+        if self.args.criterion == "normal":
+            criterion = Normal_loss
+        return criterion
 
     def _build_model(self):
         raise NotImplementedError
@@ -32,9 +46,10 @@ class Exp_Basic(object):
             'Solar':Dataset_Custom,
             'custom':Dataset_Custom,
             'Volatility':VolatilityDataSetNoraml,
-            'VolatilityInformer':VolatilityDataSet
+            'VolatilitySeq2Seq':VolatilityDataSet,
+            'Ubiquant':UbiquantDataSetNoraml
         }
-        Data = data_dict[self.args.data+"Informer"] if "informer" in self.args.model else data_dict[self.args.data]
+        Data = data_dict[self.args.data+"Seq2Seq"] if "former" in self.args.model else data_dict[self.args.data]
         timeenc = 0 if args.embed!='timeF' else 1
 
         if flag == 'test':
@@ -43,7 +58,7 @@ class Exp_Basic(object):
             shuffle_flag = False; drop_last = False; batch_size = 1; freq=args.detail_freq
             Data = Dataset_Pred
         else:
-            shuffle_flag = True; drop_last = True; batch_size = args.batch_size; freq=args.freq
+            shuffle_flag = True; drop_last = False; batch_size = args.batch_size; freq=args.freq
         data_set = Data(
             root_path=args.root_path,
             file_name=file_name,
@@ -116,11 +131,11 @@ class Exp_Basic(object):
                     epoch_train_steps += 1
                     
                     model_optim.zero_grad()
-                    pred, true = self._process_one_batch(train_data, batch)
-                    loss = criterion(pred, true)
+                    batch_out= self._process_one_batch(train_data, batch)
+                    loss = criterion(*batch_out)
                     train_loss.append(loss.item())
                     
-                    if (i+1) % 100==0:
+                    if (i+1) % 1000==0:
                         print("\epoch: {0}, file_idx: {1}, epoch_train_steps: {2},  | loss: {3:.7f}".format(epoch + 1, file_idx, epoch_train_steps, loss.item()))
                     
                     if self.args.use_amp:
@@ -133,13 +148,13 @@ class Exp_Basic(object):
                 # file_idx
                 train_loss = np.average(train_loss)
                 total_train_loss.append(train_loss)
-                print("Epoch: {} file_idx: {} train_loss: {}".format(epoch+1, file_idx, train_loss))
+                logger.info("Epoch: {} file_idx: {} train_loss: {}".format(epoch+1, file_idx, train_loss))
 
             total_vali_loss, vali_metrics = self.vali("val", criterion)
             total_test_loss, test_metrics = self.vali("test", criterion)
             total_train_loss = np.average(total_train_loss)
             # epoch损失记录
-            print("Epoch: {}, epoch_train_steps: {} | Train Loss: {:.7f} Vali Loss: {:.7f} Test Loss: {:.7f} cost time: {}".format(
+            logger.info("Epoch: {}, epoch_train_steps: {} | Train Loss: {:.7f} Vali Loss: {:.7f} Test Loss: {:.7f} cost time: {}".format(
                 epoch + 1, epoch_train_steps, total_train_loss, total_vali_loss, total_test_loss, time.time()-epoch_time))
             
             early_stopping(total_vali_loss, self.model, path)
@@ -233,8 +248,8 @@ class Exp_Basic(object):
             total_trues.append(trues)
         
         total_trues, total_preds = np.concatenate(total_trues), np.concatenate(total_preds)
-        total_preds = np.where(abs(total_preds)>10, 0, total_preds)
-        total_trues = np.where(abs(total_trues)>1, 0, total_trues)
+        # total_preds = np.where(abs(total_preds)>10, 0, total_preds)
+        # total_trues = np.where(abs(total_trues)>1, 0, total_trues)
         logger.info("test shape:{} {}".format(total_preds.shape, total_trues.shape))
         mae, mse, rmse, mape, mspe = metric(total_preds, total_trues)
         print('mse:{}, mae:{}'.format(mse, mae))

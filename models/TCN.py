@@ -53,16 +53,21 @@ class TemporalBlock(nn.Module):
 
 
 class TCN(nn.Module):
-    def __init__(self, input_size, tcn_hidden_size, tcn_n_layers, tcn_dropout, out_size):
+    def __init__(self, args):
         super(TCN, self).__init__()
-        num_inputs = input_size
+        input_size, tcn_hidden_size, tcn_n_layers, tcn_dropout, out_size = \
+                args.input_size,\
+                args.tcn_hidden_size, \
+                args.tcn_n_layers,\
+                args.tcn_dropout,\
+                args.out_size
         num_channels = [tcn_hidden_size] * tcn_n_layers
         kernel_size = 2
         layers = []
         num_levels = len(num_channels)
         for i in range(num_levels):
             dilation_size = 2 ** i
-            in_channels = num_inputs if i == 0 else num_channels[i-1]
+            in_channels = input_size if i == 0 else num_channels[i-1]
             out_channels = num_channels[i]
             # one temporalBlock can be seen from fig1(b).
             layers += [TemporalBlock(in_channels, out_channels, kernel_size, stride=1, dilation=dilation_size,

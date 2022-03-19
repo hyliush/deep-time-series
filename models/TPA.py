@@ -30,7 +30,7 @@ class TPA_Attention(nn.Module):
 
 
 class TPA(nn.Module):
-    def __init__(self, input_size, seq_len, tpa_hidden_size, tpa_n_layers, tpa_ar_len, out_size):
+    def __init__(self, args):
         
         '''
         Args:
@@ -40,6 +40,14 @@ class TPA(nn.Module):
             default pred_len = 1 
         '''
         super(TPA, self).__init__()
+        input_size, seq_len, tpa_hidden_size, tpa_n_layers, tpa_ar_len, out_size = \
+                args.input_size,\
+                args.seq_len,\
+                args.tpa_hidden_size, \
+                args.tpa_n_layers,\
+                args.tpa_ar_len,\
+                args.out_size
+
         self.input_proj = nn.Linear(input_size, tpa_hidden_size)
         self.lstm = nn.LSTM(input_size=tpa_hidden_size, hidden_size=tpa_hidden_size,
                             num_layers=tpa_n_layers, batch_first=True)
