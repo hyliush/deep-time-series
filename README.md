@@ -1,6 +1,9 @@
 # Deep Learning for Time Series forecasting
 ![Python 3.6](https://img.shields.io/badge/python-3.6-green.svg?style=plastic) ![PyTorch 1.2](https://img.shields.io/badge/PyTorch%20-%23EE4C2C.svg?style=plastic) ![cuDNN 7.3.1](https://img.shields.io/badge/cudnn-7.3.1-green.svg?style=plastic) ![License CC BY-NC-SA](https://img.shields.io/badge/license-CC_BY--NC--SA--green.svg?style=plastic)
 
+This repo mainly focuses on the progress of time series forecasting using deep learning. It was originally [a collection of models](#models-currently-supported) (transformers, attention models, GRUs) that I used in financial market forecasting, which has been organized into a unified framework for easier use.
+
+For beginners, we recommend you read this [paper](https://arxiv.org/abs/2004.13408) or [the brief introduction](/) we provided to learn about time series forecasting.
 
 
 ## Requirements
@@ -17,8 +20,20 @@ Dependencies can be installed using the following command:
 pip install -r requirements.txt
 ```
 
-## Data
 
+## Get Started
+1. Download data provided by the [repo](https://github.com/thuml/Autoformer). You can obtain all the six benchmarks from [Tsinghua Cloud](https://cloud.tsinghua.edu.cn/d/e1ccfff39ad541908bae/) or [Google Drive](https://drive.google.com/drive/folders/1ZOYpTUa82_jCcxIdTmyr0LXQfvaM9vIy?usp=sharing). __All the datasets are well pre-processed__ and can be used easily.
+2. Train the model. We provide the experiment scripts of all benchmarks under the folder ./scripts. You can reproduce the experiment results by:
+```bash
+bash ./scripts/ETT_script/Autoformer_ETTm1.sh
+bash ./scripts/ECL_script/Autoformer.sh
+bash ./scripts/Exchange_script/Autoformer.sh
+bash ./scripts/Traffic_script/Autoformer.sh
+bash ./scripts/Weather_script/Autoformer.sh
+bash ./scripts/ILI_script/Autoformer.sh
+```
+
+**To run on your customized data**, a `DataSet` class must be provided in `dataloader.py`, then add the `Dataset` to `Exp_Basic.py`. Need to be noted that elements ejected from the `DataSet` class must conform to the model's requirement.
 ## Usage
 <span id="colablink">Colab Examples:</span> We provide google colabs to help reproducing and customing our repo, which includes `experiments(train and test)`, `forecasting`, `visualization` and `custom data`.
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1_X7O2BkFLvqyCdZzDZvV2MB0aAvYALLC)
@@ -75,12 +90,11 @@ python -u main_informer.py --model <model> --data <data>
 
 
 
-## <span id="resultslink">Results</span>
+## Results on a toy data
 
 
 ## Contact
-If you have any questions, feel free to contact hyliu through Email (hyliu_sh@outlook.com) or Github issues. Pull requests are highly welcomed!
-
+If you have any questions, feel free to contact hyliu through Email (hyliu_sh@outlook.com) or Github issues. 
 ## Acknowlegements 
 To complete the project, we referenced the following repos.
-[Informer2020](https://github.com/zhouhaoyi/Informer2020),   [AdjustAutocorrelation](https://github.com/Daikon-Sun/AdjustAutocorrelation), [flow-forecast](https://github.com/hyliush/deep-time-series/tree/master).
+[Informer2020](https://github.com/zhouhaoyi/Informer2020),   [AdjustAutocorrelation](https://github.com/Daikon-Sun/AdjustAutocorrelation), [flow-forecast](https://github.com/hyliush/deep-time-series/tree/master), [pytorch-seq2seq](https://github.com/bentrevett/pytorch-seq2seq), [Autoformer](https://github.com/thuml/Autoformer).
