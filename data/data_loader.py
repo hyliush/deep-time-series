@@ -11,13 +11,28 @@ from utils.timefeatures import time_features
 
 import warnings
 warnings.filterwarnings('ignore')
+class DatasetBase(Dataset):
+    def __init__(self, data_path, flag, size, features, file_name, 
+                 target, scale, inverse, timeenc, freq, cols):
+        self.data_path = data_path
+        self.flag = flag
+        self.size = size
+        self.features = features
+        self.file_name = file_name
+        self.target = target
+        self.scale = scale
+        self.inverse = inverse
+        self.timeenc = timeenc
+        self.freq = freq
+        self.cols = cols
 
-class Dataset_ETT_hour(Dataset):
+class Dataset_ETT_hour(DatasetBase):
     def __init__(self, data_path, flag='train', size=None, 
                  features='S', file_name='ETTh1.csv', 
                  target='OT', scale=True, inverse=False, timeenc=0, freq='h', cols=None):
-        # size [seq_len, label_len, pred_len]
-        # info
+
+        super().__init__(data_path, flag, size, features, file_name, 
+                        target, scale, inverse, timeenc, freq, cols)
         if size == None:
             self.seq_len = 24*4*4
             self.label_len = 24*4
@@ -30,16 +45,6 @@ class Dataset_ETT_hour(Dataset):
         assert flag in ['train', 'test', 'val']
         type_map = {'train':0, 'val':1, 'test':2}
         self.set_type = type_map[flag]
-        
-        self.features = features
-        self.target = target
-        self.scale = scale
-        self.inverse = inverse
-        self.timeenc = timeenc
-        self.freq = freq
-        
-        self.data_path = data_path
-        self.file_name = file_name
         self.__read_data__()
 
     def __read_data__(self):
@@ -100,12 +105,13 @@ class Dataset_ETT_hour(Dataset):
     def inverse_transform(self, data):
         return self.scaler.inverse_transform(data)
 
-class Dataset_ETT_minute(Dataset):
+class Dataset_ETT_minute(DatasetBase):
     def __init__(self, data_path, flag='train', size=None, 
                  features='S', file_name='ETTm1.csv', 
                  target='OT', scale=True, inverse=False, timeenc=0, freq='t', cols=None):
-        # size [seq_len, label_len, pred_len]
-        # info
+
+        super().__init__(data_path, flag, size, features, file_name, 
+                        target, scale, inverse, timeenc, freq, cols)
         if size == None:
             self.seq_len = 24*4*4
             self.label_len = 24*4
@@ -118,16 +124,6 @@ class Dataset_ETT_minute(Dataset):
         assert flag in ['train', 'test', 'val']
         type_map = {'train':0, 'val':1, 'test':2}
         self.set_type = type_map[flag]
-        
-        self.features = features
-        self.target = target
-        self.scale = scale
-        self.inverse = inverse
-        self.timeenc = timeenc
-        self.freq = freq
-        
-        self.data_path = data_path
-        self.file_name = file_name
         self.__read_data__()
 
     def __read_data__(self):
@@ -187,12 +183,12 @@ class Dataset_ETT_minute(Dataset):
         return self.scaler.inverse_transform(data)
 
 
-class Dataset_Custom(Dataset):
+class Dataset_Custom(DatasetBase):
     def __init__(self, data_path, flag='train', size=None, 
                  features='S', file_name='ETTh1.csv', 
                  target='OT', scale=True, inverse=False, timeenc=0, freq='h', cols=None):
-        # size [seq_len, label_len, pred_len]
-        # info
+        super().__init__(data_path, flag, size, features, file_name, 
+                        target, scale, inverse, timeenc, freq, cols)
         if size == None:
             self.seq_len = 24*4*4
             self.label_len = 24*4
@@ -206,15 +202,6 @@ class Dataset_Custom(Dataset):
         type_map = {'train':0, 'val':1, 'test':2}
         self.set_type = type_map[flag]
         
-        self.features = features
-        self.target = target
-        self.scale = scale
-        self.inverse = inverse
-        self.timeenc = timeenc
-        self.freq = freq
-        self.cols=cols
-        self.data_path = data_path
-        self.data_path = file_name
         self.__read_data__()
 
     def __read_data__(self):
@@ -286,12 +273,12 @@ class Dataset_Custom(Dataset):
     def inverse_transform(self, data):
         return self.scaler.inverse_transform(data)
 
-class Dataset_Pred(Dataset):
+class Dataset_Pred(DatasetBase):
     def __init__(self, data_path, flag='pred', size=None, 
                  features='S', file_name='ETTh1.csv', 
                  target='OT', scale=True, inverse=False, timeenc=0, freq='15min', cols=None):
-        # size [seq_len, label_len, pred_len]
-        # info
+        super().__init__(data_path, flag, size, features, file_name, 
+                        target, scale, inverse, timeenc, freq, cols)
         if size == None:
             self.seq_len = 24*4*4
             self.label_len = 24*4
@@ -303,15 +290,6 @@ class Dataset_Pred(Dataset):
         # init
         assert flag in ['pred']
         
-        self.features = features
-        self.target = target
-        self.scale = scale
-        self.inverse = inverse
-        self.timeenc = timeenc
-        self.freq = freq
-        self.cols=cols
-        self.data_path = data_path
-        self.file_name = file_name
         self.__read_data__()
 
     def __read_data__(self):
@@ -385,8 +363,8 @@ class VolatilityDataSetSeq2Seq(Dataset):
     def __init__(self, data_path, flag='train', size=None, 
                  features='S', file_name='ETTh1.csv', 
                  target='OT', scale=True, inverse=False, timeenc=0, freq='d', cols=None):
-        # size [seq_len, label_len, pred_len]
-        # info
+        super().__init__(data_path, flag, size, features, file_name, 
+                        target, scale, inverse, timeenc, freq, cols)
         self.test_size = 60
         if size == None:
             self.seq_len = 20
@@ -400,16 +378,7 @@ class VolatilityDataSetSeq2Seq(Dataset):
         assert flag in ['train', 'test', 'val']
         type_map = {'train':0, 'val':1, 'test':2}
         self.set_type = type_map[flag]
-        
-        self.features = features
-        self.target = target
-        self.scale = scale
-        self.inverse = inverse
-        self.timeenc = timeenc
-        self.freq = freq
-        
-        self.data_path = data_path
-        self.file_name = file_name
+
         self.__read_data__()
 
     def __read_data__(self):
@@ -475,14 +444,14 @@ class VolatilityDataSetSeq2Seq(Dataset):
         return self.scaler.inverse_transform(data)
 
 
-class VolatilityDataSetNoraml(Dataset):
+class VolatilityDataSetNoraml(DatasetBase):
     def __init__(self, data_path, flag='train', size=None, 
                  features='S', file_name='ETTh1.csv', 
                  target='OT', scale=True, inverse=False, timeenc=0,
                   freq='d', cols=None, horizon = 0):
         '''horizon: predict timeseries from horizon+1 to horizon+1+pred in head. default(0) '''
-        # size [seq_len, label_len, pred_len]
-        # info
+        super().__init__(data_path, flag, size, features, file_name, 
+                        target, scale, inverse, timeenc, freq, cols)
         self.test_size = 60
         if size == None:
             self.seq_len = 20
@@ -497,16 +466,6 @@ class VolatilityDataSetNoraml(Dataset):
         type_map = {'train':0, 'val':1, 'test':2}
         self.set_type = type_map[flag]
         
-        self.features = features
-        self.target = target
-        self.scale = scale
-        self.inverse = inverse
-        self.timeenc = timeenc
-        self.freq = freq
-
-        self.horizon = horizon
-        self.data_path = data_path
-        self.file_name = file_name
         self.__read_data__()
 
     def __read_data__(self):
@@ -575,8 +534,8 @@ class VolatilityDataSetGate(Dataset):
     def __init__(self, data_path, flag='train', size=None, 
                  features='S', file_name='ETTh1.csv', 
                  target='OT', scale=True, inverse=False, timeenc=0, freq='d', cols=None):
-        # size [seq_len, label_len, pred_len]
-        # info
+        super().__init__(data_path, flag, size, features, file_name, 
+                        target, scale, inverse, timeenc, freq, cols)
         self.test_size = 60
         if size == None:
             self.seq_len = 20
@@ -590,16 +549,7 @@ class VolatilityDataSetGate(Dataset):
         assert flag in ['train', 'test', 'val']
         type_map = {'train':0, 'val':1, 'test':2}
         self.set_type = type_map[flag]
-        
-        self.features = features
-        self.target = target
-        self.scale = scale
-        self.inverse = inverse
-        self.timeenc = timeenc
-        self.freq = freq
-        
-        self.data_path = data_path
-        self.file_name = file_name
+    
         self.__read_data__()
 
     def __read_data__(self):
@@ -674,8 +624,8 @@ class UbiquantInformer(Dataset):
     def __init__(self, data_path, flag='train', size=None, 
                  features='S', file_name='ETTh1.csv', 
                  target='OT', scale=True, inverse=False, timeenc=0, freq='d', cols=None, test_size=60):
-        # size [seq_len, label_len, pred_len]
-        # info
+        super().__init__(data_path, flag, size, features, file_name, 
+                        target, scale, inverse, timeenc, freq, cols)
         self.test_size = 30
         if size == None:
             self.seq_len = 20
@@ -689,16 +639,7 @@ class UbiquantInformer(Dataset):
         assert flag in ['train', 'test', 'val']
         type_map = {'train':0, 'val':1, 'test':2}
         self.set_type = type_map[flag]
-        
-        self.features = features
-        self.target = target
-        self.scale = scale
-        self.inverse = inverse
-        self.timeenc = timeenc
-        self.freq = freq
-        
-        self.data_path = data_path
-        self.file_name = file_name
+
         self.__read_data__()
 
     def __read_data__(self):
@@ -768,8 +709,8 @@ class UbiquantDataSetNoraml(Dataset):
                  target='OT', scale=True, inverse=False, timeenc=0,
                   freq='d', cols=None, test_size=60, horizon = 0):
         '''horizon: predict timeseries from horizon+1 to horizon+1+pred in head. default(0) '''
-        # size [seq_len, label_len, pred_len]
-        # info
+        super().__init__(data_path, flag, size, features, file_name, 
+                        target, scale, inverse, timeenc, freq, cols)
         self.test_size = 30
         if size == None:
             self.seq_len = 20
@@ -784,16 +725,6 @@ class UbiquantDataSetNoraml(Dataset):
         type_map = {'train':0, 'val':1, 'test':2}
         self.set_type = type_map[flag]
         
-        self.features = features
-        self.target = target
-        self.scale = scale
-        self.inverse = inverse
-        self.timeenc = timeenc
-        self.freq = freq
-
-        self.horizon = horizon
-        self.data_path = data_path
-        self.file_name = file_name
         self.__read_data__()
 
     def __read_data__(self):
@@ -855,3 +786,98 @@ class UbiquantDataSetNoraml(Dataset):
 
     def inverse_transform(self, data):
         return self.scaler.inverse_transform(data)
+
+class ToyDataset(DatasetBase):
+    def __init__(self,data_path="", flag='train', size=None, 
+                 features='S', file_name='ETTh1.csv', 
+                 target='OT', scale=True, inverse=False, timeenc=0, freq='h', cols=None):
+        super().__init__(data_path, flag, size, features, file_name, 
+                        target, scale, inverse, timeenc, freq, cols)
+        self.seq_len, self.label_len, self.pred_len = size
+        self._get_data()
+        
+    def _get_data(self):
+        if self.flag == "train":
+            size = 4500
+        if self.flag == "val":
+            size = 500
+        if self.flag == "test":
+            size = 1000
+        self.data_x, self.data_y = [], []
+        for i in range(size):
+            t = self.seq_len
+            a1 = np.random.uniform(0, 60, 1)
+            x1 = np.arange(12)
+            y1 = a1*np.sin(np.pi*x1/6) + 72 + np.random.randn()
+            a2 = np.random.uniform(0, 60, 1)
+            x2 = np.arange(12, 24)
+            y2 = a2*np.sin(np.pi*x2/6) + 72 + np.random.randn()
+            a3 = np.random.uniform(0, 60, 1)
+            x3 = np.arange(24, t)
+            y3 = a3*np.sin(np.pi*x3/6) + 72 + np.random.randn()
+            a4 = max(a1, a2)
+            x4 = np.arange(t, t+self.pred_len)
+            y4 = a4*np.sin(np.pi*x4/12) + 72 + np.random.randn()
+            x = np.concatenate([y1, y2, y3])
+            x = x[:, np.newaxis]
+            y = y4[:, np.newaxis]
+            self.data_x.append(x)
+            if self.label_len>0:
+                self.data_y.append(np.concatenate([x[-self.label_len:], y], axis=0))
+            else:
+                self.data_y.append(y)
+
+    def __getitem__(self, index):
+        return self.data_x[index], self.data_y[index]
+    def __len__(self):
+        return len(self.data_x)
+    def inverse_transform(self, x):
+        return x
+
+
+class ToyDatasetSeq2Seq(DatasetBase):
+    def __init__(self,data_path="", flag='train', size=None, 
+                 features='S', file_name='ETTh1.csv', 
+                 target='OT', scale=True, inverse=False, timeenc=0, freq='h', cols=None):
+        super().__init__(data_path, flag, size, features, file_name, 
+                        target, scale, inverse, timeenc, freq, cols)
+        self.seq_len, self.label_len, self.pred_len = size
+        self._get_data()
+        
+    def _get_data(self):
+        if self.flag == "train":
+            size = 4500
+        if self.flag == "val":
+            size = 500
+        if self.flag == "test":
+            size = 1000
+        self.data_x, self.data_y = [], []
+        for i in range(size):
+            t = self.seq_len
+            a1 = np.random.uniform(0, 60, 1)
+            x1 = np.arange(12)
+            y1 = a1*np.sin(np.pi*x1/6) + 72 + np.random.randn()
+            a2 = np.random.uniform(0, 60, 1)
+            x2 = np.arange(12, 24)
+            y2 = a2*np.sin(np.pi*x2/6) + 72 + np.random.randn()
+            a3 = np.random.uniform(0, 60, 1)
+            x3 = np.arange(24, t)
+            y3 = a3*np.sin(np.pi*x3/6) + 72 + np.random.randn()
+            a4 = max(a1, a2)
+            x4 = np.arange(t, t+self.pred_len)
+            y4 = a4*np.sin(np.pi*x4/12) + 72 + np.random.randn()
+            x = np.concatenate([y1, y2, y3])
+            x = x[:, np.newaxis]
+            y = y4[:, np.newaxis]
+            self.data_x.append(x)
+            if self.label_len>0:
+                self.data_y.append(np.concatenate([x[-self.label_len:], y], axis=0))
+            else:
+                self.data_y.append(y)
+
+    def __getitem__(self, index):
+        return self.data_x[index], self.data_y[index], self.data_x[index], self.data_y[index]
+    def __len__(self):
+        return len(self.data_x)
+    def inverse_transform(self, x):
+        return x

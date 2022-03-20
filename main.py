@@ -15,7 +15,8 @@ data_parser = {
     'seq_len':10, 'label_len':1, "pred_len":1},
     'Ubiquant':{'data_path':'D:/IDEA/Spatial-temporal/ubiquant/ubiquantSeg',
     'freq':'b', 'T':'target','M':[45,45,45],'S':[1,1,1],'MS':[45,45,1],
-    'seq_len':25, 'label_len':0, "pred_len":1}
+    'seq_len':25, 'label_len':0, "pred_len":1},
+    'Toy':{'seq_len':96, 'label_len':1, "pred_len":24, "MS":[1,1,1], "T":"s"}
 }
 if args.data in data_parser.keys():
     data_info = data_parser[args.data]
@@ -27,7 +28,7 @@ if args.data in data_parser.keys():
         args.seq_len, args.label_len, args.pred_len = data_info['seq_len'], data_info['label_len'], data_info['pred_len']
     args.target = data_info['T']
     args.enc_in, args.dec_in, args.out_size = data_info[args.features]
-
+    args.input_size = args.enc_in
 args.detail_freq = args.freq
 args.freq = args.freq[-1:]
 
@@ -43,7 +44,7 @@ for ii in range(args.itr):
     # set experiments
     exp = Exp_model(args)
 
-    train = False
+    train = True
     if train:
         print('>>>>>>>start training : {}>>>>>>>>>>>>>>>>>>>>>>>>>>'.format(setting))
         exp.train(setting)

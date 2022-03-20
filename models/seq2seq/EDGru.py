@@ -121,7 +121,7 @@ class Gru(nn.Module):
             output, hidden = self.decoder(input, input_mark, hidden, context)
             
             #place predictions in a tensor holding predictions for each token
-            outputs[:, t-1, :] = output.squeeze()
+            outputs[:, t-1, :] = output.squeeze(dim=1)
             
             #decide if we are going to use teacher forcing or not
             teacher_force = random.random() < teacher_forcing_ratio

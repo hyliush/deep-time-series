@@ -6,7 +6,7 @@ from utils import logger
 from utils.tools import EarlyStopping, adjust_learning_rate
 from tqdm import tqdm
 import time
-from data.data_loader import Dataset_ETT_hour, Dataset_ETT_minute, Dataset_Custom, Dataset_Pred, UbiquantDataSetNoraml, VolatilityDataSetSeq2Seq, VolatilityDataSetNoraml
+from data.data_loader import Dataset_ETT_hour, Dataset_ETT_minute, Dataset_Custom, Dataset_Pred, ToyDatasetSeq2Seq, UbiquantDataSetNoraml, VolatilityDataSetSeq2Seq, ToyDataset,VolatilityDataSetNoraml
 from torch.utils.data import DataLoader
 from torch import optim
 from utils.loss import Normal_loss
@@ -52,7 +52,9 @@ class Exp_Basic(object):
             'custom':Dataset_Custom,
             'Volatility':VolatilityDataSetNoraml,
             'VolatilitySeq2Seq':VolatilityDataSetSeq2Seq,
-            'Ubiquant':UbiquantDataSetNoraml
+            'Ubiquant':UbiquantDataSetNoraml,
+            'Toy': ToyDataset,
+            'ToySeq2Seq': ToyDatasetSeq2Seq
         }
         Data = data_dict[self.args.data+"Seq2Seq"] if "ed" in self.args.model or "former" in self.args.model else data_dict[self.args.data]
         timeenc = 0 if args.embed!='timeF' else 1
@@ -268,7 +270,7 @@ class Exp_Basic(object):
                 # plot_pred(total_trues, total_preds)
                 if self.args.pred_len > 1:
                     map_plot_function(total_trues, total_preds, 
-                    plot_values_distribution, ['volitility'], [0], self.pred_len)
+                    plot_values_distribution, ['volitility'], [0], self.args.pred_len)
                 else:
                     map_plot_function(total_trues.reshape(120, -1, 1), total_preds.reshape(120, -1, 1), 
                     plot_values_distribution, ['volitility'], [0], 6)
