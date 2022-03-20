@@ -797,37 +797,14 @@ class ToyDataset(DatasetBase):
         self._get_data()
         
     def _get_data(self):
-        if self.flag == "train":
-            size = 4500
-        if self.flag == "val":
-            size = 500
-        if self.flag == "test":
-            size = 1000
-        self.data_x, self.data_y = [], []
-        for i in range(size):
-            t = self.seq_len
-            a1 = np.random.uniform(0, 60, 1)
-            x1 = np.arange(12)
-            y1 = a1*np.sin(np.pi*x1/6) + 72 + np.random.randn()
-            a2 = np.random.uniform(0, 60, 1)
-            x2 = np.arange(12, 24)
-            y2 = a2*np.sin(np.pi*x2/6) + 72 + np.random.randn()
-            a3 = np.random.uniform(0, 60, 1)
-            x3 = np.arange(24, t)
-            y3 = a3*np.sin(np.pi*x3/6) + 72 + np.random.randn()
-            a4 = max(a1, a2)
-            x4 = np.arange(t, t+self.pred_len)
-            y4 = a4*np.sin(np.pi*x4/12) + 72 + np.random.randn()
-            x = np.concatenate([y1, y2, y3])
-            x = x[:, np.newaxis]
-            y = y4[:, np.newaxis]
-            self.data_x.append(x)
-            if self.label_len>0:
-                self.data_y.append(np.concatenate([x[-self.label_len:], y], axis=0))
-            else:
-                self.data_y.append(y)
+        data = np.load("./data/ToyData/data.npz", allow_pickle=True)
+        self.data_x, self.data_y = data[self.flag]
 
     def __getitem__(self, index):
+        if self.label_len>0:
+            y = np.concatenate([self.data_x[index][-self.label_len:], self.data_y[index]], axis=0)
+        else:
+            y = self.data_y[index]
         return self.data_x[index], self.data_y[index]
     def __len__(self):
         return len(self.data_x)
@@ -845,38 +822,15 @@ class ToyDatasetSeq2Seq(DatasetBase):
         self._get_data()
         
     def _get_data(self):
-        if self.flag == "train":
-            size = 4500
-        if self.flag == "val":
-            size = 500
-        if self.flag == "test":
-            size = 1000
-        self.data_x, self.data_y = [], []
-        for i in range(size):
-            t = self.seq_len
-            a1 = np.random.uniform(0, 60, 1)
-            x1 = np.arange(12)
-            y1 = a1*np.sin(np.pi*x1/6) + 72 + np.random.randn()
-            a2 = np.random.uniform(0, 60, 1)
-            x2 = np.arange(12, 24)
-            y2 = a2*np.sin(np.pi*x2/6) + 72 + np.random.randn()
-            a3 = np.random.uniform(0, 60, 1)
-            x3 = np.arange(24, t)
-            y3 = a3*np.sin(np.pi*x3/6) + 72 + np.random.randn()
-            a4 = max(a1, a2)
-            x4 = np.arange(t, t+self.pred_len)
-            y4 = a4*np.sin(np.pi*x4/12) + 72 + np.random.randn()
-            x = np.concatenate([y1, y2, y3])
-            x = x[:, np.newaxis]
-            y = y4[:, np.newaxis]
-            self.data_x.append(x)
-            if self.label_len>0:
-                self.data_y.append(np.concatenate([x[-self.label_len:], y], axis=0))
-            else:
-                self.data_y.append(y)
+        data = np.load("./data/ToyData/data.npz", allow_pickle=True)
+        self.data_x, self.data_y = data[self.flag]
 
     def __getitem__(self, index):
-        return self.data_x[index], self.data_y[index], self.data_x[index], self.data_y[index]
+        if self.label_len>0:
+            y = np.concatenate([self.data_x[index][-self.label_len:], self.data_y[index]], axis=0)
+        else:
+            y = self.data_y[index]
+        return self.data_x[index], y, self.data_x[index], y
     def __len__(self):
         return len(self.data_x)
     def inverse_transform(self, x):

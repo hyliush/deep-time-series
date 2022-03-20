@@ -30,10 +30,14 @@ class Exp_Basic(object):
             criterion = Normal_loss
         return criterion
 
-    def _move2device(self, *args):
-        for i in args:
-            i = i.to(self.device)
-        return args
+    def _move2device(self, data):
+        if isinstance(data, torch.Tensor):
+            return data.float().to(self.device)
+        if isinstance(data, tuple):
+            data = list(data)
+        for i in range(len(data)):
+            data[i] = data[i].float().to(self.device)
+        return data
 
     def _build_model(self):
         raise NotImplementedError

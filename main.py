@@ -16,7 +16,7 @@ data_parser = {
     'Ubiquant':{'data_path':'D:/IDEA/Spatial-temporal/ubiquant/ubiquantSeg',
     'freq':'b', 'T':'target','M':[45,45,45],'S':[1,1,1],'MS':[45,45,1],
     'seq_len':25, 'label_len':0, "pred_len":1},
-    'Toy':{'seq_len':96, 'label_len':1, "pred_len":24, "MS":[1,1,1], "T":"s"}
+    'Toy':{'seq_len':96, 'label_len':0, "pred_len":24, "MS":[1,1,1], "T":"s"}
 }
 if args.data in data_parser.keys():
     data_info = data_parser[args.data]
@@ -33,7 +33,7 @@ args.detail_freq = args.freq
 args.freq = args.freq[-1:]
 
 from exp.exp_main import Exp_model
-args.model = "edgru"
+args.model = "trans"
 for ii in range(args.itr):
     # setting record of experiments
     setting = '{}_{}_ft{}__sl{}_ll{}_pl{}_id{}_co{}_{}_{}'.format(args.model, args.data, args.features, 
@@ -44,7 +44,7 @@ for ii in range(args.itr):
     # set experiments
     exp = Exp_model(args)
 
-    train = True
+    train = False
     if train:
         print('>>>>>>>start training : {}>>>>>>>>>>>>>>>>>>>>>>>>>>'.format(setting))
         exp.train(setting)

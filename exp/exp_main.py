@@ -72,8 +72,7 @@ class Exp_model(Exp_Basic):
         return model
 
 def _process_one_batch1(self, dataset_object, batch):
-    batch_x = batch[0].float().to(self.device)
-    batch_y = batch[1].float()
+    batch_x, batch_y = self._move2device(batch)
 
     if self.args.use_amp:
         with torch.cuda.amp.autocast():
@@ -89,17 +88,12 @@ def _process_one_batch1(self, dataset_object, batch):
     if self.args.inverse:
         outputs = dataset_object.inverse_transform(outputs)
     f_dim = -1 if self.args.features=='MS' else 0
-    batch_y = batch_y[:,-self.args.pred_len:,f_dim:].to(self.device)
+    batch_y = batch_y[:,-self.args.pred_len:,f_dim:]
 
     return outputs, batch_y
 
 def _process_one_batch2(self, dataset_object, batch):
-    batch_x, batch_y, batch_x_mark, batch_y_mark = batch
-    batch_x = batch_x.float().to(self.device)
-    batch_y = batch_y.float()
-
-    batch_x_mark = batch_x_mark.float().to(self.device)
-    batch_y_mark = batch_y_mark.float().to(self.device)
+    batch_x, batch_y, batch_x_mark, batch_y_mark = self._move2device(batch)
 
     # decoder input
     if self.args.padding==0: # batch_size * (label_len + pred_len) * out_size pred部分被padding
@@ -127,12 +121,7 @@ def _process_one_batch2(self, dataset_object, batch):
     return outputs, batch_y
 
 def _process_one_batch3(self, dataset_object, batch):
-    batch_x, batch_x_temporal, batch_x_spatial, batch_y = batch
-    batch_x = batch_x.float().to(self.device)
-    batch_x_temporal = batch_x_temporal.to(self.device)
-    batch_x_spatial = batch_x_spatial.to(self.device)
-    batch_y = batch_y.float()
-
+    batch_x, batch_x_temporal, batch_x_spatial, batch_y = self._move2device(batch)
     # encoder - decoder
     if self.args.use_amp:
         with torch.cuda.amp.autocast():
@@ -176,13 +165,7 @@ def _process_one_batch4(self, dataset_object, batch):
 
 
 def _process_one_batch5(self, dataset_object, batch):
-    batch_x, batch_y, batch_x_mark, batch_y_mark = batch
-    batch_x = batch_x.float().to(self.device)
-    batch_y = batch_y.float().to(self.device)
-
-    batch_x_mark = batch_x_mark.float().to(self.device)
-    batch_y_mark = batch_y_mark.float().to(self.device)
-
+    batch_x, batch_y, batch_x_mark, batch_y_mark = self._move2device(batch)
     # encoder - decoder
     if self.args.use_amp:
         with torch.cuda.amp.autocast():
