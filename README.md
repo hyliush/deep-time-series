@@ -32,20 +32,6 @@ bash ./scripts/Traffic_script/Autoformer.sh
 bash ./scripts/Weather_script/Autoformer.sh
 bash ./scripts/ILI_script/Autoformer.sh
 ```
-
-&ensp;**To run on your customized data**, a `DataSet` class must be provided in `dataloader.py`, then add the `Dataset` to `Exp_Basic.py`. Need to be noted that elements ejected from the `DataSet` class must conform to the model's requirement.
-## Usage
-Usually we will encounter three forms of data:
-1. multi files(usual caused by multi individual) which will cause oom if load all of them. Every separate file contaies train, vail, test.
-2. sigle file contaied train, vail, test.
-3. multi separate files (usual three) i.e. train, vail, test.
-
-
-&ensp;For 1, we load a file (train, vail, test)dataset iteratively in a epoch until all files are loaded. For 2, 3, we load  train, vail, test dataset before starting training.
-
-<span id="colablink">Colab Examples:</span> We provide google colabs to help reproducing and customing our repo, which includes `experiments(train and test)`, `forecasting`, `visualization` and `custom data`.
-<!-- [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1_X7O2BkFLvqyCdZzDZvV2MB0aAvYALLC) -->
-
 Commands for training and testing the model with *ProbSparse* self-attention on Dataset ETTh1, ETTh2 and ETTm1 respectively:
 
 ```bash
@@ -58,24 +44,21 @@ python -u main.py --model informer --data ETTh2 --attn prob --freq h
 # ETTm1
 python -u main.py --model informer --data ETTm1 --attn prob --freq t
 ```
+## Usage on customized data
+&ensp;**To run on your customized data**, a `DataSet` class must be provided in `dataloader.py`, then add the `Dataset` to `Exp_Basic.py`. Need to be noted that elements ejected from the `DataSet` class must conform to the model's requirement.
 
-We provide a more detailed and complete command description for training and testing the model:
+<span id="colablink">See Colab Examples for detail:</span> We provide google colabs to help reproducing and customing our repo, which includes `experiments(train and test)`, `forecasting`, `visualization` and `custom data`.
+<!-- [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1_X7O2BkFLvqyCdZzDZvV2MB0aAvYALLC) -->
 
-```python
-python -u main_informer.py --model <model> --data <data>
---data_path <data_path> --data_path <data_path> --features <features>
---target <target> --freq <freq> --checkpoints <checkpoints>
---seq_len <seq_len> --label_len <label_len> --pred_len <pred_len>
---enc_in <enc_in> --dec_in <dec_in> --out_size <out_size> --d_model <d_model>
---n_heads <n_heads> --e_layers <e_layers> --d_layers <d_layers>
---s_layers <s_layers> --d_ff <d_ff> --factor <factor> --padding <padding>
---distil --dropout <dropout> --attn <attn> --embed <embed> --activation <activation>
---output_hidden --do_predict --mix --cols <cols> --itr <itr>
---num_workers <num_workers> --train_epochs <train_epochs>
---batch_size <batch_size> --patience <patience> --des <des>
---learning_rate <learning_rate> --loss <loss> --lradj <lradj>
---use_amp --inverse --use_gpu <use_gpu> --gpu <gpu> --use_multi_gpu --devices <devices>
-```
+## Other
+Usually we will encounter three forms of data:
+1. multi files(usual caused by multi individual) which will cause oom if load all of them. Every separate file contaies train, vail, test.
+2. sigle file contaied train, vail, test.
+3. multi separate files (usual three) i.e. train, vail, test.
+
+
+
+&ensp;For 1, we load a file (train, vail, test)dataset iteratively in a epoch until all files are loaded. For 2, 3, we load  train, vail, test dataset before starting training.
 
 ### Models currently supported
 We will keep adding series forecasting models to expand this repo.
