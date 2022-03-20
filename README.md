@@ -1,9 +1,9 @@
 # Deep Learning for Time Series forecasting
 ![Python 3.6](https://img.shields.io/badge/python-3.6-green.svg?style=plastic) ![PyTorch 1.2](https://img.shields.io/badge/PyTorch%20-%23EE4C2C.svg?style=plastic) ![cuDNN 7.3.1](https://img.shields.io/badge/cudnn-7.3.1-green.svg?style=plastic) ![License CC BY-NC-SA](https://img.shields.io/badge/license-CC_BY--NC--SA--green.svg?style=plastic)
 
-This repo mainly focuses on the progress of time series forecasting using deep learning. It was originally [a collection of models](#models-currently-supported) (transformers, attention models, GRUs) that I used in financial market forecasting, which has been organized into a unified framework for easier use.
+&ensp; This repo mainly focuses on the progress of time series forecasting using deep learning. It was originally [a collection of models](#models-currently-supported) (transformers, attention models, GRUs) that I used in financial market forecasting, which has been organized into a unified framework for easier use.
 
-For beginners, we recommend you read this [paper](https://arxiv.org/abs/2004.13408) or [the brief introduction](/What%20you%20need%20know%20before%20starting%20the%20project.pdf) we provided to learn about time series forecasting.
+&ensp; For beginners, we recommend you read this [paper](https://arxiv.org/abs/2004.13408) or [the brief introduction](/What%20you%20need%20know%20before%20starting%20the%20project.pdf) we provided to learn about time series forecasting.
 
 
 ## Requirements
@@ -33,8 +33,16 @@ bash ./scripts/Weather_script/Autoformer.sh
 bash ./scripts/ILI_script/Autoformer.sh
 ```
 
-**To run on your customized data**, a `DataSet` class must be provided in `dataloader.py`, then add the `Dataset` to `Exp_Basic.py`. Need to be noted that elements ejected from the `DataSet` class must conform to the model's requirement.
+&ensp;**To run on your customized data**, a `DataSet` class must be provided in `dataloader.py`, then add the `Dataset` to `Exp_Basic.py`. Need to be noted that elements ejected from the `DataSet` class must conform to the model's requirement.
 ## Usage
+Usually we will encounter three forms of data:
+1. multi files(usual caused by multi individual) which will cause oom if load all of them. Every separate file contaies train, vail, test.
+2. sigle file contaied train, vail, test.
+3. multi separate files (usual three) i.e. train, vail, test.
+
+
+&ensp;For 1, we load a file (train, vail, test)dataset iteratively in a epoch until all files are loaded. For 2, 3, we load  train, vail, test dataset before starting training.
+
 <span id="colablink">Colab Examples:</span> We provide google colabs to help reproducing and customing our repo, which includes `experiments(train and test)`, `forecasting`, `visualization` and `custom data`.
 <!-- [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1_X7O2BkFLvqyCdZzDZvV2MB0aAvYALLC) -->
 
@@ -55,7 +63,7 @@ We provide a more detailed and complete command description for training and tes
 
 ```python
 python -u main_informer.py --model <model> --data <data>
---root_path <root_path> --data_path <data_path> --features <features>
+--data_path <data_path> --data_path <data_path> --features <features>
 --target <target> --freq <freq> --checkpoints <checkpoints>
 --seq_len <seq_len> --label_len <label_len> --pred_len <pred_len>
 --enc_in <enc_in> --dec_in <dec_in> --out_size <out_size> --d_model <d_model>

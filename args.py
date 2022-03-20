@@ -1,13 +1,13 @@
 import argparse
 import torch
-parser = argparse.ArgumentParser(description='[Informer] Long Sequences Forecasting')
+parser = argparse.ArgumentParser(description='Time Series Forecasting')
 
 # basic
 parser.add_argument('--model', type=str, default='tpa',help='model of experiment, options: [lstm, \
-mlp, tpa, tcn, trans, gated, informerstack, informerlight(TBD)]')
+mlp, tpa, tcn, trans, gated, informerstack, informerlight(TBD)], autoformer, transformer,\
+edlstm, edgru, edgruattention')
 parser.add_argument('--data', type=str, default='Volatility', help='data, [ETTh1, Ubiquant, Volatility]')
-parser.add_argument('--root_path', type=str, default='./data/ETT/', help='root path of the data file')
-parser.add_argument('--data_path', type=str, default='ETTh1.csv', help='data file')    
+parser.add_argument('--data_path', type=str, default='./data/ETT/', help='root path of the data file')
 parser.add_argument('--features', type=str, default='MS', help='forecasting task, options:[M, S, MS]; M:multivariate predict multivariate, S:univariate predict univariate, MS:multivariate predict univariate')
 parser.add_argument('--criterion', type=str, default='mse', help='loss function')    
 
@@ -41,7 +41,7 @@ parser.add_argument('--des', type=str, default='test',help='exp description')
 
 # model common
 parser.add_argument('--out_size', type=int, default=7, help='output features size')
-parser.add_argument('--dropout', type=float, default=0.05, help='dropout')
+parser.add_argument('--dropout', type=float, default=0.1, help='dropout')
 
 # seq2seq common
 parser.add_argument('--enc_in', type=int, default=45, help='encoder input size')
@@ -57,7 +57,7 @@ parser.add_argument('--e_layers', type=int, default=2, help='num of encoder laye
 parser.add_argument('--d_layers', type=int, default=1, help='num of decoder layers')
 parser.add_argument('--s_layers', type=str, default='3,2,1', help='num of stack encoder layers')
 parser.add_argument('--d_ff', type=int, default=2048, help='dimension of fcn')
-parser.add_argument('--factor', type=int, default=5, help='probsparse attn factor')
+parser.add_argument('--factor', type=int, default=1, help='probsparse attn factor')
 parser.add_argument('--padding', type=int, default=0, help='padding type')
 parser.add_argument('--distil', action='store_false', help='whether to use distilling in encoder, using this argument means not using distilling', default=True)
 parser.add_argument('--attn', type=str, default='prob', help='attention used in encoder, options:[prob, full]')

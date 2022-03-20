@@ -6,7 +6,7 @@ from mylogger import logger
 from utils.tools import EarlyStopping, adjust_learning_rate
 from tqdm import tqdm
 import time
-from data.data_loader import Dataset_ETT_hour, Dataset_ETT_minute, Dataset_Custom, Dataset_Pred, UbiquantDataSetNoraml, VolatilityDataSet, VolatilityDataSetNoraml
+from data.data_loader import Dataset_ETT_hour, Dataset_ETT_minute, Dataset_Custom, Dataset_Pred, UbiquantDataSetNoraml, VolatilityDataSetSeq2Seq, VolatilityDataSetNoraml
 from torch.utils.data import DataLoader
 from torch import optim
 from utils.loss import Normal_loss
@@ -15,6 +15,7 @@ import torch.nn as nn
 class Exp_Basic(object):
     def __init__(self, args):
         self.args = args
+        self.fileName_lst = os.listdir(args.data_path)
         self.device = self._acquire_device()
         self.model = self._build_model().to(self.device)
 
@@ -29,13 +30,17 @@ class Exp_Basic(object):
             criterion = Normal_loss
         return criterion
 
+    def _move2device(self, *args):
+        for i in args:
+            i = i.to(self.device)
+        return args
+
     def _build_model(self):
         raise NotImplementedError
         return None
 
     def _get_data(self, file_name, flag):
         args = self.args
-
         data_dict = {
             'ETTh1':Dataset_ETT_hour,
             'ETTh2':Dataset_ETT_hour,
@@ -46,10 +51,10 @@ class Exp_Basic(object):
             'Solar':Dataset_Custom,
             'custom':Dataset_Custom,
             'Volatility':VolatilityDataSetNoraml,
-            'VolatilitySeq2Seq':VolatilityDataSet,
+            'VolatilitySeq2Seq':VolatilityDataSetSeq2Seq,
             'Ubiquant':UbiquantDataSetNoraml
         }
-        Data = data_dict[self.args.data+"Seq2Seq"] if "former" in self.args.model else data_dict[self.args.data]
+        Data = data_dict[self.args.data+"Seq2Seq"] if "ed" in self.args.model or "former" in self.args.model else data_dict[self.args.data]
         timeenc = 0 if args.embed!='timeF' else 1
 
         if flag == 'test':
@@ -60,7 +65,7 @@ class Exp_Basic(object):
         else:
             shuffle_flag = True; drop_last = False; batch_size = args.batch_size; freq=args.freq
         data_set = Data(
-            root_path=args.root_path,
+            data_path=args.data_path,
             file_name=file_name,
             flag=flag,
             size=[args.seq_len, args.label_len, args.pred_len],

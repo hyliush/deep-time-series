@@ -17,14 +17,15 @@ warnings.filterwarnings('ignore')
 
 class Exp_model(Exp_Basic):
     def __init__(self, args):
-        self.fileName_lst = os.listdir(args.data_path)
         Exp_model.init_process_one_batch(args)
         super().__init__(args)
 
     @classmethod    
     def init_process_one_batch(cls, args):
-        if args.model in ["informer", "informerstack", "transformer", "autoformer"]:
+        if 'former' in args.model:
             cls._process_one_batch = _process_one_batch2
+        elif 'ed' in args.model:
+            cls._process_one_batch = _process_one_batch5
         elif args.model == "gdnn":
             cls._process_one_batch = _process_one_batch3
         elif args.model == "deepar":
@@ -172,3 +173,31 @@ def _process_one_batch4(self, dataset_object, batch):
         mu_sigma_lst.append(mu_sigma)
     mu_sigma_batch = torch.stack(mu_sigma_lst, dim=0)
     return mu_sigma_batch.permute(1, 0, 2), labels_batch.unsqueeze(dim=-1).permute(1, 0, 2)
+
+
+def _process_one_batch5(self, dataset_object, batch):
+    batch_x, batch_y, batch_x_mark, batch_y_mark = batch
+    batch_x = batch_x.float().to(self.device)
+    batch_y = batch_y.float().to(self.device)
+
+    batch_x_mark = batch_x_mark.float().to(self.device)
+    batch_y_mark = batch_y_mark.float().to(self.device)
+
+    # encoder - decoder
+    if self.args.use_amp:
+        with torch.cuda.amp.autocast():
+            if self.args.output_hidden:
+                outputs = self.model(batch_x, batch_x_mark, batch_y, batch_y_mark)[0]
+            else:
+                outputs = self.model(batch_x, batch_x_mark, batch_y, batch_y_mark)
+    else:
+        if self.args.output_hidden:
+            outputs = self.model(batch_x, batch_x_mark, batch_y, batch_y_mark)[0]
+        else:# debug into
+            outputs = self.model(batch_x, batch_x_mark, batch_y, batch_y_mark)
+    if self.args.inverse:
+        outputs = dataset_object.inverse_transform(outputs)
+    f_dim = -1 if self.args.features=='MS' else 0
+    batch_y = batch_y[:,-self.args.pred_len:,f_dim:]
+
+    return outputs, batch_y
