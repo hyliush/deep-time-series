@@ -1,8 +1,6 @@
 import numpy as np
 from matplotlib import pyplot as plt
-
 from .plot_functions import plot_pred, plot_values_distribution, plot_error_distribution, plot_errors_threshold, plot_visual_sample, plot_dataset_distribution
-
 
 def map_plot_function_input(dataset, plot_function, plot_kwargs={}, dataset_indices=None, labels=None, limit=None):
 

@@ -2,7 +2,7 @@ import os
 import torch
 import numpy as np
 from utils.metrics import metric
-from mylogger import logger
+from utils import logger
 from utils.tools import EarlyStopping, adjust_learning_rate
 from tqdm import tqdm
 import time
@@ -265,14 +265,13 @@ class Exp_Basic(object):
         if plot:
                 from utils.visualization import plot_pred, map_plot_function, \
                 plot_values_distribution, plot_error_distribution, plot_errors_threshold
-                plot_pred(total_trues, total_preds)
+                # plot_pred(total_trues, total_preds)
                 if self.args.pred_len > 1:
                     map_plot_function(total_trues, total_preds, 
                     plot_values_distribution, ['volitility'], [0], self.pred_len)
                 else:
                     map_plot_function(total_trues.reshape(120, -1, 1), total_preds.reshape(120, -1, 1), 
                     plot_values_distribution, ['volitility'], [0], 6)
-        return
 
     def predict(self, setting, load=False):
         pred_data, pred_loader = self._get_data(flag='pred')

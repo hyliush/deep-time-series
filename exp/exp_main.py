@@ -7,7 +7,7 @@ from models.seq2seq import Informer, Autoformer, Transformer, GruAttention, Gru,
 from models.DeepAR import DeepAR
 from models.Lstm import BenchmarkLstm
 from models.Mlp import BenchmarkMlp
-from mylogger import logger
+from utils import logger
 
 import torch
 import torch.nn as nn
