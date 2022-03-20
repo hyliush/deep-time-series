@@ -8,12 +8,12 @@
 
 ## Requirements
 
-- Python 3.6
+- Python 3.7
 - matplotlib == 3.1.1
 - numpy == 1.19.4
 - pandas == 0.25.1
 - scikit_learn == 0.21.3
-- torch == 1.8.0
+- torch == 1.7.1
 
 Dependencies can be installed using the following command:
 ```bash
@@ -99,7 +99,10 @@ We will keep adding series forecasting models to expand this repo.
 
 
 ## Results on a toy data
-
+## DOING and TODO
+1. Add probability estimation function.
+2. Improve the network structure(especially attention network) according to our data scenario.
+3. Add Tensorboard to record exp.
 
 ## Contact
 If you have any questions, feel free to contact hyliu through Email (hyliu_sh@outlook.com) or Github issues. 
