@@ -6,7 +6,7 @@ import numpy as np
 import math
 from math import sqrt
 import os
-
+import torch.fft
 
 class AutoCorrelation(nn.Module):
     """

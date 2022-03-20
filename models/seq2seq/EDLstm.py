@@ -3,25 +3,23 @@ import random
 import torch
 import sys
 sys.path.append("d:\\IDEA\\Spatial-temporal\\deep-time-series")
-from layers.Embed import TokenEmbedding
+from layers.Embed import DataEmbedding_ED
 
 class Encoder(nn.Module):
-    def __init__(self, enc_in, emb_dim, hid_dim, n_layers, dropout):
+    def __init__(self, enc_in, emb_dim, hid_dim, n_layers, embed, freq, dropout):
         super().__init__()
         
         self.hid_dim = hid_dim
         self.n_layers = n_layers
         
-        self.embedding = TokenEmbedding(c_in=enc_in, d_model=emb_dim)
+        self.embedding = DataEmbedding_ED(enc_in, emb_dim, embed, freq, dropout)
         self.rnn = nn.LSTM(emb_dim, hid_dim, n_layers, dropout = dropout, batch_first=True)
-        self.dropout = nn.Dropout(p=dropout)
 
-    def forward(self, x_enc):
+    def forward(self, x_enc, x_mark_enc):
         
         #x_enc = [batch size, x_enc len, n_features]
         
-        embedded = self.dropout(self.embedding(x_enc))
-        
+        embedded = self.embedding(x_enc, x_mark_enc)
         #embedded = [batch size, x_enc len, emb dim]
         
         outputs, (hidden, cell) = self.rnn(embedded)
@@ -35,20 +33,18 @@ class Encoder(nn.Module):
         return hidden, cell
 
 class Decoder(nn.Module):
-    def __init__(self, dec_in, emb_dim, hid_dim, n_layers, dropout):
+    def __init__(self, dec_in, emb_dim, hid_dim, n_layers, embed, freq, dropout):
         super().__init__()
         
         self.hid_dim = hid_dim
         self.n_layers = n_layers
         
-        self.embedding = TokenEmbedding(c_in=dec_in, d_model=emb_dim)
+        self.embedding = DataEmbedding_ED(dec_in, emb_dim, embed, freq, dropout)
         self.rnn = nn.LSTM(emb_dim, hid_dim, n_layers, dropout = dropout, batch_first=True)
         
         self.fc_out = nn.Linear(hid_dim, dec_in)
         
-        self.dropout = nn.Dropout(dropout)
-        
-    def forward(self, input, hidden, cell):
+    def forward(self, input, input_mark, hidden, cell):
         
         #input = [batch size]
         #hidden = [n layers * n directions, batch size, hid dim]
@@ -59,8 +55,7 @@ class Decoder(nn.Module):
         #context = [n layers, batch size, hid dim]
         
         #input = [batch size, 1, n_features]
-        embedded = self.dropout(self.embedding(input))
-        
+        embedded = self.embedding(input, input_mark)
         #embedded = [batch size, 1, emb dim]
                 
         output, (hidden, cell) = self.rnn(embedded, (hidden, cell))
@@ -85,19 +80,20 @@ class Lstm(nn.Module):
     def __init__(self, args):
         super().__init__()
 
-        enc_in, dec_in, emb_dim, hid_dim, n_layers, dropout = \
-        args.enc_in, args.dec_in, args.emb_dim, args.hid_dim, args.n_layers, args.dropout
+        enc_in, dec_in, emb_dim, hid_dim, n_layers, embed, freq, dropout = \
+        args.enc_in, args.dec_in, args.d_model, args.d_model, 3, \
+        args.embed, args.freq, args.dropout
         self.teacher_forcing_ratio = args.teacher_forcing_ratio
-
-        self.encoder = Encoder(enc_in, emb_dim, hid_dim, n_layers, dropout)
-        self.decoder = Decoder(dec_in, emb_dim, hid_dim, n_layers, dropout)
+        self.out_size = args.out_size
+        self.encoder = Encoder(enc_in, emb_dim, hid_dim, n_layers, embed, freq, dropout)
+        self.decoder = Decoder(dec_in, emb_dim, hid_dim, n_layers, embed, freq, dropout)
         
         assert self.encoder.hid_dim == self.decoder.hid_dim, \
             "Hidden dimensions of encoder and decoder must be equal!"
         assert self.encoder.n_layers == self.decoder.n_layers, \
             "Encoder and decoder must have equal number of layers!"
         
-    def forward(self, x_enc, x_dec):
+    def forward(self, x_enc, x_mark_enc, x_dec, x_mark_dec):
         if self.training:
             teacher_forcing_ratio = self.teacher_forcing_ratio
         else:
@@ -112,15 +108,16 @@ class Lstm(nn.Module):
         outputs = torch.zeros(batch_size, x_dec_len-1, dec_in).to(x_enc.device)
         
         #last hidden state of the encoder is used as the initial hidden state of the decoder
-        hidden, cell = self.encoder(x_enc)
+        hidden, cell = self.encoder(x_enc, x_mark_enc)
         
         #first input to the decoder is the <sos> tokens
-        input = x_dec[:, 0, :].unsqueeze(dim=1)
+        input, input_mark = x_dec[:, 0, :].unsqueeze(dim=1), x_mark_dec[:, 0, :].unsqueeze(dim=1)
+
         for t in range(1, x_dec_len):
             
             #insert input token embedding, previous hidden and previous cell states
             #receive output tensor (predictions) and new hidden and cell states
-            output, hidden, cell = self.decoder(input, hidden, cell)
+            output, hidden, cell = self.decoder(input, input_mark, hidden, cell)
             
             #place predictions in a tensor holding predictions for each token
             outputs[:, t-1, :] = output.squeeze()
@@ -131,8 +128,8 @@ class Lstm(nn.Module):
             #if teacher forcing, use actual next token as next input
             #if not, use predicted token
             input = x_dec[:, t, :].unsqueeze(dim=1) if teacher_force else output
-        
-        return outputs
+            input_mark = x_mark_dec[:, t, :].unsqueeze(dim=1)
+        return outputs[:, :, -self.out_size:]
 
 
 if __name__ == '__main__':

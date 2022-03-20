@@ -13,8 +13,10 @@ def plot_pred(total_trues, total_preds, pred_idx=0, span=300):
     start_idx = np.random.choice(total_trues.shape[0]-span+1, 1)[0]
     plt.plot(lst1[start_idx:start_idx+span])
     plt.plot(lst2[start_idx:start_idx+span])
+    plt.plot(lst1[start_idx:start_idx+span], "o")
+    plt.plot(lst2[start_idx:start_idx+span], "o")
     plt.show()
-
+    return
 
 def plot_errorbar(y, ax, percentile=85, **kwargs):
     mean = y.mean(axis=0)

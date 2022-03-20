@@ -7,7 +7,7 @@ from models.informer import Informer, InformerStack
 from models.DeepAR import DeepAR
 from models.Lstm import BenchmarkLstm
 from models.Mlp import BenchmarkMlp
-from mylogger import logger
+from utils import logger
 
 import torch
 import torch.nn as nn

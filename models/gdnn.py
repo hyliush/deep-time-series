@@ -1,5 +1,5 @@
 import torch.nn as nn
-from models.activation import Swish
+from utils.activation import Swish
 from models.informer.embed import SpatialEmbedding, TemporalEmbedding, TokenEmbedding, FixedEmbedding
 
 class Gdnn(nn.Module):

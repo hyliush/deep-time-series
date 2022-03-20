@@ -13,8 +13,8 @@ import warnings
 warnings.filterwarnings('ignore')
 
 class Dataset_ETT_hour(Dataset):
-    def __init__(self, root_path, flag='train', size=None, 
-                 features='S', data_path='ETTh1.csv', 
+    def __init__(self, data_path, flag='train', size=None, 
+                 features='S', file_name='ETTh1.csv', 
                  target='OT', scale=True, inverse=False, timeenc=0, freq='h', cols=None):
         # size [seq_len, label_len, pred_len]
         # info
@@ -38,14 +38,14 @@ class Dataset_ETT_hour(Dataset):
         self.timeenc = timeenc
         self.freq = freq
         
-        self.root_path = root_path
         self.data_path = data_path
+        self.file_name = file_name
         self.__read_data__()
 
     def __read_data__(self):
         self.scaler = StandardScaler()
-        df_raw = pd.read_csv(os.path.join(self.root_path,
-                                          self.data_path))
+        df_raw = pd.read_csv(os.path.join(self.data_path,
+                                          self.file_name))
 
         border1s = [0, 12*30*24 - self.seq_len, 12*30*24+4*30*24 - self.seq_len]
         border2s = [12*30*24, 12*30*24+4*30*24, 12*30*24+8*30*24]
@@ -101,8 +101,8 @@ class Dataset_ETT_hour(Dataset):
         return self.scaler.inverse_transform(data)
 
 class Dataset_ETT_minute(Dataset):
-    def __init__(self, root_path, flag='train', size=None, 
-                 features='S', data_path='ETTm1.csv', 
+    def __init__(self, data_path, flag='train', size=None, 
+                 features='S', file_name='ETTm1.csv', 
                  target='OT', scale=True, inverse=False, timeenc=0, freq='t', cols=None):
         # size [seq_len, label_len, pred_len]
         # info
@@ -126,14 +126,14 @@ class Dataset_ETT_minute(Dataset):
         self.timeenc = timeenc
         self.freq = freq
         
-        self.root_path = root_path
         self.data_path = data_path
+        self.file_name = file_name
         self.__read_data__()
 
     def __read_data__(self):
         self.scaler = StandardScaler()
-        df_raw = pd.read_csv(os.path.join(self.root_path,
-                                          self.data_path))
+        df_raw = pd.read_csv(os.path.join(self.data_path,
+                                          self.file_name))
 
         border1s = [0, 12*30*24*4 - self.seq_len, 12*30*24*4+4*30*24*4 - self.seq_len]
         border2s = [12*30*24*4, 12*30*24*4+4*30*24*4, 12*30*24*4+8*30*24*4]
@@ -188,8 +188,8 @@ class Dataset_ETT_minute(Dataset):
 
 
 class Dataset_Custom(Dataset):
-    def __init__(self, root_path, flag='train', size=None, 
-                 features='S', data_path='ETTh1.csv', 
+    def __init__(self, data_path, flag='train', size=None, 
+                 features='S', file_name='ETTh1.csv', 
                  target='OT', scale=True, inverse=False, timeenc=0, freq='h', cols=None):
         # size [seq_len, label_len, pred_len]
         # info
@@ -213,14 +213,14 @@ class Dataset_Custom(Dataset):
         self.timeenc = timeenc
         self.freq = freq
         self.cols=cols
-        self.root_path = root_path
         self.data_path = data_path
+        self.data_path = file_name
         self.__read_data__()
 
     def __read_data__(self):
         self.scaler = StandardScaler()
-        df_raw = pd.read_csv(os.path.join(self.root_path,
-                                          self.data_path))
+        df_raw = pd.read_csv(os.path.join(self.data_path,
+                                          self.file_name))
         '''
         df_raw.columns: ['date', ...(other features), target feature]
         '''
@@ -287,8 +287,8 @@ class Dataset_Custom(Dataset):
         return self.scaler.inverse_transform(data)
 
 class Dataset_Pred(Dataset):
-    def __init__(self, root_path, flag='pred', size=None, 
-                 features='S', data_path='ETTh1.csv', 
+    def __init__(self, data_path, flag='pred', size=None, 
+                 features='S', file_name='ETTh1.csv', 
                  target='OT', scale=True, inverse=False, timeenc=0, freq='15min', cols=None):
         # size [seq_len, label_len, pred_len]
         # info
@@ -310,14 +310,14 @@ class Dataset_Pred(Dataset):
         self.timeenc = timeenc
         self.freq = freq
         self.cols=cols
-        self.root_path = root_path
         self.data_path = data_path
+        self.file_name = file_name
         self.__read_data__()
 
     def __read_data__(self):
         self.scaler = StandardScaler()
-        df_raw = pd.read_csv(os.path.join(self.root_path,
-                                          self.data_path))
+        df_raw = pd.read_csv(os.path.join(self.data_path,
+                                          self.file_name))
         '''
         df_raw.columns: ['date', ...(other features), target feature]
         '''
@@ -381,10 +381,10 @@ class Dataset_Pred(Dataset):
         return self.scaler.inverse_transform(data)
 
 
-class VolatilityDataSet(Dataset):
-    def __init__(self, root_path, flag='train', size=None, 
+class VolatilityDataSetSeq2Seq(Dataset):
+    def __init__(self, data_path, flag='train', size=None, 
                  features='S', file_name='ETTh1.csv', 
-                 target='OT', scale=True, inverse=False, timeenc=0, freq='d', cols=None, test_size=60):
+                 target='OT', scale=True, inverse=False, timeenc=0, freq='d', cols=None):
         # size [seq_len, label_len, pred_len]
         # info
         self.test_size = 60
@@ -408,17 +408,17 @@ class VolatilityDataSet(Dataset):
         self.timeenc = timeenc
         self.freq = freq
         
-        self.root_path = root_path
+        self.data_path = data_path
         self.file_name = file_name
         self.__read_data__()
 
     def __read_data__(self):
         self.scaler = StandardScaler()
-        df_raw = pd.read_csv(os.path.join(self.root_path,
+        df_raw = pd.read_csv(os.path.join(self.data_path,
                                           self.file_name))
         df_raw = df_raw.drop(columns=["stock_id", "target", "weekday", "time_id", "holiday_name", "holiday_tag", "holiday_tag_cumsum"])
         df_raw = df_raw.rename(columns={"Date":"date"})
-        length = len(df_raw) - 1
+        length = len(df_raw)
         cut_point1, cut_point2 = length-3*self.test_size, length-2*self.test_size
         
         border1s = [0, cut_point1 - self.seq_len, cut_point2 - self.seq_len]
@@ -426,8 +426,6 @@ class VolatilityDataSet(Dataset):
         border1 = border1s[self.set_type]
         border2 = border2s[self.set_type]
 
-        if isinstance(self.features, list):
-            df_data = df_raw[self.features]
         if isinstance(self.features, str):
             if self.features=='M' or self.features=='MS':
                 cols_data = df_raw.columns[1:]
@@ -478,10 +476,10 @@ class VolatilityDataSet(Dataset):
 
 
 class VolatilityDataSetNoraml(Dataset):
-    def __init__(self, root_path, flag='train', size=None, 
+    def __init__(self, data_path, flag='train', size=None, 
                  features='S', file_name='ETTh1.csv', 
                  target='OT', scale=True, inverse=False, timeenc=0,
-                  freq='d', cols=None, test_size=60, horizon = 0):
+                  freq='d', cols=None, horizon = 0):
         '''horizon: predict timeseries from horizon+1 to horizon+1+pred in head. default(0) '''
         # size [seq_len, label_len, pred_len]
         # info
@@ -507,13 +505,13 @@ class VolatilityDataSetNoraml(Dataset):
         self.freq = freq
 
         self.horizon = horizon
-        self.root_path = root_path
+        self.data_path = data_path
         self.file_name = file_name
         self.__read_data__()
 
     def __read_data__(self):
         self.scaler = StandardScaler()
-        df_raw = pd.read_csv(os.path.join(self.root_path,
+        df_raw = pd.read_csv(os.path.join(self.data_path,
                                           self.file_name))
         df_raw = df_raw.drop(columns=["stock_id", "target", "weekday", "time_id", "holiday_name", "holiday_tag", "holiday_tag_cumsum"])
         df_raw = df_raw.rename(columns={"Date":"date"})
@@ -525,8 +523,6 @@ class VolatilityDataSetNoraml(Dataset):
         border1 = border1s[self.set_type]
         border2 = border2s[self.set_type]
 
-        if isinstance(self.features, list):
-            df_data = df_raw[self.features]
         if isinstance(self.features, str):
             if self.features=='M' or self.features=='MS':
                 cols_data = df_raw.columns[1:]
@@ -576,9 +572,9 @@ class VolatilityDataSetNoraml(Dataset):
 
 
 class VolatilityDataSetGate(Dataset):
-    def __init__(self, root_path, flag='train', size=None, 
+    def __init__(self, data_path, flag='train', size=None, 
                  features='S', file_name='ETTh1.csv', 
-                 target='OT', scale=True, inverse=False, timeenc=0, freq='d', cols=None, test_size=60):
+                 target='OT', scale=True, inverse=False, timeenc=0, freq='d', cols=None):
         # size [seq_len, label_len, pred_len]
         # info
         self.test_size = 60
@@ -602,13 +598,13 @@ class VolatilityDataSetGate(Dataset):
         self.timeenc = timeenc
         self.freq = freq
         
-        self.root_path = root_path
+        self.data_path = data_path
         self.file_name = file_name
         self.__read_data__()
 
     def __read_data__(self):
         self.scaler = StandardScaler()
-        df_raw = pd.read_csv(os.path.join(self.root_path,
+        df_raw = pd.read_csv(os.path.join(self.data_path,
                                           self.file_name))
 
         length = len(df_raw) - 1
@@ -675,7 +671,7 @@ class VolatilityDataSetGate(Dataset):
         return self.scaler.inverse_transform(data)
 
 class UbiquantInformer(Dataset):
-    def __init__(self, root_path, flag='train', size=None, 
+    def __init__(self, data_path, flag='train', size=None, 
                  features='S', file_name='ETTh1.csv', 
                  target='OT', scale=True, inverse=False, timeenc=0, freq='d', cols=None, test_size=60):
         # size [seq_len, label_len, pred_len]
@@ -701,13 +697,13 @@ class UbiquantInformer(Dataset):
         self.timeenc = timeenc
         self.freq = freq
         
-        self.root_path = root_path
+        self.data_path = data_path
         self.file_name = file_name
         self.__read_data__()
 
     def __read_data__(self):
         self.scaler = StandardScaler()
-        df_raw = pd.read_csv(os.path.join(self.root_path,
+        df_raw = pd.read_csv(os.path.join(self.data_path,
                                           self.file_name))
         df_raw = df_raw.drop(columns=["row_id", "time_id", "investment_id"])
         length = len(df_raw) - 1
@@ -767,7 +763,7 @@ class UbiquantInformer(Dataset):
         return self.scaler.inverse_transform(data)
 
 class UbiquantDataSetNoraml(Dataset):
-    def __init__(self, root_path, flag='train', size=None, 
+    def __init__(self, data_path, flag='train', size=None, 
                  features='S', file_name='ETTh1.csv', 
                  target='OT', scale=True, inverse=False, timeenc=0,
                   freq='d', cols=None, test_size=60, horizon = 0):
@@ -796,13 +792,13 @@ class UbiquantDataSetNoraml(Dataset):
         self.freq = freq
 
         self.horizon = horizon
-        self.root_path = root_path
+        self.data_path = data_path
         self.file_name = file_name
         self.__read_data__()
 
     def __read_data__(self):
         self.scaler = StandardScaler()
-        df_raw = pd.read_csv(os.path.join(self.root_path,
+        df_raw = pd.read_csv(os.path.join(self.data_path,
                                           self.file_name))
         df_raw["target"] = df_raw["target"].shift()
         df_raw = df_raw.dropna()
