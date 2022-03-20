@@ -10,7 +10,7 @@
 
 - Python 3.7
 - matplotlib == 3.1.1
-- numpy == 1.19.4
+- numpy == 1.21.5
 - pandas == 0.25.1
 - scikit_learn == 0.21.3
 - torch == 1.7.1
@@ -19,7 +19,6 @@ Dependencies can be installed using the following command:
 ```bash
 pip install -r requirements.txt
 ```
-
 
 ## Get Started
 1. Download data provided by the [repo](https://github.com/thuml/Autoformer). You can obtain all the six benchmarks from [Tsinghua Cloud](https://cloud.tsinghua.edu.cn/d/e1ccfff39ad541908bae/) or [Google Drive](https://drive.google.com/drive/folders/1ZOYpTUa82_jCcxIdTmyr0LXQfvaM9vIy?usp=sharing). __All the datasets are well pre-processed__ and can be used easily.
