@@ -209,14 +209,14 @@ class Exp_Basic(object):
 
     def _test(self, test_data, test_loader, file_path):                
             self.model.eval()
-            preds, trues = [], []
+            preds_lst, trues_lst = [], []
             for i, batch in enumerate(test_loader):
                 pred, true = self._process_one_batch(test_data, batch)
-                preds.append(pred.detach().cpu()); trues.append(true.detach().cpu())
+                preds_lst.append(pred.detach().cpu()); trues_lst.append(true.detach().cpu())
             
-            preds, trues = np.concatenate(preds), np.concatenate(trues)
+            preds, trues = np.concatenate(preds_lst), np.concatenate(trues_lst)
             logger.debug('test shape:{} {}'.format(preds.shape, trues.shape))
-
+            
             mae, mse, rmse, mape, mspe = metric(preds, trues)
             print('mse:{}, mae:{}'.format(mse, mae))
 
@@ -239,7 +239,7 @@ class Exp_Basic(object):
         if not os.path.exists(folder_path):
             os.makedirs(folder_path)
         
-        total_preds, total_trues = [], []
+        total_preds_lst, total_trues_lst = [], []
         
         for file_name in self.fileName_lst:
             test_data, test_loader = self._get_data(file_name, flag='test')
@@ -249,10 +249,10 @@ class Exp_Basic(object):
             # inverse
             preds = test_data.inverse_transform(preds)[..., -1:]
             trues = test_data.inverse_transform(trues)[..., -1:]
-            total_preds.append(preds)
-            total_trues.append(trues)
+            total_preds_lst.append(preds)
+            total_trues_lst.append(trues)
         
-        total_trues, total_preds = np.concatenate(total_trues), np.concatenate(total_preds)
+        total_trues, total_preds = np.concatenate(total_trues_lst), np.concatenate(total_preds_lst)
         # total_preds = np.where(abs(total_preds)>10, 0, total_preds)
         # total_trues = np.where(abs(total_trues)>1, 0, total_trues)
         logger.info("test shape:{} {}".format(total_preds.shape, total_trues.shape))
@@ -263,8 +263,15 @@ class Exp_Basic(object):
         np.save(folder_path+'pred.npy', total_preds)
         np.save(folder_path+f'true.npy', total_trues)
         if plot:
-                from utils.visualize import plot_pred
+                from utils.visualization import plot_pred, map_plot_function, \
+                plot_values_distribution, plot_error_distribution, plot_errors_threshold
                 plot_pred(total_trues, total_preds)
+                if self.args.pred_len > 1:
+                    map_plot_function(total_trues, total_preds, 
+                    plot_values_distribution, ['volitility'], [0], self.pred_len)
+                else:
+                    map_plot_function(total_trues.reshape(120, -1, 1), total_preds.reshape(120, -1, 1), 
+                    plot_values_distribution, ['volitility'], [0], 6)
         return
 
     def predict(self, setting, load=False):

@@ -12,7 +12,7 @@ data_parser = {
     'Solar':{'T':'POWER_136','M':[137,137,137],'S':[1,1,1],'MS':[137,137,1]},
     'Volatility':{'data_path':'D:/News_topics/RV-predictability/save_file/volatility_tmp',
     'freq':'b', 'T':'rv','M':[45,45,45],'S':[1,1,1],'MS':[45,45,1],
-    'seq_len':10, 'label_len':1, "pred_len":3},
+    'seq_len':10, 'label_len':1, "pred_len":1},
     'Ubiquant':{'data_path':'D:/IDEA/Spatial-temporal/ubiquant/ubiquantSeg',
     'freq':'b', 'T':'target','M':[45,45,45],'S':[1,1,1],'MS':[45,45,1],
     'seq_len':25, 'label_len':0, "pred_len":1}
