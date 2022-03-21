@@ -82,6 +82,7 @@ This challenge aims at introducing a new statistical model to predict and analyz
 <br><br>
 <b>Figure 2.</b> GRU(Encoder-Decoder) results(2 epoches for train, test 2 samples).
 </p>
+
 ## DOING and TODO
 1. Add probability estimation function.
 2. Improve the network structure(especially attention network) according to our data scenario.
