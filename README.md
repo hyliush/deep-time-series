@@ -4,7 +4,7 @@
 
 &ensp; This repo included [a collection of models](#models-currently-supported) (transformers, attention models, GRUs) mainly focuses on the progress of time series forecasting using deep learning. It was originally collected for financial market forecasting, which has been organized into a unified framework for easier use.
 
-&ensp; For beginners, we recommend you read this [paper](https://arxiv.org/abs/2004.13408) or [the brief introduction](/What%20you%20need%20know%20before%20starting%20the%20project.pdf) we provided to learn about time series forecasting.
+&ensp; For beginners, we recommend you read this [paper](https://arxiv.org/abs/2004.13408) or [the brief introduction](/What%20you%20need%20know%20before%20starting%20the%20project.md) we provided to learn about time series forecasting.
 
 
 ## Requirements
@@ -71,16 +71,17 @@ We will keep adding series forecasting models to expand this repo.
 
 ## Results on Oze Challenge
 This challenge aims at introducing a new statistical model to predict and analyze energy consumptions and temperatures in a big building using observations stored in the Oze-Energies database. More details can be seen from the [repo](https://github.com/maxjcohen/ozechallenge_benchmark).
+A simple model(Seq2Seq) result for the task (only 2 epoches for train, test 2 samples):
 <p align="center">
 <img src="./img/edgru_sample.jpg" alt="" align=center />
 <br><br>
-<b>Figure 1.</b> GRU(Encoder-Decoder) results(2 epoches for train, test 2 samples).
+<b>Figure 1.</b> GRU results (randomly choose a sample).
 </p>
 
 <p align="center">
 <img src="./img/edgru_distribution.jpg" alt="" align=center />
 <br><br>
-<b>Figure 2.</b> GRU(Encoder-Decoder) results(2 epoches for train, test 2 samples).
+<b>Figure 2.</b> GRU results (values distribution).
 </p>
 
 ## DOING and TODO
