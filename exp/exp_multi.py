@@ -71,7 +71,7 @@ class Exp_Multi(Exp_Basic):
             total_train_loss = np.average(total_train_loss)
             # epoch损失记录
             logger.info("Epoch: {}, epoch_train_steps: {} | Train Loss: {:.7f} Vali Loss: {:.7f} cost time: {}".format(
-                idx_epoch + 1, epoch_train_steps, total_train_loss, total_vali_loss, time.time()-epoch_time))
+                idx_epoch + 1, epoch_train_steps, total_train_loss, total_vali_loss, (time.time()-epoch_time)/60))
             
             early_stopping(total_vali_loss, self.model, path)
             if early_stopping.early_stop:

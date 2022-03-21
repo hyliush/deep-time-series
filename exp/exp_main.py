@@ -9,8 +9,9 @@ from models.DeepAR import DeepAR
 from models.Lstm import BenchmarkLstm
 from models.Mlp import BenchmarkMlp
 from utils import logger
+from utils.data import order_split
 from data.data_loader import Dataset_ETT_hour, Dataset_ETT_minute, Dataset_Custom, Dataset_Pred, ToyDatasetSeq2Seq, UbiquantDataSetNoraml, VolatilityDataSetSeq2Seq, ToyDataset,VolatilityDataSetNoraml
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, random_split
 import torch
 import torch.nn as nn
 import os
@@ -40,7 +41,6 @@ class Exp_model(Exp):
             cls._process_one_batch = _process_one_batch1
         pass
     def __get_data(self):
-        from torch.utils.data import DataLoader, random_split
         from data.data_loader import OzeDataset
         DATASET_PATH = r'D:\IDEA\Spatial-temporal\transformer-series\data\dataset1.npz'
         LABELS_PATH = r'D:\IDEA\Spatial-temporal\transformer-series\data\labels.json'

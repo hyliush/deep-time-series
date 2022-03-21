@@ -65,7 +65,7 @@ class Exp_Single(Exp_Basic):
                 train_loss = running_loss/len(train_loader)
                 # epoch损失记录
                 logger.info("Epoch: {} | Train Loss: {:.7f} Vali Loss: {:.7f} cost time: {}".format(
-                    idx_epoch + 1, train_loss, vali_loss, time.time()-epoch_time))
+                    idx_epoch + 1, train_loss, vali_loss, (time.time()-epoch_time)/60))
                 
                 early_stopping(vali_loss, self.model, path)
                 if early_stopping.early_stop:
