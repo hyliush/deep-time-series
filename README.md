@@ -1,7 +1,8 @@
 # Deep Learning for Time Series forecasting
-![Python 3.6](https://img.shields.io/badge/python-3.6-green.svg?style=plastic) ![PyTorch 1.2](https://img.shields.io/badge/PyTorch%20-%23EE4C2C.svg?style=plastic) ![cuDNN 7.3.1](https://img.shields.io/badge/cudnn-7.3.1-green.svg?style=plastic) ![License CC BY-NC-SA](https://img.shields.io/badge/license-CC_BY--NC--SA--green.svg?style=plastic)
+![Python 3.7](https://img.shields.io/badge/python-3.7-green.svg?style=plastic) ![PyTorch 1.2](https://img.shields.io/badge/PyTorch%20-%23EE4C2C.svg?style=plastic) ![cuDNN 7.3.1](https://img.shields.io/badge/cudnn-7.3.1-green.svg?style=plastic) 
+<!-- ![License CC BY-NC-SA](https://img.shields.io/badge/license-CC_BY--NC--SA--green.svg?style=plastic) -->
 
-&ensp; This repo mainly focuses on the progress of time series forecasting using deep learning. It was originally [a collection of models](#models-currently-supported) (transformers, attention models, GRUs) that I used in financial market forecasting, which has been organized into a unified framework for easier use.
+&ensp; This repo included [a collection of models](#models-currently-supported) (transformers, attention models, GRUs) mainly focuses on the progress of time series forecasting using deep learning. It was originally collected for financial market forecasting, which has been organized into a unified framework for easier use.
 
 &ensp; For beginners, we recommend you read this [paper](https://arxiv.org/abs/2004.13408) or [the brief introduction](/What%20you%20need%20know%20before%20starting%20the%20project.pdf) we provided to learn about time series forecasting.
 
@@ -31,18 +32,6 @@ bash ./scripts/Traffic_script/Autoformer.sh
 bash ./scripts/Weather_script/Autoformer.sh
 bash ./scripts/ILI_script/Autoformer.sh
 ```
-Commands for training and testing the model with *ProbSparse* self-attention on Dataset ETTh1, ETTh2 and ETTm1 respectively:
-
-```bash
-# ETTh1
-python -u main.py --model informer --data ETTh1 --attn prob --freq h
-
-# ETTh2
-python -u main.py --model informer --data ETTh2 --attn prob --freq h
-
-# ETTm1
-python -u main.py --model informer --data ETTm1 --attn prob --freq t
-```
 ## Usage on customized data
 &ensp;**To run on your customized data**, a `DataSet` class must be provided in `dataloader.py`, then add the `Dataset` to `Exp_Basic.py`. Need to be noted that elements ejected from the `DataSet` class must conform to the model's requirement.
 
@@ -57,7 +46,7 @@ Usually we will encounter three forms of data:
 
 
 
-&ensp;For 1, we load a file (train, vail, test)dataset iteratively in a epoch until all files are loaded. For 2, 3, we load  train, vail, test dataset before starting training.
+&ensp;For 1, we load a file (train, vail, test) dataset iteratively in a epoch until all files are loaded. For 2, 3, we load  train, vail, test dataset before starting training.
 
 ### Models currently supported
 We will keep adding series forecasting models to expand this repo.
@@ -71,7 +60,7 @@ We will keep adding series forecasting models to expand this repo.
 |2017|[DeepAR:Probabilistic Forecasting with Autoregressive Recurrent Networks](https://arxiv.org/abs/1704.04110)|many to many|
 |2018|[TPA:Temporal Pattern Attention for Multivariate Time Series Forecasting](https://arxiv.org/abs/1809.04206)|many to one|
 |2018|[TCN:An Empirical Evaluation of Generic Convolutional and Recurrent Networks for Sequence Modeling](https://arxiv.org/abs/1803.01271)|many to one|
-|2019|[LogTrans:Enhancing the Locality and Breaking the Memory Bottleneck of Transformer on Time Series Forecasting](https://arxiv.org/abs/1907.00235)|many to one 
+|2019|[LogTrans:Enhancing the Locality and Breaking the Memory Bottleneck of Transformer on Time Series Forecasting](https://arxiv.org/abs/1907.00235)|many to many 
 |2020 | [Informer: Beyond Efficient Transformer for Long Sequence Time-Series Forecasting](https://arxiv.org/abs/2012.07436)|many to many
 |2021|[Autoformer: Decomposition Transformers with Auto-Correlation for Long-Term Series Forecasting](https://arxiv.org/abs/2106.13008)|many to many|
 ||Reformer|many to many|

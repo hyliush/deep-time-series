@@ -33,7 +33,7 @@ args.detail_freq = args.freq
 args.freq = args.freq[-1:]
 
 from exp.exp_main import Exp_model
-args.model = "trans"
+args.model = "edgru"
 for ii in range(args.itr):
     # setting record of experiments
     setting = '{}_{}_ft{}__sl{}_ll{}_pl{}_id{}_co{}_{}_{}'.format(args.model, args.data, args.features, 
@@ -44,7 +44,7 @@ for ii in range(args.itr):
     # set experiments
     exp = Exp_model(args)
 
-    train = False
+    train = True
     if train:
         print('>>>>>>>start training : {}>>>>>>>>>>>>>>>>>>>>>>>>>>'.format(setting))
         exp.train(setting)

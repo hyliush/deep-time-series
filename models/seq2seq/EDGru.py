@@ -131,8 +131,6 @@ class Gru(nn.Module):
             input = x_dec[:, t, :].unsqueeze(dim=1) if teacher_force else output
             input_mark = x_mark_dec[:, t, :].unsqueeze(dim=1)
         return outputs[:, :, -self.out_size:]
-
-
 if __name__ == '__main__':
 
     enc_in, dec_in, emb_dim, hid_dim, n_layers = 45, 45, 512, 64, 2

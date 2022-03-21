@@ -6,7 +6,7 @@ parser = argparse.ArgumentParser(description='Time Series Forecasting')
 parser.add_argument('--model', type=str, default='tpa',help='model of experiment, options: [lstm, \
 mlp, tpa, tcn, trans, gated, informerstack, informerlight(TBD)], autoformer, transformer,\
 edlstm, edgru, edgruattention')
-parser.add_argument('--data', type=str, default='Toy', help='data, [ETTh1, Ubiquant, Volatility]')
+parser.add_argument('--data', type=str, default='Volatility', help='data, [ETTh1, Ubiquant, Volatility]')
 parser.add_argument('--data_path', type=str, default='./data/ToyData/', help='root path of the data file')
 parser.add_argument('--features', type=str, default='MS', help='forecasting task, options:[M, S, MS]; M:multivariate predict multivariate, S:univariate predict univariate, MS:multivariate predict univariate')
 parser.add_argument('--criterion', type=str, default='mse', help='loss function')    

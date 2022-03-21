@@ -359,7 +359,7 @@ class Dataset_Pred(DatasetBase):
         return self.scaler.inverse_transform(data)
 
 
-class VolatilityDataSetSeq2Seq(Dataset):
+class VolatilityDataSetSeq2Seq(DatasetBase):
     def __init__(self, data_path, flag='train', size=None, 
                  features='S', file_name='ETTh1.csv', 
                  target='OT', scale=True, inverse=False, timeenc=0, freq='d', cols=None):

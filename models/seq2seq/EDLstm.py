@@ -131,7 +131,6 @@ class Lstm(nn.Module):
             input_mark = x_mark_dec[:, t, :].unsqueeze(dim=1)
         return outputs[:, :, -self.out_size:]
 
-
 if __name__ == '__main__':
 
     enc_in, dec_in, emb_dim, hid_dim, n_layers = 45, 45, 512, 64, 2

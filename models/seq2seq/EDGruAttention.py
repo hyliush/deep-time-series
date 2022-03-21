@@ -176,7 +176,7 @@ class GruAttention(nn.Module):
             #if not, use predicted token
             input = x_dec[:, t, :].unsqueeze(dim=1) if teacher_force else output
             input_mark = x_mark_dec[:, t, :].unsqueeze(dim=1)
-        return outputs[:, :, -self.out_size:]
+        return outputs[:, :, -self.out_size:]       
 if __name__ == '__main__':
     enc_in, dec_in, emb_dim, enc_hid_dim, dec_hid_dim = 45, 45, 512, 512, 512
     batch_size, seq_len = 32, 10

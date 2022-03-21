@@ -1,4 +1,4 @@
-from exp.exp_basic import Exp_Basic
+from exp.exp_multi import Exp_Basic
 from models.Gdnn import Gdnn
 from models.TCN import TCN
 from models.TPA import TPA

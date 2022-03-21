@@ -6,8 +6,6 @@ from utils import logger
 from utils.tools import EarlyStopping, adjust_learning_rate
 from tqdm import tqdm
 import time
-from data.data_loader import Dataset_ETT_hour, Dataset_ETT_minute, Dataset_Custom, Dataset_Pred, ToyDatasetSeq2Seq, UbiquantDataSetNoraml, VolatilityDataSetSeq2Seq, ToyDataset,VolatilityDataSetNoraml
-from torch.utils.data import DataLoader
 from torch import optim
 from utils.loss import Normal_loss
 import torch.nn as nn
@@ -15,7 +13,6 @@ import torch.nn as nn
 class Exp_Basic(object):
     def __init__(self, args):
         self.args = args
-        self.fileName_lst = os.listdir(args.data_path)
         self.device = self._acquire_device()
         self.model = self._build_model().to(self.device)
 
@@ -43,58 +40,22 @@ class Exp_Basic(object):
         raise NotImplementedError
         return None
 
-    def _get_data(self, file_name, flag):
-        args = self.args
-        data_dict = {
-            'ETTh1':Dataset_ETT_hour,
-            'ETTh2':Dataset_ETT_hour,
-            'ETTm1':Dataset_ETT_minute,
-            'ETTm2':Dataset_ETT_minute,
-            'WTH':Dataset_Custom,
-            'ECL':Dataset_Custom,
-            'Solar':Dataset_Custom,
-            'custom':Dataset_Custom,
-            'Volatility':VolatilityDataSetNoraml,
-            'VolatilitySeq2Seq':VolatilityDataSetSeq2Seq,
-            'Ubiquant':UbiquantDataSetNoraml,
-            'Toy': ToyDataset,
-            'ToySeq2Seq': ToyDatasetSeq2Seq
-        }
-        Data = data_dict[self.args.data+"Seq2Seq"] if "ed" in self.args.model or "former" in self.args.model else data_dict[self.args.data]
-        timeenc = 0 if args.embed!='timeF' else 1
-
-        if flag == 'test':
-            shuffle_flag = False; drop_last = False; batch_size = args.batch_size; freq=args.freq
-        elif flag=='pred':
-            shuffle_flag = False; drop_last = False; batch_size = 1; freq=args.detail_freq
-            Data = Dataset_Pred
-        else:
-            shuffle_flag = True; drop_last = False; batch_size = args.batch_size; freq=args.freq
-        data_set = Data(
-            data_path=args.data_path,
-            file_name=file_name,
-            flag=flag,
-            size=[args.seq_len, args.label_len, args.pred_len],
-            features=args.features,
-            target=args.target,
-            inverse=args.inverse,
-            timeenc=timeenc,
-            freq=freq,
-            cols=args.cols
-        )
-        logger.debug(flag, len(data_set))
-        data_loader = DataLoader(
-            data_set,
-            batch_size=batch_size,
-            shuffle=shuffle_flag,
-            num_workers=args.num_workers,
-            drop_last=drop_last)
-
-        return data_set, data_loader
-
     def _process_one_batch(self):
-        raise NotImplementedError
-        return
+         raise NotImplementedError
+         return
+    def process_one_batch(self, dataset_object, batch):
+        if self.args.use_amp:
+            with torch.cuda.amp.autocast():
+                outputs, batch_y = self._process_one_batch(batch)
+        else:
+            outputs, batch_y = self._process_one_batch(batch)
+        if self.args.output_hidden:
+            outputs = outputs[0]
+        if self.args.inverse:
+            outputs = dataset_object.inverse_transform(outputs)
+        f_dim = -1 if self.args.features=='MS' else 0
+        batch_y = batch_y[:,-self.args.pred_len:,f_dim:]
+        return outputs, batch_y
 
     def _acquire_device(self):
         if self.args.use_gpu:
@@ -142,7 +103,7 @@ class Exp_Basic(object):
                     epoch_train_steps += 1
                     
                     model_optim.zero_grad()
-                    batch_out= self._process_one_batch(train_data, batch)
+                    batch_out= self.process_one_batch(train_data, batch)
                     loss = criterion(*batch_out)
                     train_loss.append(loss.item())
                     
@@ -179,13 +140,13 @@ class Exp_Basic(object):
         
         return self.model
 
-    def _vali(self, test_data, test_loader, criterion):
+    def _vali(self, val_data, val_loader, criterion):
         # 区别于_test, 不需要保存和loss测度
         self.model.eval()
         
         loss, preds, trues = [], [], []
-        for i, batch in enumerate(test_loader):
-            pred, true = self._process_one_batch(test_data, batch)
+        for i, batch in enumerate(val_loader):
+            pred, true = self.process_one_batch(val_data, batch)
             pred, true = pred.detach().cpu(), true.detach().cpu()
             preds.append(pred); trues.append(true)
             
@@ -200,8 +161,8 @@ class Exp_Basic(object):
         
         total_loss, total_preds, total_trues = [], [], []
         for file_name in self.fileName_lst:
-            test_data, test_loader = self._get_data(file_name, flag=flag)
-            preds, trues, loss = self._vali(test_data, test_loader, criterion)
+            val_data, val_loader = self._get_data(file_name, flag=flag)
+            preds, trues, loss = self._vali(val_data, val_loader, criterion)
             total_preds.append(preds)
             total_trues.append(trues)
             total_loss.append(loss)
@@ -214,27 +175,27 @@ class Exp_Basic(object):
         return total_loss, (mae, mse, rmse, mape, mspe)
 
     def _test(self, test_data, test_loader, file_path):                
-            self.model.eval()
-            preds_lst, trues_lst = [], []
-            for i, batch in enumerate(test_loader):
-                pred, true = self._process_one_batch(test_data, batch)
-                preds_lst.append(pred.detach().cpu()); trues_lst.append(true.detach().cpu())
-            
-            preds, trues = np.concatenate(preds_lst), np.concatenate(trues_lst)
-            logger.debug('test shape:{} {}'.format(preds.shape, trues.shape))
-            
-            mae, mse, rmse, mape, mspe = metric(preds, trues)
-            print('mse:{}, mae:{}'.format(mse, mae))
+        self.model.eval()
+        preds_lst, trues_lst = [], []
+        for i, batch in enumerate(test_loader):
+            pred, true = self.process_one_batch(test_data, batch)
+            preds_lst.append(pred.detach().cpu()); trues_lst.append(true.detach().cpu())
+        
+        preds, trues = np.concatenate(preds_lst), np.concatenate(trues_lst)
+        logger.debug('test shape:{} {}'.format(preds.shape, trues.shape))
+        
+        mae, mse, rmse, mape, mspe = metric(preds, trues)
+        print('mse:{}, mae:{}'.format(mse, mae))
 
-            if file_path is not None:
-                np.save(f'{file_path}_metrics.npy', np.array([mae, mse, rmse, mape, mspe]))
-                np.save(f'{file_path}_pred.npy', preds)
-                np.save(f'{file_path}_true.npy', trues)
+        if file_path is not None:
+            np.save(f'{file_path}_metrics.npy', np.array([mae, mse, rmse, mape, mspe]))
+            np.save(f'{file_path}_pred.npy', preds)
+            np.save(f'{file_path}_true.npy', trues)
 
-            return preds, trues
+        return preds, trues
 
     def test(self, setting, load=False, plot=True):
-        # test 比 predict功能更多，但test承接train之后模型，为保证单独使用test，增加load参数
+        # test承接train之后模型，为保证单独使用test，增加load参数
         if load:
             path = os.path.join(self.args.checkpoints, setting)
             best_model_path = path+'/'+'checkpoint.pth'
@@ -269,41 +230,12 @@ class Exp_Basic(object):
         np.save(folder_path+'pred.npy', total_preds)
         np.save(folder_path+f'true.npy', total_trues)
         if plot:
-                from utils.visualization import plot_pred, map_plot_function, \
-                plot_values_distribution, plot_error_distribution, plot_errors_threshold
-                # plot_pred(total_trues, total_preds)
-                if self.args.pred_len > 1:
-                    map_plot_function(total_trues, total_preds, 
-                    plot_values_distribution, ['volitility'], [0], self.args.pred_len)
-                else:
-                    map_plot_function(total_trues.reshape(120, -1, 1), total_preds.reshape(120, -1, 1), 
-                    plot_values_distribution, ['volitility'], [0], 6)
-
-    def predict(self, setting, load=False):
-        pred_data, pred_loader = self._get_data(flag='pred')
-        
-        if load:
-            path = os.path.join(self.args.checkpoints, setting)
-            best_model_path = path+'/'+'checkpoint.pth'
-            self.model.load_state_dict(torch.load(best_model_path))
-
-        self.model.eval()
-        
-        preds = []
-        
-        for i, (batch_x,batch_y,batch_x_mark,batch_y_mark) in enumerate(pred_loader):
-            pred, true = self._process_one_batch(
-                pred_data, batch_x, batch_y, batch_x_mark, batch_y_mark)
-            preds.append(pred.detach().cpu().numpy())
-
-        preds = np.array(preds)
-        preds = preds.reshape(-1, preds.shape[-2], preds.shape[-1])
-        
-        # result save
-        folder_path = './results/' + setting +'/'
-        if not os.path.exists(folder_path):
-            os.makedirs(folder_path)
-        
-        np.save(folder_path+'real_prediction.npy', preds)
-        
-        return
+            from utils.visualization import plot_pred, map_plot_function, \
+            plot_values_distribution, plot_error_distribution, plot_errors_threshold
+            # plot_pred(total_trues, total_preds)
+            if self.args.pred_len > 1:
+                map_plot_function(total_trues, total_preds, 
+                plot_values_distribution, ['volitility'], [0], self.args.pred_len)
+            else:
+                map_plot_function(total_trues.reshape(120, -1, 1), total_preds.reshape(120, -1, 1), 
+                plot_values_distribution, ['volitility'], [0], 6)
