@@ -835,3 +835,85 @@ class ToyDatasetSeq2Seq(DatasetBase):
         return len(self.data_x)
     def inverse_transform(self, x):
         return x
+
+import json
+from typing import Optional
+class OzeDataset(Dataset):
+    def __init__(self,
+                 dataset_path: str,
+                 labels_path: Optional[str] = "labels.json",
+                 normalize: Optional[str] = "max",
+                 **kwargs):
+        """Load dataset from npz."""
+        super().__init__(**kwargs)
+
+        self._normalize = normalize
+
+        self._load_npz(dataset_path, labels_path)
+
+    def _load_npz(self, dataset_path, labels_path):
+        # Load dataset as csv
+        dataset = np.load(dataset_path)
+
+        # Load labels, can be found through csv or challenge description
+        with open(labels_path, "r") as stream_json:
+            self.labels = json.load(stream_json)
+
+        R = dataset['R'].astype(np.float32)
+        X = dataset['X'].astype(np.float32).transpose(0, 2, 1)
+        Z = dataset['Z'].astype(np.float32).transpose(0, 2, 1)
+
+        m = Z.shape[0]  # Number of training example
+        K = Z.shape[1]  # Time serie length
+
+        R = np.tile(R[:, np.newaxis, :], (1, K, 1))
+
+        # Store R, Z and X as x and y
+        self._x = np.concatenate([Z, R], axis=-1)
+        self._y = X
+
+        # Normalize
+        if self._normalize == "mean":
+            mean = np.mean(self._x, axis=(0, 1))
+            std = np.std(self._x, axis=(0, 1))
+            self._x = (self._x - mean) / (std + np.finfo(float).eps)
+
+            self._mean = np.mean(self._y, axis=(0, 1))
+            self._std = np.std(self._y, axis=(0, 1))
+            self._y = (self._y - self._mean) / (self._std + np.finfo(float).eps)
+        elif self._normalize == "max":
+            M = np.max(self._x, axis=(0, 1))
+            m = np.min(self._x, axis=(0, 1))
+            self._x = (self._x - m) / (M - m + np.finfo(float).eps)
+
+            self._M = np.max(self._y, axis=(0, 1))
+            self._m = np.min(self._y, axis=(0, 1))
+            self._y = (self._y - self._m) / (self._M - self._m + np.finfo(float).eps)
+        elif self._normalize is None:
+            pass
+        else:
+            raise(
+                NameError(f'Normalize method "{self._normalize}" not understood.'))
+
+        # Convert to float32
+        self._x = torch.Tensor(self._x)
+        self._y = torch.Tensor(self._y)
+
+    def inverse_transform(self,
+                y: np.ndarray,
+                idx_label: int) -> torch.Tensor:
+        if self._normalize == "max":
+            return y * (self._M[idx_label] - self._m[idx_label] + np.finfo(float).eps) + self._m[idx_label]
+        elif self._normalize == "mean":
+            return y * (self._std[idx_label] + np.finfo(float).eps) + self._mean[idx_label]
+        else:
+            raise(
+                NameError(f'Normalize method "{self._normalize}" not understood.'))
+
+    def __getitem__(self, idx):
+        if torch.is_tensor(idx):
+            idx = idx.tolist()
+
+        return self._x[idx], self._y[idx]
+    def __len__(self):
+        return self._x.shape[0]

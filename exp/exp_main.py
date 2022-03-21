@@ -1,4 +1,5 @@
-from exp.exp_multi import Exp_Basic
+from exp.exp_multi import Exp_Multi
+from exp.exp_single import Exp_Single
 from models.Gdnn import Gdnn
 from models.TCN import TCN
 from models.TPA import TPA
@@ -15,14 +16,16 @@ import torch.nn as nn
 import os
 import warnings
 warnings.filterwarnings('ignore')
+from args import args
+Exp = Exp_Single if args.single_file else Exp_Multi
 
-class Exp_model(Exp_Basic):
+class Exp_model(Exp):
     def __init__(self, args):
         self.fileName_lst = os.listdir(args.data_path)
         self.file_name = self.fileName_lst[0] if len(self.fileName_lst)<=3 else ""
         Exp_model.init_process_one_batch(args)
         super().__init__(args)
-
+        self.__get_data()
     @classmethod    
     def init_process_one_batch(cls, args):
         if 'former' in args.model:
@@ -36,7 +39,46 @@ class Exp_model(Exp_Basic):
         else:
             cls._process_one_batch = _process_one_batch1
         pass
+    def __get_data(self):
+        from torch.utils.data import DataLoader, random_split
+        from data.data_loader import OzeDataset
+        DATASET_PATH = r'D:\IDEA\Spatial-temporal\transformer-series\data\dataset1.npz'
+        LABELS_PATH = r'D:\IDEA\Spatial-temporal\transformer-series\data\labels.json'
+        BATCH_SIZE = 2
+        NUM_WORKERS = 0
+        dataset = OzeDataset(DATASET_PATH, LABELS_PATH)
+
+        # Split between train, validation and test
+        self.dataset_train, self.dataset_val, self.dataset_test = random_split(
+            dataset, (5500, 1000, 1000), generator=torch.Generator().manual_seed(42))
+        
+        self.dataloader_train = DataLoader(self.dataset_train,
+                                    batch_size=BATCH_SIZE,
+                                    shuffle=True,
+                                    num_workers=NUM_WORKERS,
+                                    pin_memory=False
+                                    )
+
+        self.dataloader_val = DataLoader(self.dataset_val,
+                                    batch_size=BATCH_SIZE,
+                                    shuffle=True,
+                                    num_workers=NUM_WORKERS
+                                    )
+
+        self.dataloader_test = DataLoader(self.dataset_test,
+                                    batch_size=BATCH_SIZE,
+                                    shuffle=False,
+                                    num_workers=NUM_WORKERS
+                                    )
     def _get_data(self, file_name, flag):
+        if flag == "train":
+            return self.dataset_train, self.dataloader_train
+        if flag == "val":
+            return self.dataset_val, self.dataloader_val
+        if flag == "test":
+            return self.dataset_test, self.dataloader_test
+
+    def _get_data1(self, file_name, flag):
         args = self.args
         data_dict = {
             'ETTh1':Dataset_ETT_hour,
@@ -147,8 +189,8 @@ def _process_one_batch3(self, batch):
     return outputs, batch_y
 
 def _process_one_batch5(self, batch):
-    batch_x, batch_y, batch_x_mark, batch_y_mark = self._move2device(batch)
-    outputs = self.model(batch_x, batch_x_mark, batch_y, batch_y_mark)
+    batch_x, batch_y = self._move2device(batch)
+    outputs = self.model(batch_x, batch_y)
     return outputs, batch_y
 
 def _process_one_batch4(self, batch):

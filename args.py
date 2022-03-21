@@ -6,17 +6,17 @@ parser = argparse.ArgumentParser(description='Time Series Forecasting')
 parser.add_argument('--model', type=str, default='tpa',help='model of experiment, options: [lstm, \
 mlp, tpa, tcn, trans, gated, informerstack, informerlight(TBD)], autoformer, transformer,\
 edlstm, edgru, edgruattention')
-parser.add_argument('--data', type=str, default='Volatility', help='data, [ETTh1, Ubiquant, Volatility]')
+parser.add_argument('--data', type=str, default='Volatility1', help='data, [ETTh1, Ubiquant, Volatility]')
 parser.add_argument('--data_path', type=str, default='./data/ToyData/', help='root path of the data file')
-parser.add_argument('--features', type=str, default='MS', help='forecasting task, options:[M, S, MS]; M:multivariate predict multivariate, S:univariate predict univariate, MS:multivariate predict univariate')
+parser.add_argument('--features', type=str, default='M', help='forecasting task, options:[M, S, MS]; M:multivariate predict multivariate, S:univariate predict univariate, MS:multivariate predict univariate')
 parser.add_argument('--criterion', type=str, default='mse', help='loss function')    
 
 # data
 parser.add_argument('--target', type=str, default='OT', help='target feature in S or MS task')
 parser.add_argument('--freq', type=str, default='h', help='freq for time features encoding, options:[s:secondly, t:minutely, h:hourly, d:daily, b:business days, w:weekly, m:monthly], you can also use more detailed freq like 15min or 3h')
-parser.add_argument('--seq_len', type=int, default=96, help='input sequence length of Informer encoder')
-parser.add_argument('--label_len', type=int, default=48, help='start token length of Informer decoder')
-parser.add_argument('--pred_len', type=int, default=24, help='prediction sequence length')
+parser.add_argument('--seq_len', type=int, default=672, help='input sequence length of Informer encoder')
+parser.add_argument('--label_len', type=int, default=1, help='start token length of Informer decoder')
+parser.add_argument('--pred_len', type=int, default=671, help='prediction sequence length')
 parser.add_argument('--cols', type=str, nargs='+', help='certain cols from the data files as the input features')
 parser.add_argument('--inverse', action='store_true', help='inverse output data', default=False)
 
@@ -44,8 +44,8 @@ parser.add_argument('--out_size', type=int, default=7, help='output features siz
 parser.add_argument('--dropout', type=float, default=0.1, help='dropout')
 
 # seq2seq common
-parser.add_argument('--enc_in', type=int, default=45, help='encoder input size')
-parser.add_argument('--dec_in', type=int, default=45, help='decoder input size')
+parser.add_argument('--enc_in', type=int, default=37, help='encoder input size')
+parser.add_argument('--dec_in', type=int, default=8, help='decoder input size')
 parser.add_argument('--teacher_forcing_ratio', type=float, default=0.5, help='teacher_forcing_ratio')
 
 ## informer, autoformer, transformer
@@ -114,6 +114,7 @@ parser.add_argument('--use_multi_gpu', action='store_true', help='use multiple g
 parser.add_argument('--devices', type=str, default='0,1,2,3',help='device ids of multile gpus')
 parser.add_argument('--load', type=bool, default=False, help='load last trained model')
 
+parser.add_argument('--single_file', type=bool, default=True, help='single_file')
 args = parser.parse_args()
 
 args.use_gpu = True if torch.cuda.is_available() and args.use_gpu else False
@@ -122,3 +123,36 @@ if args.use_gpu and args.use_multi_gpu:
     device_ids = args.devices.split(',')
     args.device_ids = [int(id_) for id_ in device_ids]
     args.gpu = args.device_ids[0]
+
+data_parser = {
+    'ETTh1':{'T':'OT','M':[7,7,7],'S':[1,1,1],'MS':[7,7,1]},
+    'ETTh2':{'T':'OT','M':[7,7,7],'S':[1,1,1],'MS':[7,7,1]},
+    'ETTm1':{'T':'OT','M':[7,7,7],'S':[1,1,1],'MS':[7,7,1]},
+    'ETTm2':{'T':'OT','M':[7,7,7],'S':[1,1,1],'MS':[7,7,1]},
+    'WTH':{'T':'WetBulbCelsius','M':[12,12,12],'S':[1,1,1],'MS':[12,12,1]},
+    'ECL':{'T':'MT_320','M':[321,321,321],'S':[1,1,1],'MS':[321,321,1]},
+    'Solar':{'T':'POWER_136','M':[137,137,137],'S':[1,1,1],'MS':[137,137,1]},
+    'Volatility':{'data_path':'D:/News_topics/RV-predictability/save_file/volatility_tmp',
+    'freq':'b', 'T':'rv','M':[45,45,45],'S':[1,1,1],'MS':[45,45,1],
+    'seq_len':10, 'label_len':1, "pred_len":1},
+    'Ubiquant':{'data_path':'D:/IDEA/Spatial-temporal/ubiquant/ubiquantSeg',
+    'freq':'b', 'T':'target','M':[45,45,45],'S':[1,1,1],'MS':[45,45,1],
+    'seq_len':25, 'label_len':0, "pred_len":1},
+    'Toy':{'seq_len':96, 'label_len':0, "pred_len":24, "MS":[1,1,1], "T":"s"},
+    'oze':{'seq_len':672, 'label_len':1, "pred_len":671, "M":[37,8,8], "T":"s"}
+}
+args.model = "edgru"
+args.data = "oze"
+if args.data in data_parser.keys():
+    data_info = data_parser[args.data]
+    if "data_path" in data_info:
+        args.data_path = data_info["data_path"]
+    if 'freq' in data_info:
+        args.freq = data_info["freq"]
+    if 'seq_len' in data_info:
+        args.seq_len, args.label_len, args.pred_len = data_info['seq_len'], data_info['label_len'], data_info['pred_len']
+    args.target = data_info['T']
+    args.enc_in, args.dec_in, args.out_size = data_info[args.features]
+    args.input_size = args.enc_in
+args.detail_freq = args.freq
+args.freq = args.freq[-1:]
