@@ -69,7 +69,19 @@ We will keep adding series forecasting models to expand this repo.
 
 
 
-## Results on a toy data
+## Results on Oze Challenge
+This challenge aims at introducing a new statistical model to predict and analyze energy consumptions and temperatures in a big building using observations stored in the Oze-Energies database. More details can be seen from the [repo](https://github.com/maxjcohen/ozechallenge_benchmark).
+<p align="center">
+<img src="./img/edgru_sample.jpg" alt="" align=center />
+<br><br>
+<b>Figure 1.</b> GRU(Encoder-Decoder) results(2 epoches for train, test 2 samples).
+</p>
+
+<p align="center">
+<img src="./img/edgru_distribution.jpg" alt="" align=center />
+<br><br>
+<b>Figure 2.</b> GRU(Encoder-Decoder) results(2 epoches for train, test 2 samples).
+</p>
 ## DOING and TODO
 1. Add probability estimation function.
 2. Improve the network structure(especially attention network) according to our data scenario.

@@ -7,7 +7,8 @@ from utils.tools import EarlyStopping, adjust_learning_rate
 from tqdm import tqdm
 import time
 from exp.exp_basic import Exp_Basic
-
+from utils.visualization import plot_pred, map_plot_function, \
+plot_values_distribution, plot_error_distribution, plot_errors_threshold, plot_visual_sample
 class Exp_Multi(Exp_Basic):
     def __init__(self, args):
         super().__init__(args)
@@ -174,8 +175,6 @@ class Exp_Multi(Exp_Basic):
         np.save(folder_path+'pred.npy', total_preds)
         np.save(folder_path+f'true.npy', total_trues)
         if plot:
-            from utils.visualization import plot_pred, map_plot_function, \
-            plot_values_distribution, plot_error_distribution, plot_errors_threshold
             # plot_pred(total_trues, total_preds)
             if self.args.pred_len > 1:
                 map_plot_function(total_trues, total_preds, 

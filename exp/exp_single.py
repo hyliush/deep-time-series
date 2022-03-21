@@ -7,6 +7,11 @@ from utils.tools import EarlyStopping, adjust_learning_rate
 import time
 from tqdm import tqdm
 from exp.exp_basic import Exp_Basic
+from utils.visualization import plot_pred, map_plot_function, \
+plot_values_distribution, plot_error_distribution, plot_errors_threshold, plot_visual_sample
+import matplotlib.pyplot as plt
+import seaborn as sns
+sns.set()
 
 class Exp_Single(Exp_Basic):
     def __init__(self, args):
@@ -123,19 +128,22 @@ class Exp_Single(Exp_Basic):
         logger.info('mse:{}, mae:{}'.format(mse, mae))
 
         # inverse
-        preds = test_data.inverse_transform(preds)[..., -1:]
-        trues = test_data.inverse_transform(trues)[..., -1:]
+        # preds = test_data.inverse_transform(preds)[..., -1:]
+        # trues = test_data.inverse_transform(trues)[..., -1:]
 
         np.save(folder_path+'metrics.npy', np.array([mae, mse, rmse, mape, mspe]))
         np.save(folder_path+'pred.npy', preds)
         np.save(folder_path+f'true.npy', trues)
         if plot:
-            from utils.visualization import plot_pred, map_plot_function, \
-            plot_values_distribution, plot_error_distribution, plot_errors_threshold
             # plot_pred(total_trues, preds)
             if self.args.pred_len > 1:
-                map_plot_function(trues, preds, 
-                plot_values_distribution, ['volitility'], [0], self.args.pred_len)
+                labels = test_data.dataset.labels["X"]
+                fig = map_plot_function(trues, preds, plot_visual_sample, labels, range(len(labels)), 168)
+                fig.savefig(f"./img/{self.args.model}_sample.jpg", bbox_inches='tight')
+
+                fig = map_plot_function(trues, preds, 
+                plot_values_distribution, labels, range(len(labels)), 168)
+                fig.savefig(f"./img/{self.args.model}_distribution.jpg", bbox_inches='tight')
             else:
                 map_plot_function(trues.reshape(120, -1, 1), preds.reshape(120, -1, 1), 
                 plot_values_distribution, ['volitility'], [0], 6)

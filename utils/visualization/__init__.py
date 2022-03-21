@@ -73,3 +73,4 @@ def map_plot_function(trues, preds, plot_function, labels=None, idx_labels=None,
         for idx, label in enumerate(ax.get_xticklabels()):
             if idx % n_ticks:
                 label.set_visible(False)
+    return fig
