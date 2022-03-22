@@ -72,8 +72,10 @@ A simple model(Seq2Seq) result for the task (only 2 epoches for train, test 2 sa
 <br><br>
 <b>Figure 4.</b> GRU results (values distribution).
 </p>
+
 ## Models currently supported
 We will keep adding series forecasting models to expand this repo.
+
 | Year | Models |Tasks|
 | --- | --- |---|
 |---|Vanilla Lstm|many to one|
@@ -90,6 +92,7 @@ We will keep adding series forecasting models to expand this repo.
 ||Reformer|many to many|
 ||Transformer XL|many to many|
 ||N-BEATS|
+
 ## DOING and TODO
 1. Add probability estimation function.
 2. Improve the network structure(especially attention network) according to our data scenario.
