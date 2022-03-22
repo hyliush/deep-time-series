@@ -5,6 +5,7 @@
 &ensp; This repo included [a collection of models](#models-currently-supported) (transformers, attention models, GRUs) mainly focuses on the progress of time series forecasting using deep learning. It was originally collected for financial market forecasting, which has been organized into a unified framework for easier use.
 &ensp; For beginners, we recommend you read this [paper](https://arxiv.org/abs/2004.13408) or [the brief introduction](/What%20you%20need%20know%20before%20starting%20the%20project.pdf) we provided to learn about time series forecasting. And read the [paper](https://arxiv.org/abs/2012.03854) for a more comprehensive understanding.
 &ensp;With limited ability and energy, we only test how well the repo works on a specific dataset. For problems in use, please leave an issue. The repo will be kept updated.
+See the dev branch for recent updates.
 
 
 ## Requirements
