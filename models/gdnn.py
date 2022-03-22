@@ -3,9 +3,7 @@ from utils.activation import Swish
 from models.informer.embed import SpatialEmbedding, TemporalEmbedding, TokenEmbedding, FixedEmbedding
 
 class Gdnn(nn.Module):
-    def __init__(self, n_spatial=146, gdnn_embed_size=512, embed_type='fixed', freq='h',
-                input_size=45, gdnn_hidden_size1=150, gdnn_out_size=100, num_layers=3,
-                gdnn_hidden_size2=50, out_size=1):
+    def __init__(self, args):
         '''
         Args:
             n_spatial): num of spatial
@@ -18,6 +16,13 @@ class Gdnn(nn.Module):
 
         '''
         super(Gdnn, self).__init__()
+        n_spatial, gdnn_embed_size, embed_type, freq,\
+        input_size, gdnn_hidden_size1, gdnn_out_size, num_layers,\
+        gdnn_hidden_size2, out_size = \
+        args.n_spatial, args.gdnn_embed_size, args.embed, args.freq, \
+        args.input_size, args.gdnn_hidden_size1, args.gdnn_out_size, args.gdnn_n_layers,\
+        args.gdnn_hidden_size2, args.out_size,
+
         # st_net
         self.st_net = St_net(n_spatial, gdnn_embed_size, embed_type, freq)
 

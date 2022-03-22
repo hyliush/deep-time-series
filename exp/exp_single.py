@@ -117,7 +117,7 @@ class Exp_Single(Exp_Basic):
 
         self.model.eval()
         preds_lst, trues_lst = [], []
-        for i, batch in enumerate(test_loader):
+        for batch in tqdm(test_loader):
             pred, true = self.process_one_batch(test_data, batch)
             preds_lst.append(pred.detach().cpu()); trues_lst.append(true.detach().cpu())
         
@@ -137,12 +137,12 @@ class Exp_Single(Exp_Basic):
         if plot:
             # plot_pred(total_trues, preds)
             if self.args.pred_len > 1:
-                labels = test_data.dataset.labels["X"]
-                fig = map_plot_function(trues, preds, plot_visual_sample, labels, range(len(labels)), 168)
+                # labels = test_data.dataset.labels["X"]
+                labels = "HUFL,HULL,MUFL,MULL,LUFL,LULL,OT".split(',')
+                fig = map_plot_function(trues, preds, plot_visual_sample, labels, 168)
                 fig.savefig(f"./img/{self.args.model}_sample.jpg", bbox_inches='tight')
 
-                fig = map_plot_function(trues, preds, 
-                plot_values_distribution, labels, range(len(labels)), 168)
+                fig = map_plot_function(trues, preds, plot_values_distribution, labels, 48)
                 fig.savefig(f"./img/{self.args.model}_distribution.jpg", bbox_inches='tight')
             else:
                 map_plot_function(trues.reshape(120, -1, 1), preds.reshape(120, -1, 1), 

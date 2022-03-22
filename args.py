@@ -6,7 +6,8 @@ parser = argparse.ArgumentParser(description='Time Series Forecasting')
 parser.add_argument('--model', type=str, default='tpa',help='model of experiment, options: [lstm, \
 mlp, tpa, tcn, trans, gated, informerstack, informerlight(TBD)], autoformer, transformer,\
 edlstm, edgru, edgruattention')
-parser.add_argument('--data', type=str, default='Volatility1', help='data, [ETTh1, Ubiquant, Volatility]')
+parser.add_argument('--data', type=str, default='', help='only for revising some params related to the data, [ETTh1, Ubiquant, Volatility]')
+parser.add_argument('--dataset', type=str, default='Volatility', help='dataset, [ETTh1, Ubiquant, Volatility]')
 parser.add_argument('--data_path', type=str, default='./data/ToyData/', help='root path of the data file')
 parser.add_argument('--file_name', type=str, default='ETTh1.csv', help='file_name')
 parser.add_argument('--features', type=str, default='M', help='forecasting task, options:[M, S, MS]; M:multivariate predict multivariate, S:univariate predict univariate, MS:multivariate predict univariate')
@@ -23,7 +24,7 @@ parser.add_argument('--inverse', action='store_true', help='inverse output data'
 
 # training
 parser.add_argument('--train_epochs', type=int, default=100, help='train epochs')
-parser.add_argument('--batch_size', type=int, default=32, help='batch size of train input data')
+parser.add_argument('--batch_size', type=int, default=8, help='batch size of train input data')
 parser.add_argument('--activation', type=str, default='gelu',help='activation')
 parser.add_argument('--learning_rate', type=float, default=0.0001, help='optimizer learning rate')
 parser.add_argument('--loss', type=str, default='mse',help='loss function')
@@ -98,8 +99,7 @@ parser.add_argument('--gdnn_hidden_size2', type=int, default=50, help=' combined
 parser.add_argument('--gdnn_out_size', type=int, default=100, help='lstm output size')
 
 # deepar
-parser.add_argument('--dataset', default='elect', help='Name of the dataset')
-parser.add_argument('--data-folder', default='../timeseries-data', help='Parent dir of the dataset')
+parser.add_argument('--data_folder', default='../timeseries-data', help='Parent dir of the dataset')
 parser.add_argument('--model-name', default='base_model', help='Directory containing params.json')
 parser.add_argument('--relative-metrics', action='store_true', help='Whether to normalize the metrics by label scales')
 parser.add_argument('--sampling', action='store_true', help='Whether to sample during evaluation')
@@ -126,7 +126,9 @@ if args.use_gpu and args.use_multi_gpu:
     args.gpu = args.device_ids[0]
 
 data_parser = {
-    'ETTh1':{'data_path':'./data/ETT/', 'T':'OT','M':[7,7,7],'S':[1,1,1],'MS':[7,7,1]},
+    'ETTh1':{'data_path':'./data/ETT/', 'file_name':'ETTh1.csv',
+    'seq_len':672, 'label_len':1, "pred_len":671,
+    "features":"M", 'T':'OT','M':[7,7,7],'S':[1,1,1],'MS':[7,7,1]},
     'ETTh2':{'T':'OT','M':[7,7,7],'S':[1,1,1],'MS':[7,7,1]},
     'ETTm1':{'T':'OT','M':[7,7,7],'S':[1,1,1],'MS':[7,7,1]},
     'ETTm2':{'T':'OT','M':[7,7,7],'S':[1,1,1],'MS':[7,7,1]},
@@ -142,18 +144,13 @@ data_parser = {
     'Toy':{'data_path':'./data/ToyData', 'seq_len':96, 'label_len':0, "pred_len":24, "MS":[1,1,1], "T":"s"},
     'oze':{'seq_len':672, 'label_len':1, "pred_len":671, "M":[37,8,8], "T":"s"}
 }
-args.model = "autoformer"
-args.data = "ETTh1"
 if args.data in data_parser.keys():
     data_info = data_parser[args.data]
-    if "data_path" in data_info:
-        args.data_path = data_info["data_path"]
-    if 'freq' in data_info:
-        args.freq = data_info["freq"]
-    if 'seq_len' in data_info:
-        args.seq_len, args.label_len, args.pred_len = data_info['seq_len'], data_info['label_len'], data_info['pred_len']
+    args.data_path = data_info["data_path"]
+    args.file_name = data_info["file_name"]
+    args.seq_len, args.label_len, args.pred_len = data_info['seq_len'], data_info['label_len'], data_info['pred_len']
     args.target = data_info['T']
     args.enc_in, args.dec_in, args.out_size = data_info[args.features]
-    args.input_size = args.enc_in
-args.detail_freq = args.freq
-args.freq = args.freq[-1:]
+    if 'freq' in data_info:
+        args.freq = data_info["freq"]
+args.input_size = args.enc_in

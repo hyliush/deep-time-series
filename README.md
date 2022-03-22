@@ -3,8 +3,8 @@
 <!-- ![License CC BY-NC-SA](https://img.shields.io/badge/license-CC_BY--NC--SA--green.svg?style=plastic) -->
 
 &ensp; This repo included [a collection of models](#models-currently-supported) (transformers, attention models, GRUs) mainly focuses on the progress of time series forecasting using deep learning. It was originally collected for financial market forecasting, which has been organized into a unified framework for easier use.
-
-&ensp; For beginners, we recommend you read this [paper](https://arxiv.org/abs/2004.13408) or [the brief introduction](/What%20you%20need%20know%20before%20starting%20the%20project.pdf) we provided to learn about time series forecasting.
+&ensp; For beginners, we recommend you read this [paper](https://arxiv.org/abs/2004.13408) or [the brief introduction](/What%20you%20need%20know%20before%20starting%20the%20project.pdf) we provided to learn about time series forecasting. And read the [paper](https://arxiv.org/abs/2012.03854) for a more comprehensive understanding.
+&ensp;With limited ability and energy, we only test how well the repo works on a specific dataset. For problems in use, please leave an issue. The repo will be kept updated.
 
 
 ## Requirements
@@ -23,32 +23,55 @@ pip install -r requirements.txt
 
 ## Get Started
 1. Download data provided by the [repo](https://github.com/thuml/Autoformer). You can obtain all the six benchmarks from [Tsinghua Cloud](https://cloud.tsinghua.edu.cn/d/e1ccfff39ad541908bae/) or [Google Drive](https://drive.google.com/drive/folders/1ZOYpTUa82_jCcxIdTmyr0LXQfvaM9vIy?usp=sharing). __All the datasets are well pre-processed__ and can be used easily.
-2. Train the model. We provide the experiment scripts of all benchmarks under the folder ./scripts. You can reproduce the experiment results by:
-```bash
-bash ./scripts/ETT_script/Autoformer_ETTm1.sh
-bash ./scripts/ECL_script/Autoformer.sh
-bash ./scripts/Exchange_script/Autoformer.sh
-bash ./scripts/Traffic_script/Autoformer.sh
-bash ./scripts/Weather_script/Autoformer.sh
-bash ./scripts/ILI_script/Autoformer.sh
+2. Train the model and predict.
+   - Step1. set `model` e.g. "autoformer".
+   - Step2. set `dataset`, i.e.  assign a `Dataset` class to feed data into the pre-determined model.
+   - Step3. set some essential params included `data_path`, `file_name`,`seq_len`,`label_len`,`pred_len`,`features`,`T`,`M`,`S`,`MS`. Default params we has provided can be set from data_parser if `data` is provided.
+   - Other. Sometimes it is necessary to revise `_process_one_batch` and `_get_data` in `exp_main`.
+
+A simple command included three parameters correspond to the above three steps:
+```python 
+python -u main.py --model 'autoformer', --dataset 'ETTh1', --data "ETTh1"
 ```
-## Usage on customized data
-&ensp;**To run on your customized data**, a `DataSet` class must be provided in `dataloader.py`, then add the `Dataset` to `Exp_Basic.py`. Need to be noted that elements ejected from the `DataSet` class must conform to the model's requirement.
+
+## Usage on customized data(comming soon)
+&ensp;**To run on your customized data**, a `DataSet` class must be provided in `data_loader.py`, then add the `Dataset` to `Exp_Basic.py`. Need to be noted that elements ejected from the `DataSet` class must conform to the model's requirement.
 
 <span id="colablink">See Colab Examples for detail:</span> We provide google colabs to help reproducing and customing our repo, which includes `experiments(train and test)`, `forecasting`, `visualization` and `custom data`.
 <!-- [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1_X7O2BkFLvqyCdZzDZvV2MB0aAvYALLC) -->
 
-## Other
-Usually we will encounter three forms of data:
-1. multi files(usual caused by multi individual) which will cause oom if load all of them. Every separate file contaies train, vail, test.
-2. sigle file contaied train, vail, test.
-3. multi separate files (usual three) i.e. train, vail, test.
+## Simple Results on ETT
+Ses the [repo](https://github.com/zhouhaoyi/ETDataset) for more details on ETT dataset.
 
+Autoformer result for the task (only 2 epoches for train, test 300+ samples):
 
+<p align="center">
+<img src="./img/autoformer_sample.jpg" alt="" align=center />
+<br><br>
+<b>Figure 1.</b> Autoformer results (randomly choose a sample).
+</p>
 
-&ensp;For 1, we load a file (train, vail, test) dataset iteratively in a epoch until all files are loaded. For 2, 3, we load  train, vail, test dataset before starting training.
+<p align="center">
+<img src="./img/autoformer_distribution.jpg" alt="" align=center />
+<br><br>
+<b>Figure 2.</b> Autoformer results (values distribution).
+</p>
 
-### Models currently supported
+## Simple Results on Oze Challenge
+This challenge aims at introducing a new statistical model to predict and analyze energy consumptions and temperatures in a big building using observations stored in the Oze-Energies database. More details can be seen from the [repo](https://github.com/maxjcohen/ozechallenge_benchmark).
+A simple model(Seq2Seq) result for the task (only 2 epoches for train, test 2 samples):
+<p align="center">
+<img src="./img/edgru_sample.jpg" alt="" align=center />
+<br><br>
+<b>Figure 3.</b> GRU results (randomly choose a sample).
+</p>
+
+<p align="center">
+<img src="./img/edgru_distribution.jpg" alt="" align=center />
+<br><br>
+<b>Figure 4.</b> GRU results (values distribution).
+</p>
+## Models currently supported
 We will keep adding series forecasting models to expand this repo.
 | Year | Models |Tasks|
 | --- | --- |---|
@@ -66,29 +89,17 @@ We will keep adding series forecasting models to expand this repo.
 ||Reformer|many to many|
 ||Transformer XL|many to many|
 ||N-BEATS|
-
-
-
-## Results on Oze Challenge
-This challenge aims at introducing a new statistical model to predict and analyze energy consumptions and temperatures in a big building using observations stored in the Oze-Energies database. More details can be seen from the [repo](https://github.com/maxjcohen/ozechallenge_benchmark).
-A simple model(Seq2Seq) result for the task (only 2 epoches for train, test 2 samples):
-<p align="center">
-<img src="./img/edgru_sample.jpg" alt="" align=center />
-<br><br>
-<b>Figure 1.</b> GRU results (randomly choose a sample).
-</p>
-
-<p align="center">
-<img src="./img/edgru_distribution.jpg" alt="" align=center />
-<br><br>
-<b>Figure 2.</b> GRU results (values distribution).
-</p>
-
 ## DOING and TODO
 1. Add probability estimation function.
 2. Improve the network structure(especially attention network) according to our data scenario.
 3. Add Tensorboard to record exp.
+## About exp_single and exp_multi
+Usually we will encounter three forms of data:
+1. multi files(usual caused by multi individual) which will cause oom if load all of them. Every separate file contaies train, vail, test.
+2. sigle file contaied train, vail, test.
+3. multi separate files (usual three) i.e. train, vail, test.
 
+&ensp;For 1, we load a file (train, vail, test dataset) iteratively in a epoch until all files are loaded and fed to a model. i.e.`exp_multi.py`. For 2, 3, we load  train, vail, test dataset before starting training. i.e. `exp_single.py`.
 ## Contact
 If you have any questions, feel free to contact hyliu through Email (hyliu_sh@outlook.com) or Github issues. 
 ## Acknowlegements 
