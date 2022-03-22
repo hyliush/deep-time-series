@@ -13,7 +13,7 @@ for ii in range(args.itr):
     # set experiments
     exp = Exp_model(args)
 
-    train = False
+    train = True
     if train:
         print('>>>>>>>start training : {}>>>>>>>>>>>>>>>>>>>>>>>>>>'.format(setting))
         exp.train(setting)

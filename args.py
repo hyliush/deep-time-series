@@ -8,6 +8,7 @@ mlp, tpa, tcn, trans, gated, informerstack, informerlight(TBD)], autoformer, tra
 edlstm, edgru, edgruattention')
 parser.add_argument('--data', type=str, default='Volatility1', help='data, [ETTh1, Ubiquant, Volatility]')
 parser.add_argument('--data_path', type=str, default='./data/ToyData/', help='root path of the data file')
+parser.add_argument('--file_name', type=str, default='ETTh1.csv', help='file_name')
 parser.add_argument('--features', type=str, default='M', help='forecasting task, options:[M, S, MS]; M:multivariate predict multivariate, S:univariate predict univariate, MS:multivariate predict univariate')
 parser.add_argument('--criterion', type=str, default='mse', help='loss function')    
 
@@ -125,7 +126,7 @@ if args.use_gpu and args.use_multi_gpu:
     args.gpu = args.device_ids[0]
 
 data_parser = {
-    'ETTh1':{'T':'OT','M':[7,7,7],'S':[1,1,1],'MS':[7,7,1]},
+    'ETTh1':{'data_path':'./data/ETT/', 'T':'OT','M':[7,7,7],'S':[1,1,1],'MS':[7,7,1]},
     'ETTh2':{'T':'OT','M':[7,7,7],'S':[1,1,1],'MS':[7,7,1]},
     'ETTm1':{'T':'OT','M':[7,7,7],'S':[1,1,1],'MS':[7,7,1]},
     'ETTm2':{'T':'OT','M':[7,7,7],'S':[1,1,1],'MS':[7,7,1]},
@@ -138,11 +139,11 @@ data_parser = {
     'Ubiquant':{'data_path':'D:/IDEA/Spatial-temporal/ubiquant/ubiquantSeg',
     'freq':'b', 'T':'target','M':[45,45,45],'S':[1,1,1],'MS':[45,45,1],
     'seq_len':25, 'label_len':0, "pred_len":1},
-    'Toy':{'seq_len':96, 'label_len':0, "pred_len":24, "MS":[1,1,1], "T":"s"},
+    'Toy':{'data_path':'./data/ToyData', 'seq_len':96, 'label_len':0, "pred_len":24, "MS":[1,1,1], "T":"s"},
     'oze':{'seq_len':672, 'label_len':1, "pred_len":671, "M":[37,8,8], "T":"s"}
 }
-args.model = "edgru"
-args.data = "oze"
+args.model = "autoformer"
+args.data = "ETTh1"
 if args.data in data_parser.keys():
     data_info = data_parser[args.data]
     if "data_path" in data_info:

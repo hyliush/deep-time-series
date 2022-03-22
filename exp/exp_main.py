@@ -23,7 +23,7 @@ Exp = Exp_Single if args.single_file else Exp_Multi
 class Exp_model(Exp):
     def __init__(self, args):
         self.fileName_lst = os.listdir(args.data_path)
-        self.file_name = self.fileName_lst[0] if len(self.fileName_lst)<=3 else ""
+        self.file_name = args.file_name
         Exp_model.init_process_one_batch(args)
         super().__init__(args)
         self.__get_data()
@@ -70,7 +70,7 @@ class Exp_model(Exp):
                                     shuffle=False,
                                     num_workers=NUM_WORKERS
                                     )
-    def _get_data(self, file_name, flag):
+    def _get_data1(self, file_name, flag):
         if flag == "train":
             return self.dataset_train, self.dataloader_train
         if flag == "val":
@@ -78,7 +78,7 @@ class Exp_model(Exp):
         if flag == "test":
             return self.dataset_test, self.dataloader_test
 
-    def _get_data1(self, file_name, flag):
+    def _get_data(self, file_name, flag):
         args = self.args
         data_dict = {
             'ETTh1':Dataset_ETT_hour,
@@ -95,7 +95,7 @@ class Exp_model(Exp):
             'Toy': ToyDataset,
             'ToySeq2Seq': ToyDatasetSeq2Seq
         }
-        Data = data_dict[self.args.data+"Seq2Seq"] if "ed" in self.args.model or "former" in self.args.model else data_dict[self.args.data]
+        Data = data_dict[self.args.data] if "ed" in self.args.model or "former" in self.args.model else data_dict[self.args.data]
         timeenc = 0 if args.embed!='timeF' else 1
 
         if flag == 'test':
