@@ -3,7 +3,7 @@
 
 <!-- code_chunk_output -->
 
-- [What you need know before starting the project](#what-you-need-know-before-starting-the-project)
+- [What you need know before starting the repo](#what-you-need-know-before-starting-the-repo)
   - [TimeSeries Basic](#timeseries-basic)
     - [TimeSeries concept](#timeseries-concept)
     - [TimeSeries components](#timeseries-components)
@@ -18,7 +18,7 @@
 
 <!-- /code_chunk_output -->
 
-# What you need know before starting the project
+# What you need know before starting the repo
 ## TimeSeries Basic
 ### TimeSeries concept
 a time series is a series of data points indexed (or listed or graphed) in time order. Most commonly, a time series is a sequence taken at successive equally spaced points in time. Thus it is a sequence of discrete-time data. 
@@ -43,13 +43,14 @@ Deep learning in particular has gained popularity in recent times, inspired by n
 ### TimeSeries Forecasting Tasks
 TimeSeries forecasing tasks can be roughly classified from three perspectives in the table1.
 
-n.inputs|horizon|point or prob
----|---|---|---
-univariate|one-horizon|point
-multivariate|multi-horizon|probabilistic
+|n.inputs|horizon|point or prob|
+|---|---|---|---|
+|univariate|one-horizon|point|
+|multivariate|multi-horizon|probabilistic|
+
 &ensp;According to the number of input variables, it can be divided into univariate, multivariate time series forecasting. The difference is whether the input variables contain covariates. For example, when predicting future PM2.5 concentration, if only time information and historical PM2.5 are available, it is a univariate forecasting task. If the concentration of other pollutants such as PM10, O3 are available (i.e. covariates, the historical PM2.5 is included usually), it is called a multivariate forecasting task. Note that we don't just predict a single target variable, sometimes need predict PM2.5, PM10, and O3 at the same time. A single-output task can be easily transformed to a multi-output task by revised `out_size` in a network. 
 &ensp;According to the forecasting step size, it can be divided into one-horizon/step and multi-horizon/step forecasting. The former only predicts the target varible at one moment in the future, and the latter predicts the target varible at several moments in the future, which provides the decision maker the trend information of the target. 
-&ensp;**Borrowing concepts from the NLP domain, we mainly focus on the many-to-one (the third subplot that means single-horizon forecasting) and many-to-many task(the forth subplot that means multi-horizon forecasting) in this project (the many-to-many task showed in the last subplot is also viewed as multi-horizon forecasting in some articles and [challenge matches](https://github.com/maxjcohen/ozechallenge_benchmark)).**
+&ensp;**Borrowing concepts from the NLP domain, we mainly focus on the many-to-one (the third subplot that means single-horizon forecasting) and many-to-many task(the forth subplot that means multi-horizon forecasting) in this repo (the many-to-many task showed in the last subplot is also viewed as multi-horizon forecasting in some articles and [challenge matches](https://github.com/maxjcohen/ozechallenge_benchmark)).**
 
 <p align="center">
 <img src="./assets/tasks.png" alt="" align=center />
@@ -58,14 +59,14 @@ multivariate|multi-horizon|probabilistic
 </p>
 
 &ensp; Each rectangle is a vector and arrows represent functions (e.g. matrix multiply). Input vectors are in red, output vectors are in blue and green vectors hold the RNN's state (more on this soon). From left to right: (1) Vanilla mode of processing without RNN, from fixed-sized input to fixed-sized output (e.g. image classification). (2) Sequence output (e.g. image captioning takes an image and outputs a sentence of words). (3) Sequence input (e.g. sentiment analysis where a given sentence is classified as expressing positive or negative sentiment). (4) Sequence input and sequence output (e.g. Machine Translation: an RNN reads a sentence in English and then outputs a sentence in French). (5) Synced sequence input and output (e.g. video classification where we wish to label each frame of the video). Notice that in every case are no pre-specified constraints on the lengths sequences because the recurrent transformation (green) is fixed and can be applied as many times as we like. [source](http://karpathy.github.io/2015/05/21/rnn-effectiveness/)
-&ensp; At last, regardless of the form of the target, forecastings can be further divided into two different categories – point estimates and probabilistic forecasts. Many models only provide point forecasting but not probabilistic forecasting. Thus, we mainly focus on the former in the project.
+&ensp; At last, regardless of the form of the target, forecastings can be further divided into two different categories – point estimates and probabilistic forecasts. Many models only provide point forecasting but not probabilistic forecasting. Thus, we mainly focus on the former in the repo.
 
 #### Single-horizon forecasting
 &ensp;Since multivariate output can be easily obtained (as mentioned earlier), the following mainly focuses on univariate output.
 $$\hat{y}_{i, t+1}=f\left(y_{i, t-k: t}, \boldsymbol{x}_{i, t-k: t}, \boldsymbol{u}_{t-k: t+1}, \boldsymbol{s}_{i}\right)$$
 
 $\mu$ are known future inputs (e.g. date information), $y_{i, t-k: t}=\left\{y_{i, t-k}, \ldots, y_{i, t}\right\}$ are observations of the target, $\boldsymbol{x}_{i, t-k: t}=\left\{\boldsymbol{x}_{i, t-k}, \ldots, \boldsymbol{x}_{i, t}\right\}$ are exogenous inputs(covirates) that can only be observed historically over a look-back window $k,s_i$ is static metadata associated with the entity (e.g. age, sensor location, air monitoring station, stockid), and $f(.)$ is the forecasting function learnt by the model. While we focus on univariate forecasting in this survey (i.e. 1-D targets), we note that the same components can be extended to multivariate models without loss of generality. 
-&ensp;For notational simplicity , we omit the entity index $i$ in subsequent sections unless explicitly required. `In fact, when the dataset contains multiple entities, especially when the entities contain multiple variables, although the task can be viewed as time series prediction, we prefer to call it spatiotemporal prediction which is beyond the scope of this project.`
+&ensp;For notational simplicity , we omit the entity index $i$ in subsequent sections unless explicitly required. `In fact, when the dataset contains multiple entities, especially when the entities contain multiple variables, although the task can be viewed as time series prediction, we prefer to call it spatiotemporal prediction which is beyond the scope of this repo.`
 
 #### Multi-horizon forecasting
 $$\hat{y}_{t+1:t+\tau}=f\left(y_{t-k: t}, \boldsymbol{x}_{t-k: t}, \boldsymbol{u}_{t-k: t+\tau}, \boldsymbol{s} \right)$$

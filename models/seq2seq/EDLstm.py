@@ -15,11 +15,11 @@ class Encoder(nn.Module):
         self.embedding = DataEmbedding_ED(enc_in, emb_dim, embed, freq, dropout)
         self.rnn = nn.LSTM(emb_dim, hid_dim, n_layers, dropout = dropout, batch_first=True)
 
-    def forward(self, x_enc, x_mark_enc):
+    def forward(self, x_enc):
         
         #x_enc = [batch size, x_enc len, n_features]
         
-        embedded = self.embedding(x_enc, x_mark_enc)
+        embedded = self.embedding(x_enc)
         #embedded = [batch size, x_enc len, emb dim]
         
         outputs, (hidden, cell) = self.rnn(embedded)
@@ -44,7 +44,7 @@ class Decoder(nn.Module):
         
         self.fc_out = nn.Linear(hid_dim, dec_in)
         
-    def forward(self, input, input_mark, hidden, cell):
+    def forward(self, input, hidden, cell):
         
         #input = [batch size]
         #hidden = [n layers * n directions, batch size, hid dim]
@@ -55,7 +55,7 @@ class Decoder(nn.Module):
         #context = [n layers, batch size, hid dim]
         
         #input = [batch size, 1, n_features]
-        embedded = self.embedding(input, input_mark)
+        embedded = self.embedding(input)
         #embedded = [batch size, 1, emb dim]
                 
         output, (hidden, cell) = self.rnn(embedded, (hidden, cell))
@@ -93,7 +93,7 @@ class Lstm(nn.Module):
         assert self.encoder.n_layers == self.decoder.n_layers, \
             "Encoder and decoder must have equal number of layers!"
         
-    def forward(self, x_enc, x_mark_enc, x_dec, x_mark_dec):
+    def forward(self, x_enc, x_dec):
         if self.training:
             teacher_forcing_ratio = self.teacher_forcing_ratio
         else:
@@ -108,29 +108,33 @@ class Lstm(nn.Module):
         outputs = torch.zeros(batch_size, x_dec_len-1, dec_in).to(x_enc.device)
         
         #last hidden state of the encoder is used as the initial hidden state of the decoder
-        hidden, cell = self.encoder(x_enc, x_mark_enc)
+        hidden, cell = self.encoder(x_enc)
         
         #first input to the decoder is the <sos> tokens
-        input, input_mark = x_dec[:, 0, :].unsqueeze(dim=1), x_mark_dec[:, 0, :].unsqueeze(dim=1)
-
+        if isinstance(x_dec, list):
+            input = [i[:, 0, :].unsqueeze(dim=1) for i in x_dec]
+        else:
+            input = x_dec[:, 0, :].unsqueeze(dim=1)
         for t in range(1, x_dec_len):
             
             #insert input token embedding, previous hidden and previous cell states
             #receive output tensor (predictions) and new hidden and cell states
-            output, hidden, cell = self.decoder(input, input_mark, hidden, cell)
+            output, hidden, cell = self.decoder(input, hidden, cell)
             
             #place predictions in a tensor holding predictions for each token
-            outputs[:, t-1, :] = output.squeeze()
+            outputs[:, t-1, :] = output.squeeze(dim=1)
             
             #decide if we are going to use teacher forcing or not
             teacher_force = random.random() < teacher_forcing_ratio
 
             #if teacher forcing, use actual next token as next input
             #if not, use predicted token
-            input = x_dec[:, t, :].unsqueeze(dim=1) if teacher_force else output
-            input_mark = x_mark_dec[:, t, :].unsqueeze(dim=1)
+            if isinstance(x_dec, list):
+                input0 = x_dec[0][:, t, :].unsqueeze(dim=1) if teacher_force else output
+                input = [input0, x_dec[1][:, t, :].unsqueeze(dim=1)]
+            else:
+                input = x_dec[:, t, :].unsqueeze(dim=1) if teacher_force else output
         return outputs[:, :, -self.out_size:]
-
 
 if __name__ == '__main__':
 

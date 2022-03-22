@@ -14,11 +14,11 @@ class Encoder(nn.Module):
         self.rnn = nn.GRU(emb_dim, enc_hid_dim, bidirectional = True, batch_first=True)
         self.fc = nn.Linear(enc_hid_dim * 2, dec_hid_dim)
         
-    def forward(self, x_enc, x_mark_enc):
+    def forward(self, x_enc):
         
         #x_enc = [x_enc len, batch size]
         
-        embedded = self.embedding(x_enc, x_mark_enc)
+        embedded = self.embedding(x_enc)
         #embedded = [x_enc len, batch size, emb dim]
         
         outputs, hidden = self.rnn(embedded)
@@ -85,14 +85,14 @@ class Decoder(nn.Module):
         
         self.fc_out = nn.Linear((enc_hid_dim * 2) + dec_hid_dim + emb_dim, dec_in)
         
-    def forward(self, input, input_mark, hidden, encoder_outputs):
+    def forward(self, input, hidden, encoder_outputs):
              
         #hidden = [batch size, dec hid dim]
         #encoder_outputs = [batch size, x_enc len, enc hid dim * 2]
         
         #input = [1, batch size]
         
-        embedded = self.embedding(input, input_mark)
+        embedded = self.embedding(input)
         
         #embedded = [batch size, 1, emb dim]
         
@@ -140,7 +140,7 @@ class GruAttention(nn.Module):
         self.encoder = Encoder(enc_in, emb_dim, enc_hid_dim, dec_hid_dim, embed, freq, dropout)
         self.decoder = Decoder(dec_in, emb_dim, enc_hid_dim, dec_hid_dim, embed, freq, dropout, attention)
         
-    def forward(self, x_enc, x_mark_enc, x_dec, x_mark_dec):
+    def forward(self, x_enc, x_dec):
         
         #x_enc = [x_enc len, batch size, n_features]
         #x_dec = [x_dec len, batch size, n_features]
@@ -155,28 +155,34 @@ class GruAttention(nn.Module):
         outputs = torch.zeros(batch_size, x_dec_len-1, dec_in).to(x_enc.device)
         
         #last hidden state of the encoder is the context
-        encoder_outputs, hidden = self.encoder(x_enc, x_mark_enc)
+        encoder_outputs, hidden = self.encoder(x_enc)
         
         #first input to the decoder is the <sos> tokens
-        input, input_mark = x_dec[:, 0, :].unsqueeze(dim=1), x_mark_dec[:, 0, :].unsqueeze(dim=1)
-        
+        if isinstance(x_dec, list):
+            input = [i[:, 0, :].unsqueeze(dim=1) for i in x_dec]
+        else:
+            input = x_dec[:, 0, :].unsqueeze(dim=1)
         for t in range(1, x_dec_len):
             
             #insert input token embedding, previous hidden state and the context state
             #receive output tensor (predictions) and new hidden state
-            output, hidden = self.decoder(input, input_mark, hidden, encoder_outputs)
+            output, hidden = self.decoder(input, hidden, encoder_outputs)
             
             #place predictions in a tensor holding predictions for each token
-            outputs[:, t-1, :] = output.squeeze()
+            outputs[:, t-1, :] = output.squeeze(dim=1)
             
             #decide if we are going to use teacher forcing or not
             teacher_force = random.random() < teacher_forcing_ratio
             
             #if teacher forcing, use actual next token as next input
             #if not, use predicted token
-            input = x_dec[:, t, :].unsqueeze(dim=1) if teacher_force else output
-            input_mark = x_mark_dec[:, t, :].unsqueeze(dim=1)
+            if isinstance(x_dec, list):
+                input0 = x_dec[0][:, t, :].unsqueeze(dim=1) if teacher_force else output
+                input = [input0, x_dec[1][:, t, :].unsqueeze(dim=1)]
+            else:
+                input = x_dec[:, t, :].unsqueeze(dim=1) if teacher_force else output
         return outputs[:, :, -self.out_size:]
+       
 if __name__ == '__main__':
     enc_in, dec_in, emb_dim, enc_hid_dim, dec_hid_dim = 45, 45, 512, 512, 512
     batch_size, seq_len = 32, 10

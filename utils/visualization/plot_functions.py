@@ -13,8 +13,8 @@ def plot_pred(total_trues, total_preds, pred_idx=0, span=300):
     start_idx = np.random.choice(total_trues.shape[0]-span+1, 1)[0]
     plt.plot(lst1[start_idx:start_idx+span])
     plt.plot(lst2[start_idx:start_idx+span])
-    plt.plot(lst1[start_idx:start_idx+span], "o")
-    plt.plot(lst2[start_idx:start_idx+span], "o")
+    # plt.plot(lst1[start_idx:start_idx+span], "o")
+    # plt.plot(lst2[start_idx:start_idx+span], "o")
     plt.show()
     return
 
@@ -48,7 +48,7 @@ def plot_errors_threshold(y_true, y_pred, ax, error_band=0.1, unit='', **kwargs)
     ax.axhline(y=error_band*100, color='black')
     ax.text(25, error_band*100+0.5, f'{int(error_band*100)}%')
 
-    ax.set_xlabel('time (hour)')
+    ax.set_xlabel('timesteps')
     ax.set_ylabel('% mispredicted')
     ax.legend()
 
@@ -61,7 +61,7 @@ def plot_dataset_distribution(x, ax, alpha=0.4, unit='', **kwargs):
     sns.stripplot(data=x, linewidth=0, color='b',
                 alpha=alpha, zorder=1, marker='.', s=8, ax=ax)
 
-    ax.set_xlabel('time (hour)')
+    ax.set_xlabel('timesteps')
     ax.legend()
 
 
@@ -78,7 +78,7 @@ def plot_values_distribution(y_true, y_pred, ax, alpha=0.4, unit='', **kwargs):
     sns.stripplot(data=y_pred, linewidth=0, color='b',
                   alpha=alpha, zorder=1, marker='.', s=8, ax=ax)
 
-    ax.set_xlabel('time (hour)')
+    ax.set_xlabel('timesteps')
     ax.set_ylabel(unit)
     ax.legend()
 
@@ -90,7 +90,7 @@ def plot_error_distribution(y_true, y_pred, ax, alpha=0.4, unit='', **kwargs):
     sns.stripplot(data=diff, linewidth=0, color='orange',
                   alpha=alpha, zorder=1, marker='.', s=8, ax=ax)
 
-    ax.set_xlabel('time (hour)')
+    ax.set_xlabel('timesteps')
     ax.set_ylabel(unit)
     ax.legend()
 
@@ -105,6 +105,6 @@ def plot_visual_sample(y_true, y_pred, ax, unit='', **kwargs):
     ax.plot(y_true, label="Truth")
     ax.plot(y_pred, label="Prediction")
 
-    ax.set_xlabel('time (hour)')
+    ax.set_xlabel('timesteps')
     ax.set_ylabel(unit)
     ax.legend()
