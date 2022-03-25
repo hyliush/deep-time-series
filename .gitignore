@@ -9,3 +9,5 @@
 /__pycache__
 /toydata.ipynb
 /utils/visualization/__pycache__
+/test.py
+/cache

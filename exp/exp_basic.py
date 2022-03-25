@@ -50,8 +50,8 @@ class Exp_Basic(object):
             outputs = outputs[0]
         if self.args.inverse:
             outputs = dataset_object.inverse_transform(outputs)
-        f_dim = -1 if self.args.features=='MS' else 0
-        batch_y = batch_y[:,-self.args.pred_len:,f_dim:]
+        f_dim = [self.args.target_pos] if self.args.features=='MS' else ...
+        batch_y = batch_y[:,-self.args.pred_len:,f_dim]
         return outputs, batch_y
 
     def _acquire_device(self):

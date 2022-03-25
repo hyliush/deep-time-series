@@ -470,8 +470,9 @@ class VolatilityDataSetNoraml(DatasetBase):
 
     def __read_data__(self):
         self.scaler = StandardScaler()
-        df_raw = pd.read_csv(os.path.join(self.data_path,
-                                          self.file_name))
+        from fastNLP import cache_results
+        # @cache_results(_cache_fp=None)
+        df_raw = pd.read_csv(os.path.join(self.data_path, self.file_name))
         df_raw = df_raw.drop(columns=["stock_id", "target", "weekday", "time_id", "holiday_name", "holiday_tag", "holiday_tag_cumsum"])
         df_raw = df_raw.rename(columns={"Date":"date"})
         length = len(df_raw) - 1

@@ -1,5 +1,17 @@
 import numpy as np
 import torch
+import time
+
+def timmer(func):
+    def deco(*args, **kwargs):
+        # print('\n函数：{_funcname_}开始运行：'.format(_funcname_=func.__name__))
+        start_time = time.time()
+        res = func(*args, **kwargs)
+        end_time = time.time()
+        print(end_time - start_time)
+        #print('函数:{_funcname_}运行了 {_time_}秒'.format(_funcname_=func.__name__, _time_=(end_time - start_time)))
+        return res
+    return deco
 
 def adjust_learning_rate(optimizer, epoch, args):
     # lr = args.learning_rate * (0.2 ** (epoch // 2))

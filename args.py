@@ -10,16 +10,18 @@ parser.add_argument('--data', type=str, default='', help='only for revising some
 parser.add_argument('--dataset', type=str, default='Volatility', help='dataset, [ETTh1, Ubiquant, Volatility]')
 parser.add_argument('--data_path', type=str, default='./data/ToyData/', help='root path of the data file')
 parser.add_argument('--file_name', type=str, default='ETTh1.csv', help='file_name')
-parser.add_argument('--features', type=str, default='M', help='forecasting task, options:[M, S, MS]; M:multivariate predict multivariate, S:univariate predict univariate, MS:multivariate predict univariate')
 parser.add_argument('--criterion', type=str, default='mse', help='loss function')    
 
 # data
+parser.add_argument('--features', type=str, default='M', help='forecasting task, options:[M, S, MS]; M:multivariate predict multivariate, S:univariate predict univariate, MS:multivariate predict univariate')
+# if features == "MS" or "S", need to provide target and target_pos
 parser.add_argument('--target', type=str, default='OT', help='target feature in S or MS task')
+parser.add_argument('--target_pos', type=int, default=-1, help='target feature position')
+parser.add_argument('--cols', type=str, nargs='+', help='certain cols from the data files as the input features')
 parser.add_argument('--freq', type=str, default='h', help='freq for time features encoding, options:[s:secondly, t:minutely, h:hourly, d:daily, b:business days, w:weekly, m:monthly], you can also use more detailed freq like 15min or 3h')
 parser.add_argument('--seq_len', type=int, default=672, help='input sequence length of Informer encoder')
 parser.add_argument('--label_len', type=int, default=1, help='start token length of Informer decoder')
 parser.add_argument('--pred_len', type=int, default=671, help='prediction sequence length')
-parser.add_argument('--cols', type=str, nargs='+', help='certain cols from the data files as the input features')
 parser.add_argument('--inverse', action='store_true', help='inverse output data', default=False)
 
 # training

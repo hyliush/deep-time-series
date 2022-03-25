@@ -47,6 +47,8 @@ class TPA(nn.Module):
                 args.tpa_n_layers,\
                 args.tpa_ar_len,\
                 args.out_size
+        self.target_pos = args.target_pos
+        self.ar_len = tpa_ar_len
 
         self.input_proj = nn.Linear(input_size, tpa_hidden_size)
         self.lstm = nn.LSTM(input_size=tpa_hidden_size, hidden_size=tpa_hidden_size,
@@ -55,8 +57,6 @@ class TPA(nn.Module):
         
         self.out_proj = nn.Linear(tpa_hidden_size, out_size) #多变量预测，改为pred_len，则为多步预测
 
-        self.ar_len = tpa_ar_len
-        self.out_size = out_size
         pred_len = 1
         self.ar = nn.Linear(self.ar_len, pred_len) # 当预测多个序列时，实际上共享了AR参数了，一种解决办法，设置多个ar层分别处理不同序列
 
@@ -66,7 +66,7 @@ class TPA(nn.Module):
         hs, (ht, _) = self.lstm(px) # hs 最后一层，所有步， batch_size * seq_len * hidden_size
         ht = ht[-1] # 最后一层，最后一步的hidden_state, batch_size * hidden_size
         final_h = self.att(hs, ht)  # 最后一步的ht'， fig2
-        ar_out = self.ar(x[:, -self.ar_len:, -self.out_size:].transpose(1, 2))[:, :, 0]
+        ar_out = self.ar(x[:, -self.ar_len:, self.target_pos].transpose(1, 2))[:, :, 0]
         out = self.out_proj(final_h) + ar_out
         out = out.unsqueeze(1) # add timesereis dim 
         return out

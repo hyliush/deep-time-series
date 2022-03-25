@@ -74,7 +74,7 @@ class Exp_model(Exp):
             flag=flag,
             size=[args.seq_len, args.label_len, args.pred_len],
             features=args.features,
-            target=args.target,
+            target=args.target_col,
             inverse=args.inverse,
             timeenc=timeenc,
             freq=freq,

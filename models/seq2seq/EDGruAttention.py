@@ -3,7 +3,6 @@ import random
 import torch
 import torch.nn.functional as F
 import sys
-sys.path.append("d:\\IDEA\\Spatial-temporal\\deep-time-series")
 from layers.Embed import DataEmbedding_ED
 
 class Encoder(nn.Module):
