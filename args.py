@@ -158,9 +158,10 @@ args.dataset = "ETTh1"
 
 if args.data in data_parser.keys():
     data_info = data_parser[args.data]
-    args.data_path = data_info["data_path"]
-    args.file_name = data_info["file_name"]
-    args.single_file = data_info["single_file"]
+    args.data_path = data_info.get("data_path")
+    args.file_name = data_info.get("file_name")
+    args.features = data_info.get("features") or args.features
+    args.single_file = args.single_file or data_info.get("single_file")
     args.seq_len, args.label_len, args.pred_len = data_info['seq_len'], data_info['label_len'], data_info['pred_len']
     args.target = data_info['T']
     args.enc_in, args.dec_in, args.out_size = data_info[args.features]
