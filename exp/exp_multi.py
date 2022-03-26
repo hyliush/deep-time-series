@@ -40,7 +40,7 @@ class Exp_Multi(Exp_Basic):
             epoch_train_steps_count, epoch_train_steps = 0, 0
             total_train_loss = []
             for file_idx, file_name in enumerate(tqdm(self.fileName_lst), 1):
-                train_data, train_loader = self._get_data(file_name = file_name, flag = 'train')
+                train_loader = self._get_data(file_name = file_name, flag = 'train')
                 train_steps = len(train_loader)
                 epoch_train_steps_count += train_steps
 
@@ -49,7 +49,7 @@ class Exp_Multi(Exp_Basic):
                     epoch_train_steps += 1
                     
                     model_optim.zero_grad()
-                    batch_out= self.process_one_batch(train_data, batch)
+                    batch_out= self.process_one_batch(batch)
                     loss = criterion(*batch_out)
                     running_loss += loss.item()
                     
@@ -84,14 +84,14 @@ class Exp_Multi(Exp_Basic):
         self.model.load_state_dict(torch.load(best_model_path))
         return self.model
 
-    def _vali(self, val_data, val_loader, criterion):
+    def _vali(self, val_loader, criterion):
         # 区别于_test, 不需要保存和loss测度
         self.model.eval()
         
         preds, trues = [], []
         running_loss = 0
         for i, batch in enumerate(val_loader):
-            pred, true = self.process_one_batch(val_data, batch)
+            pred, true = self.process_one_batch(batch)
             pred, true = pred.detach().cpu(), true.detach().cpu()
             preds.append(pred); trues.append(true)
             
@@ -104,10 +104,10 @@ class Exp_Multi(Exp_Basic):
 
     def vali(self, flag, criterion):
         
-        total_loss, total_preds, total_trues =[], []
+        total_loss, total_preds, total_trues =[], [], []
         for file_name in self.fileName_lst:
-            val_data, val_loader = self._get_data(file_name, flag=flag)
-            preds, trues, loss = self._vali(val_data, val_loader, criterion)
+            val_loader = self._get_data(file_name, flag=flag)
+            preds, trues, loss = self._vali(val_loader, criterion)
             total_preds.append(preds)
             total_trues.append(trues)
             total_loss.append(loss)
@@ -119,11 +119,11 @@ class Exp_Multi(Exp_Basic):
         self.model.train()
         return total_loss, (mae, mse, rmse, mape, mspe)
 
-    def _test(self, test_data, test_loader, file_path):                
+    def _test(self, test_loader, file_path):                
         self.model.eval()
         preds_lst, trues_lst = [], []
         for i, batch in enumerate(test_loader):
-            pred, true = self.process_one_batch(test_data, batch)
+            pred, true = self.process_one_batch(batch)
             preds_lst.append(pred.detach().cpu()); trues_lst.append(true.detach().cpu())
         
         preds, trues = np.concatenate(preds_lst), np.concatenate(trues_lst)
@@ -154,13 +154,14 @@ class Exp_Multi(Exp_Basic):
         total_preds_lst, total_trues_lst = [], []
         
         for file_name in self.fileName_lst:
-            test_data, test_loader = self._get_data(file_name, flag='test')
+            test_loader = self._get_data(file_name, flag='test')
 
-            file_path = folder_path+f'{file_name[:-4]}' if len(self.fileName_lst)>1 else None
-            preds, trues = self._test(test_data, test_loader, file_path)
+            file_path = folder_path+f'{file_name[:-4]}'
+            preds, trues = self._test(test_loader, file_path)
             # inverse
-            preds = test_data.inverse_transform(preds)[..., -1:]
-            trues = test_data.inverse_transform(trues)[..., -1:]
+            if self.args.inverse:
+                preds = test_loader.dataset.inverse_transform(preds)[..., -1:]
+                trues = test_loader.dataset.inverse_transform(trues)[..., -1:]
             total_preds_lst.append(preds)
             total_trues_lst.append(trues)
         
@@ -178,7 +179,7 @@ class Exp_Multi(Exp_Basic):
             # plot_pred(total_trues, total_preds)
             if self.args.pred_len > 1:
                 map_plot_function(total_trues, total_preds, 
-                plot_values_distribution, ['volitility'], [0], self.args.pred_len)
+                plot_values_distribution, ['volitility'], self.args.pred_len)
             else:
                 map_plot_function(total_trues.reshape(120, -1, 1), total_preds.reshape(120, -1, 1), 
-                plot_values_distribution, ['volitility'], [0], 6)
+                plot_values_distribution, ['volitility'], 6)

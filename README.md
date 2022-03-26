@@ -95,7 +95,7 @@ We will keep adding series forecasting models to expand this repo.
 |2021|[Autoformer: Decomposition Transformers with Auto-Correlation for Long-Term Series Forecasting](https://arxiv.org/abs/2106.13008)|many to many|
 ||Reformer|many to many|
 ||Transformer XL|many to many|
-||[N-BEATS: Neural basis expansion analysis for interpretable time series forecasting](https://arxiv.org/abs/1905.10437)|
+|-2019|[N-BEATS: Neural basis expansion analysis for interpretable time series forecasting](https://arxiv.org/abs/1905.10437)|
 
 ## DOING and TODO
 1. Add probability estimation function.

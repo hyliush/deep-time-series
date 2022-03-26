@@ -40,7 +40,7 @@ class Exp_Basic(object):
     def _process_one_batch(self):
          raise NotImplementedError
          return
-    def process_one_batch(self, dataset_object, batch):
+    def process_one_batch(self, batch):
         if self.args.use_amp:
             with torch.cuda.amp.autocast():
                 outputs, batch_y = self._process_one_batch(batch)
@@ -49,7 +49,7 @@ class Exp_Basic(object):
         if self.args.output_hidden:
             outputs = outputs[0]
         if self.args.inverse:
-            outputs = dataset_object.inverse_transform(outputs)
+            outputs = self.dataset.inverse_transform(outputs)
         f_dim = [self.args.target_pos] if self.args.features=='MS' else ...
         batch_y = batch_y[:,-self.args.pred_len:,f_dim]
         return outputs, batch_y

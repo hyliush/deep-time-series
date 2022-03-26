@@ -7,6 +7,27 @@ T = TypeVar('T')
 from torch._utils import _accumulate
 from torch import randperm
 import torch
+from torch.utils.data import Sampler
+
+class SubsetSequentialSampler(Sampler[int]):
+    r"""Samples elements Sequentially from a given list of indices, without replacement.
+
+    Arguments:
+        indices (sequence): a sequence of indices
+        generator (Generator): Generator used in sampling.
+    """
+    indices: Sequence[int]
+
+    def __init__(self, indices: Sequence[int], generator=None) -> None:
+        self.indices = indices
+        self.generator = generator
+
+    def __iter__(self):
+        return (self.indices[i] for i in torch.arange(len(self.indices)))
+
+    def __len__(self):
+        return len(self.indices)
+
 class Subset(Dataset[T_co]):
     r"""
     Subset of a dataset at specified indices.

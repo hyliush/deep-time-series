@@ -1,29 +1,27 @@
 from exp.exp_multi import Exp_Multi
 from exp.exp_single import Exp_Single
-from models.Gdnn import Gdnn
-from models.TCN import TCN
-from models.TPA import TPA
-from models.Trans import Trans
-from models.seq2seq import Informer, Autoformer, Transformer, GruAttention, Gru, Lstm
-from models.DeepAR import DeepAR
-from models.Lstm import BenchmarkLstm
-from models.Mlp import BenchmarkMlp
 from utils import logger
-from utils.data import order_split
-from data.data_loader import Dataset_ETT_hour, Dataset_ETT_minute, Dataset_Custom, Dataset_Pred, ToyDatasetSeq2Seq, UbiquantDataSetNoraml, VolatilityDataSetSeq2Seq, ToyDataset,VolatilityDataSetNoraml
-from torch.utils.data import DataLoader, random_split
+from torch.utils.data import SubsetRandomSampler
+from utils.data import SubsetSequentialSampler
+from torch.utils.data import DataLoader
 import torch
 import torch.nn as nn
 import os
+from args import args
+from utils.constants import model_dict, dataset_dict
+Exp = Exp_Single if args.single_file else Exp_Multi
 import warnings
 warnings.filterwarnings('ignore')
-from args import args
-Exp = Exp_Single if args.single_file else Exp_Multi
 
 class Exp_model(Exp):
     def __init__(self, args):
+        # for multi
         self.fileName_lst = os.listdir(args.data_path)
-        self.file_name = args.file_name
+        # for single
+        self.train_filename, self.val_filename, *self.test_filename = \
+        [args.file_name]*3 if isinstance(args.file_name, str) else args.file_name
+
+        self.tmp_dataset = None
         Exp_model.init_process_one_batch(args)
         super().__init__(args)
 
@@ -42,67 +40,40 @@ class Exp_model(Exp):
         pass
 
     def _get_data(self, file_name, flag):
-        args = self.args
-        dataset_dict = {
-            'ETTh1':Dataset_ETT_hour,
-            'ETTh2':Dataset_ETT_hour,
-            'ETTm1':Dataset_ETT_minute,
-            'ETTm2':Dataset_ETT_minute,
-            'WTH':Dataset_Custom,
-            'ECL':Dataset_Custom,
-            'Solar':Dataset_Custom,
-            'custom':Dataset_Custom,
-            'Volatility':VolatilityDataSetNoraml,
-            'VolatilitySeq2Seq':VolatilityDataSetSeq2Seq,
-            'Ubiquant':UbiquantDataSetNoraml,
-            'Toy': ToyDataset,
-            'ToySeq2Seq': ToyDatasetSeq2Seq
-        }
-        DataSet = dataset_dict[self.args.dataset]
-        timeenc = 0 if args.embed!='timeF' else 1
+        if  not hasattr(self.tmp_dataset, "file_name") or self.tmp_dataset.file_name != file_name:
+            DataSet = dataset_dict[self.args.dataset]
+            timeenc = 0 if self.args.embed!='timeF' else 1
+
+            self.tmp_dataset = DataSet(
+                data_path=self.args.data_path,
+                file_name=file_name, # 决定了全部数据集还是部分数据集
+                size=[self.args.seq_len, self.args.label_len, self.args.pred_len],
+                features=self.args.features,
+                target=self.args.target,
+                inverse=self.args.inverse,
+                timeenc=timeenc,
+                freq=self.args.freq,
+                cols=self.args.cols)
+            logger.debug(flag, len(self.tmp_dataset))
+            if flag == "train":
+                self.dataset = self.tmp_dataset
 
         if flag == 'test':
-            shuffle_flag = False; drop_last = False; batch_size = 1; freq=args.freq
-        elif flag=='pred':
-            shuffle_flag = False; drop_last = False; batch_size = 1; freq=args.detail_freq
-            DataSet = Dataset_Pred
+            drop_last = False; batch_size = 1; sampler = SubsetSequentialSampler
         else:
-            shuffle_flag = True; drop_last = False; batch_size = args.batch_size; freq=args.freq
-        data_set = DataSet(
-            data_path=args.data_path,
-            file_name=file_name,
-            flag=flag,
-            size=[args.seq_len, args.label_len, args.pred_len],
-            features=args.features,
-            target=args.target_col,
-            inverse=args.inverse,
-            timeenc=timeenc,
-            freq=freq,
-            cols=args.cols
-        )
-        logger.debug(flag, len(data_set))
-        data_loader = DataLoader(data_set, batch_size=batch_size,
-            shuffle=shuffle_flag, num_workers=args.num_workers, drop_last=drop_last)
+            drop_last = False; batch_size = self.args.batch_size; sampler = SubsetRandomSampler
+        if hasattr(self.tmp_dataset, flag+"_idxs"):
+            idxs = getattr(self.tmp_dataset, flag+"_idxs")
+        else:
+            raise("flag error")
 
-        return data_set, data_loader
+        data_loader = DataLoader(self.tmp_dataset, batch_size=batch_size, sampler=sampler(idxs),
+            num_workers=self.args.num_workers, drop_last=drop_last)
+            
+        return data_loader
+
 
     def _build_model(self):
-        model_dict = {
-            'edlstm': Lstm,
-            'edgru': Gru,
-            'edgruattention':GruAttention,
-            'informer':Informer,
-            'transformer': Transformer,
-            'autoformer': Autoformer,
-            'mlp':BenchmarkMlp,
-            'lstm':BenchmarkLstm,
-            'tcn':TCN,
-            'tpa':TPA,
-            'trans':Trans,
-            'gated':Gdnn,
-            'deepar':DeepAR
-        }
-
         if self.args.model=='informer' or self.args.model=='informerstack':
             self.args.e_layers = self.args.e_layers if self.args.model=='informer' else self.args.s_layers
         model = model_dict[self.args.model](self.args).float()

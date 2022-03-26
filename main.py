@@ -3,10 +3,6 @@ from utils import logger
 from args import args
 from exp.exp_main import Exp_model
 
-# args.model = "autoformer"
-# args.dataset = "ETTh1"
-# args.data = "ETTh1"
-
 for ii in range(args.itr):
     # setting record of experiments
     setting = '{}_{}_ft{}_sl{}_ll{}_pl{}_is{}_os{}_{}_{}'.format(
@@ -18,7 +14,7 @@ for ii in range(args.itr):
     # set experiments
     exp = Exp_model(args)
     
-    train = False
+    train = True
     if train:
         print('>>>>>>>start training : {}>>>>>>>>>>>>>>>>>>>>>>>>>>'.format(setting))
         exp.train(setting)

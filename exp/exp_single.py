@@ -38,8 +38,8 @@ class Exp_Single(Exp_Basic):
         if self.args.use_amp:
             scaler = torch.cuda.amp.GradScaler()
         
-        train_data, train_loader = self._get_data(file_name=self.file_name, flag='train')
-        val_data, val_loader = self._get_data(file_name=self.file_name, flag='val')
+        train_loader = self._get_data(file_name=self.train_filename, flag='train')
+        val_loader = self._get_data(file_name=self.val_filename, flag='val')
         
         for idx_epoch in range(self.args.train_epochs):
             self.model.train()
@@ -49,7 +49,7 @@ class Exp_Single(Exp_Basic):
             with tqdm(total=len(train_loader), desc=f"[Epoch {idx_epoch+1:3d}/{self.args.train_epochs}]") as pbar:
                 for idx_batch, batch in enumerate(train_loader):
                     model_optim.zero_grad()
-                    batch_out= self.process_one_batch(train_data, batch)
+                    batch_out= self.process_one_batch(batch)
                     loss = criterion(*batch_out)
                     running_loss += loss.item()
 
@@ -66,7 +66,7 @@ class Exp_Single(Exp_Basic):
                         loss.backward()
                         model_optim.step()
 
-                vali_loss, vali_metrics = self.vali(val_data, val_loader, criterion)
+                vali_loss, vali_metrics = self.vali(val_loader, criterion)
                 train_loss = running_loss/len(train_loader)
                 # epoch损失记录
                 logger.info("Epoch: {} | Train Loss: {:.7f} Vali Loss: {:.7f} cost time: {}".format(
@@ -82,14 +82,14 @@ class Exp_Single(Exp_Basic):
         
         return self.model
 
-    def vali(self, val_data, val_loader, criterion):
+    def vali(self, val_loader, criterion):
         # 区别于_test, 不需要保存和loss测度
         self.model.eval()
         
         preds, trues = [], []
         running_loss = 0
         for i, batch in enumerate(val_loader):
-            pred, true = self.process_one_batch(val_data, batch)
+            pred, true = self.process_one_batch(batch)
             pred, true = pred.detach().cpu(), true.detach().cpu()
             preds.append(pred); trues.append(true)
             
@@ -104,7 +104,7 @@ class Exp_Single(Exp_Basic):
 
     def test(self, setting, load=False, plot=True):
         # test承接train之后模型，为保证单独使用test，增加load参数
-        test_data, test_loader = self._get_data(file_name=self.file_name, flag='test')
+        test_loader = self._get_data(file_name=self.test_filename, flag='test')
         if load:
             path = os.path.join(self.args.checkpoints, setting)
             best_model_path = path+'/'+'checkpoint.pth'
@@ -118,7 +118,7 @@ class Exp_Single(Exp_Basic):
         self.model.eval()
         preds_lst, trues_lst = [], []
         for batch in tqdm(test_loader):
-            pred, true = self.process_one_batch(test_data, batch)
+            pred, true = self.process_one_batch(batch)
             preds_lst.append(pred.detach().cpu()); trues_lst.append(true.detach().cpu())
         
         preds, trues = np.concatenate(preds_lst), np.concatenate(trues_lst)
@@ -127,9 +127,9 @@ class Exp_Single(Exp_Basic):
         mae, mse, rmse, mape, mspe = metric(preds, trues)
         logger.info('mse:{}, mae:{}'.format(mse, mae))
 
-        # inverse
-        # preds = test_data.inverse_transform(preds)[..., -1:]
-        # trues = test_data.inverse_transform(trues)[..., -1:]
+        if self.args.inverse:
+            preds = test_loader.dataset.inverse_transform(preds)[..., -1:]
+            trues = test_loader.dataset.inverse_transform(trues)[..., -1:]
 
         np.save(folder_path+'metrics.npy', np.array([mae, mse, rmse, mape, mspe]))
         np.save(folder_path+'pred.npy', preds)
@@ -146,4 +146,4 @@ class Exp_Single(Exp_Basic):
                 fig.savefig(f"./img/{self.args.model}_distribution.jpg", bbox_inches='tight')
             else:
                 map_plot_function(trues.reshape(120, -1, 1), preds.reshape(120, -1, 1), 
-                plot_values_distribution, ['volitility'], [0], 6)
+                plot_values_distribution, ['volitility'], 6)

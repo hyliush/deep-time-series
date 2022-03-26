@@ -13,7 +13,7 @@ parser.add_argument('--file_name', type=str, default='ETTh1.csv', help='file_nam
 parser.add_argument('--criterion', type=str, default='mse', help='loss function')    
 
 # data
-parser.add_argument('--features', type=str, default='M', help='forecasting task, options:[M, S, MS]; M:multivariate predict multivariate, S:univariate predict univariate, MS:multivariate predict univariate')
+parser.add_argument('--features', type=str, default='MS', help='forecasting task, options:[M, S, MS]; M:multivariate predict multivariate, S:univariate predict univariate, MS:multivariate predict univariate')
 # if features == "MS" or "S", need to provide target and target_pos
 parser.add_argument('--target', type=str, default='OT', help='target feature in S or MS task')
 parser.add_argument('--target_pos', type=int, default=-1, help='target feature position')
@@ -130,7 +130,7 @@ if args.use_gpu and args.use_multi_gpu:
 data_parser = {
     'ETTh1':{'data_path':'./data/ETT/', 'file_name':'ETTh1.csv',
     'seq_len':672, 'label_len':1, "pred_len":671,
-    "features":"M", 'T':'OT','M':[7,7,7],'S':[1,1,1],'MS':[7,7,1]},
+    "features":"M", 'T':'OT','M':[7,7,7],'S':[1,1,1],'MS':[7,7,1], "single_file":True},
     'ETTh2':{'T':'OT','M':[7,7,7],'S':[1,1,1],'MS':[7,7,1]},
     'ETTm1':{'T':'OT','M':[7,7,7],'S':[1,1,1],'MS':[7,7,1]},
     'ETTm2':{'T':'OT','M':[7,7,7],'S':[1,1,1],'MS':[7,7,1]},
@@ -138,18 +138,29 @@ data_parser = {
     'ECL':{'T':'MT_320','M':[321,321,321],'S':[1,1,1],'MS':[321,321,1]},
     'Solar':{'T':'POWER_136','M':[137,137,137],'S':[1,1,1],'MS':[137,137,1]},
     'Volatility':{'data_path':'D:/News_topics/RV-predictability/save_file/volatility_tmp',
+    "single_file":False, 'file_name':"",# if multi_file, not to provide, 
     'freq':'b', 'T':'rv','M':[45,45,45],'S':[1,1,1],'MS':[45,45,1],
-    'seq_len':10, 'label_len':1, "pred_len":1},
+    'seq_len':10, 'label_len':2, "pred_len":1},
     'Ubiquant':{'data_path':'D:/IDEA/Spatial-temporal/ubiquant/ubiquantSeg',
     'freq':'b', 'T':'target','M':[45,45,45],'S':[1,1,1],'MS':[45,45,1],
     'seq_len':25, 'label_len':0, "pred_len":1},
     'Toy':{'data_path':'./data/ToyData', 'seq_len':96, 'label_len':0, "pred_len":24, "MS":[1,1,1], "T":"s"},
     'oze':{'seq_len':672, 'label_len':1, "pred_len":671, "M":[37,8,8], "T":"s"}
 }
+
+args.model = "informer"
+args.data = "Volatility"
+args.dataset = "VolatilitySeq2Seq"
+
+args.model = "informer"
+args.data = "ETTh1"
+args.dataset = "ETTh1"
+
 if args.data in data_parser.keys():
     data_info = data_parser[args.data]
     args.data_path = data_info["data_path"]
     args.file_name = data_info["file_name"]
+    args.single_file = data_info["single_file"]
     args.seq_len, args.label_len, args.pred_len = data_info['seq_len'], data_info['label_len'], data_info['pred_len']
     args.target = data_info['T']
     args.enc_in, args.dec_in, args.out_size = data_info[args.features]
