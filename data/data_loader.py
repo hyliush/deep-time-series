@@ -47,9 +47,9 @@ class Dataset_ETT_hour(DatasetBase):
 
         border1s = [0, 12*30*24 - self.seq_len, 12*30*24+4*30*24 - self.seq_len]
         border2s = [12*30*24, 12*30*24+4*30*24, 12*30*24+8*30*24]
-        self.train_idxs = np.arange(border1s[0], border2s[0])
-        self.val_idxs = np.arange(border1s[1], border2s[1])
-        self.test_idxs = np.arange(border1s[2], border2s[2])
+        self.train_idxs = np.arange(border1s[0], border2s[0]-self.seq_len)
+        self.val_idxs = np.arange(border1s[1], border2s[1]-self.seq_len)
+        self.test_idxs = np.arange(border1s[2], border2s[2]-self.seq_len)
 
         if self.features=='M' or self.features=='MS':
             cols_data = df_raw.columns[1:]
@@ -122,9 +122,9 @@ class Dataset_ETT_minute(DatasetBase):
 
         border1s = [0, 12*30*24*4 - self.seq_len, 12*30*24*4+4*30*24*4 - self.seq_len]
         border2s = [12*30*24*4, 12*30*24*4+4*30*24*4, 12*30*24*4+8*30*24*4]
-        self.train_idxs = np.arange(border1s[0], border2s[0])
-        self.val_idxs = np.arange(border1s[1], border2s[1])
-        self.test_idxs = np.arange(border1s[2], border2s[2])
+        self.train_idxs = np.arange(border1s[0], border2s[0]-self.seq_len)
+        self.val_idxs = np.arange(border1s[1], border2s[1]-self.seq_len)
+        self.test_idxs = np.arange(border1s[2], border2s[2]-self.seq_len)
         
         if self.features=='M' or self.features=='MS':
             cols_data = df_raw.columns[1:]
@@ -209,9 +209,9 @@ class Dataset_Custom(DatasetBase):
         num_vali = len(df_raw) - num_train - num_test
         border1s = [0, num_train-self.seq_len, len(df_raw)-num_test-self.seq_len]
         border2s = [num_train, num_train+num_vali, len(df_raw)]
-        self.train_idxs = np.arange(border1s[0], border2s[0])
-        self.val_idxs = np.arange(border1s[1], border2s[1])
-        self.test_idxs = np.arange(border1s[2], border2s[2])
+        self.train_idxs = np.arange(border1s[0], border2s[0]-self.seq_len)
+        self.val_idxs = np.arange(border1s[1], border2s[1]-self.seq_len)
+        self.test_idxs = np.arange(border1s[2], border2s[2]-self.seq_len)
         
         if self.features=='M' or self.features=='MS':
             cols_data = df_raw.columns[1:]
@@ -455,9 +455,9 @@ class VolatilityDataSetNoraml(DatasetBase):
         
         border1s = [0, cut_point1 - self.seq_len, cut_point2 - self.seq_len]
         border2s = [cut_point1, cut_point2, length]
-        self.train_idxs = np.arange(border1s[0], border2s[0])
-        self.val_idxs = np.arange(border1s[1], border2s[1])
-        self.test_idxs = np.arange(border1s[2], border2s[2])
+        self.train_idxs = np.arange(border1s[0], border2s[0]-self.seq_len)
+        self.val_idxs = np.arange(border1s[1], border2s[1]-self.seq_len)
+        self.test_idxs = np.arange(border1s[2], border2s[2]-self.seq_len)
 
         if isinstance(self.features, str):
             if self.features=='M' or self.features=='MS':
@@ -529,9 +529,9 @@ class VolatilityDataSetGate(Dataset):
         
         border1s = [0, cut_point1 - self.seq_len, cut_point2 - self.seq_len]
         border2s = [cut_point1, cut_point2, length]
-        self.train_idxs = np.arange(border1s[0], border2s[0])
-        self.val_idxs = np.arange(border1s[1], border2s[1])
-        self.test_idxs = np.arange(border1s[2], border2s[2])
+        self.train_idxs = np.arange(border1s[0], border2s[0]-self.seq_len)
+        self.val_idxs = np.arange(border1s[1], border2s[1]-self.seq_len)
+        self.test_idxs = np.arange(border1s[2], border2s[2]-self.seq_len)
 
         # spatial
         self.data_spatial = df_raw[["stock_id"]].values

@@ -130,7 +130,7 @@ if args.use_gpu and args.use_multi_gpu:
 data_parser = {
     'ETTh1':{'data_path':'./data/ETT/', 'file_name':'ETTh1.csv',
     'seq_len':672, 'label_len':1, "pred_len":671,
-    "features":"M", 'T':'OT','M':[7,7,7],'S':[1,1,1],'MS':[7,7,1], "single_file":True},
+    "features":"M", 'T':'OT','M':[7,7,7],'S':[1,1,1],'MS':[7,7,1]},
     'ETTh2':{'T':'OT','M':[7,7,7],'S':[1,1,1],'MS':[7,7,1]},
     'ETTm1':{'T':'OT','M':[7,7,7],'S':[1,1,1],'MS':[7,7,1]},
     'ETTm2':{'T':'OT','M':[7,7,7],'S':[1,1,1],'MS':[7,7,1]},
