@@ -4,7 +4,7 @@ import pandas as pd
 import torch
 from torch.utils.data import Dataset, DataLoader
 # from sklearn.preprocessing import StandardScaler
-
+from fastNLP import cache_results
 from utils.tools import StandardScaler
 from utils.timefeatures import time_features
 
@@ -350,30 +350,23 @@ class VolatilityDataSetSeq2Seq(DatasetBase):
         super().__init__(data_path, size, features, file_name, 
                         target, scale, inverse, timeenc, freq, cols)
         self.test_size = 60
-        if size == None:
-            self.seq_len = 20
-            self.label_len = 1
-            self.pred_len = 1
-        else:
-            self.seq_len = size[0]
-            self.label_len = size[1]
-            self.pred_len = size[2]
+        self.seq_len, self.label_len, self.pred_len = size
         self.__read_data__()
 
     def __read_data__(self):
         self.scaler = StandardScaler()
-        df_raw = pd.read_csv(os.path.join(self.data_path,
-                                          self.file_name))
+        df_raw = pd.read_csv(os.path.join(self.data_path, self.file_name))
         df_raw = df_raw.drop(columns=["stock_id", "target", "weekday", "time_id", "holiday_name", "holiday_tag", "holiday_tag_cumsum"])
         df_raw = df_raw.rename(columns={"Date":"date"})
-        length = len(df_raw)
+
+        total_len, start_point = len(df_raw), 0
+        length = total_len-self.seq_len-self.pred_len+1
         cut_point1, cut_point2 = length-3*self.test_size, length-2*self.test_size
-        
-        border1s = [0, cut_point1 - self.seq_len, cut_point2 - self.seq_len]
+        border1s = [start_point, cut_point1, cut_point2]
         border2s = [cut_point1, cut_point2, length]
-        self.train_idxs = np.arange(border1s[0], border2s[0]- self.seq_len)
-        self.val_idxs = np.arange(border1s[1], border2s[1]- self.seq_len)
-        self.test_idxs = np.arange(border1s[2], border2s[2]- self.seq_len)
+        self.train_idxs = np.arange(border1s[0], border2s[0])
+        self.val_idxs = np.arange(border1s[1], border2s[1])
+        self.test_idxs = np.arange(border1s[2], border2s[2])
 
         if isinstance(self.features, str):
             if self.features=='M' or self.features=='MS':
@@ -433,31 +426,23 @@ class VolatilityDataSetNoraml(DatasetBase):
         super().__init__(data_path, size, features, file_name, 
                         target, scale, inverse, timeenc, freq, cols)
         self.test_size = 60
-        if size == None:
-            self.seq_len = 20
-            self.label_len = 1
-            self.pred_len = 1
-        else:
-            self.seq_len = size[0]
-            self.label_len = size[1]
-            self.pred_len = size[2]
+        self.seq_len, self.label_len, self.pred_len = size
         self.__read_data__()
 
     def __read_data__(self):
         self.scaler = StandardScaler()
-        from fastNLP import cache_results
         # @cache_results(_cache_fp=None)
         df_raw = pd.read_csv(os.path.join(self.data_path, self.file_name))
         df_raw = df_raw.drop(columns=["stock_id", "target", "weekday", "time_id", "holiday_name", "holiday_tag", "holiday_tag_cumsum"])
         df_raw = df_raw.rename(columns={"Date":"date"})
-        length = len(df_raw) - 1
+
+        length = len(df_raw)-self.seq_len-self.pred_len+1
         cut_point1, cut_point2 = length-3*self.test_size, length-2*self.test_size
-        
-        border1s = [0, cut_point1 - self.seq_len, cut_point2 - self.seq_len]
+        border1s = [0, cut_point1, cut_point2]
         border2s = [cut_point1, cut_point2, length]
-        self.train_idxs = np.arange(border1s[0], border2s[0]-self.seq_len)
-        self.val_idxs = np.arange(border1s[1], border2s[1]-self.seq_len)
-        self.test_idxs = np.arange(border1s[2], border2s[2]-self.seq_len)
+        self.train_idxs = np.arange(border1s[0], border2s[0])
+        self.val_idxs = np.arange(border1s[1], border2s[1])
+        self.test_idxs = np.arange(border1s[2], border2s[2])
 
         if isinstance(self.features, str):
             if self.features=='M' or self.features=='MS':
@@ -510,28 +495,19 @@ class VolatilityDataSetGate(Dataset):
         super().__init__(data_path, size, features, file_name, 
                         target, scale, inverse, timeenc, freq, cols)
         self.test_size = 60
-        if size == None:
-            self.seq_len = 20
-            self.label_len = 1
-            self.pred_len = 1
-        else:
-            self.seq_len = size[0]
-            self.label_len = size[1]
-            self.pred_len = size[2]
+        self.seq_len, self.label_len, self.pred_len = size
         self.__read_data__()
 
     def __read_data__(self):
         self.scaler = StandardScaler()
         df_raw = pd.read_csv(os.path.join(self.data_path, self.file_name))
-
-        length = len(df_raw) - 1
+        length = len(df_raw)-self.seq_len-self.pred_len+1
         cut_point1, cut_point2 = length-3*self.test_size, length-2*self.test_size
-        
-        border1s = [0, cut_point1 - self.seq_len, cut_point2 - self.seq_len]
+        border1s = [0, cut_point1, cut_point2]
         border2s = [cut_point1, cut_point2, length]
-        self.train_idxs = np.arange(border1s[0], border2s[0]-self.seq_len)
-        self.val_idxs = np.arange(border1s[1], border2s[1]-self.seq_len)
-        self.test_idxs = np.arange(border1s[2], border2s[2]-self.seq_len)
+        self.train_idxs = np.arange(border1s[0], border2s[0])
+        self.val_idxs = np.arange(border1s[1], border2s[1])
+        self.test_idxs = np.arange(border1s[2], border2s[2])
 
         # spatial
         self.data_spatial = df_raw[["stock_id"]].values

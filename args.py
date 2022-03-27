@@ -115,7 +115,7 @@ parser.add_argument('--use_gpu', type=bool, default=True, help='use gpu')
 parser.add_argument('--gpu', type=int, default=0, help='gpu')
 parser.add_argument('--use_multi_gpu', action='store_true', help='use multiple gpus', default=False)
 parser.add_argument('--devices', type=str, default='0,1,2,3',help='device ids of multile gpus')
-parser.add_argument('--load', type=bool, default=False, help='load last trained model')
+parser.add_argument('--load', type=bool, default=True, help='load last trained model')
 
 parser.add_argument('--single_file', type=bool, default=True, help='single_file')
 args = parser.parse_args()
@@ -139,8 +139,11 @@ data_parser = {
     'Solar':{'T':'POWER_136','M':[137,137,137],'S':[1,1,1],'MS':[137,137,1]},
     'Volatility':{'data_path':'D:/News_topics/RV-predictability/save_file/volatility_tmp',
     "single_file":False, 'file_name':"",# if multi_file, not to provide, 
-    'freq':'b', 'T':'rv','M':[45,45,45],'S':[1,1,1],'MS':[45,45,1],
-    'seq_len':10, 'label_len':2, "pred_len":1},
+    'freq':'b', 'T':'rv',"features":"MS",'MS':[45,45,1],
+    'seq_len':60, 'label_len':20, "pred_len":20},
+    # 'Volatility':{'data_path':'./data/volatility',"file_name":"volatility",
+    # 'freq':'b', 'T':'rv',"features":"MS", 'MS':[45,45,1],
+    # 'seq_len':60, 'label_len':15, "pred_len":30},
     'Ubiquant':{'data_path':'D:/IDEA/Spatial-temporal/ubiquant/ubiquantSeg',
     'freq':'b', 'T':'target','M':[45,45,45],'S':[1,1,1],'MS':[45,45,1],
     'seq_len':25, 'label_len':0, "pred_len":1},
@@ -152,16 +155,16 @@ args.model = "informer"
 args.data = "Volatility"
 args.dataset = "VolatilitySeq2Seq"
 
-args.model = "informer"
-args.data = "ETTh1"
-args.dataset = "ETTh1"
+# args.model = "informer"
+# args.data = "ETTh1"
+# args.dataset = "ETTh1"
 
 if args.data in data_parser.keys():
     data_info = data_parser[args.data]
     args.data_path = data_info.get("data_path")
     args.file_name = data_info.get("file_name")
     args.features = data_info.get("features") or args.features
-    args.single_file = args.single_file or data_info.get("single_file")
+    args.single_file = data_info.get("single_file") if data_info.get("single_file") is not None else args.single_file
     args.seq_len, args.label_len, args.pred_len = data_info['seq_len'], data_info['label_len'], data_info['pred_len']
     args.target = data_info['T']
     args.enc_in, args.dec_in, args.out_size = data_info[args.features]

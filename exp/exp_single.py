@@ -27,7 +27,7 @@ class Exp_Single(Exp_Basic):
         # 读取上次训练模型
         if self.args.load:
             if "checkpoint.pth" in path:
-                print("---------------------load last trained model--------------------------")
+                logger.info("---------------------load last trained model--------------------------")
                 self.model.load_state_dict(torch.load(best_model_path))
 
         early_stopping = EarlyStopping(patience=self.args.patience, verbose=True)
@@ -146,4 +146,4 @@ class Exp_Single(Exp_Basic):
                 fig.savefig(f"./img/{self.args.model}_distribution.jpg", bbox_inches='tight')
             else:
                 map_plot_function(trues.reshape(120, -1, 1), preds.reshape(120, -1, 1), 
-                plot_values_distribution, ['volitility'], 6)
+                plot_values_distribution, ['volitility'], [0], 6)

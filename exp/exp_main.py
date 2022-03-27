@@ -69,9 +69,7 @@ class Exp_model(Exp):
 
         data_loader = DataLoader(self.tmp_dataset, batch_size=batch_size, sampler=sampler(idxs),
             num_workers=self.args.num_workers, drop_last=drop_last)
-            
         return data_loader
-
 
     def _build_model(self):
         if self.args.model=='informer' or self.args.model=='informerstack':
