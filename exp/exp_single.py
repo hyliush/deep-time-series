@@ -102,7 +102,7 @@ class Exp_Single(Exp_Basic):
         self.model.train()
         return loss, (mae, mse, rmse, mape, mspe)
 
-    def test(self, setting, load=False, plot=True):
+    def test(self, setting, load=False, plot=True, save=False):
         # test承接train之后模型，为保证单独使用test，增加load参数
         test_loader = self._get_data(file_name=self.test_filename, flag='test')
         if load:
@@ -128,13 +128,14 @@ class Exp_Single(Exp_Basic):
         logger.info('mse:{}, mae:{}'.format(mse, mae))
 
         if self.args.inverse:
-            preds = test_loader.dataset.inverse_transform(preds)[..., -1:]
-            trues = test_loader.dataset.inverse_transform(trues)[..., -1:]
-
-        np.save(folder_path+'metrics.npy', np.array([mae, mse, rmse, mape, mspe]))
-        np.save(folder_path+'pred.npy', preds)
-        np.save(folder_path+f'true.npy', trues)
+            preds = np.sqrt(np.exp(test_loader.dataset.inverse_transform(preds)[..., -1:]))
+            trues = np.sqrt(np.exp(test_loader.dataset.inverse_transform(trues)[..., -1:]))
+        if save:
+            np.save(folder_path+'metrics.npy', np.array([mae, mse, rmse, mape, mspe]))
+            np.save(folder_path+'pred.npy', preds)
+            np.save(folder_path+f'true.npy', trues)
         if plot:
+            from utils.metrics import CORR
             plot_pred(trues, preds, pred_idx=0)
             if self.args.pred_len > 1:
                 # labels = test_data.dataset.labels["X"]

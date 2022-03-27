@@ -139,7 +139,7 @@ class Exp_Multi(Exp_Basic):
 
         return preds, trues
 
-    def test(self, setting, load=False, plot=True):
+    def test(self, setting, load=False, plot=True, save=False):
         # test承接train之后模型，为保证单独使用test，增加load参数
         if load:
             path = os.path.join(self.args.checkpoints, setting)
@@ -171,10 +171,10 @@ class Exp_Multi(Exp_Basic):
         logger.info("test shape:{} {}".format(total_preds.shape, total_trues.shape))
         mae, mse, rmse, mape, mspe = metric(total_preds, total_trues)
         print('mse:{}, mae:{}'.format(mse, mae))
-
-        np.save(folder_path+'metrics.npy', np.array([mae, mse, rmse, mape, mspe]))
-        np.save(folder_path+'pred.npy', total_preds)
-        np.save(folder_path+f'true.npy', total_trues)
+        if save:
+            np.save(folder_path+'metrics.npy', np.array([mae, mse, rmse, mape, mspe]))
+            np.save(folder_path+'pred.npy', total_preds)
+            np.save(folder_path+f'true.npy', total_trues)
         if plot:
             # plot_pred(total_trues, total_preds)
             if self.args.pred_len > 1:

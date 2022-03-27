@@ -401,9 +401,9 @@ class VolatilityDataSet(DatasetBase):
                 data_y = df_data.values
             else:
                 data_y = data
-            return df_stamp, data, data_y, train_idxs, val_idxs, test_idxs
+            return self.scaler, df_stamp, data, data_y, train_idxs, val_idxs, test_idxs
 
-        self.data_stamp, self.data_x, self.data_y, \
+        self.scaler, self.data_stamp, self.data_x, self.data_y, \
         self.train_idxs, self.val_idxs, self.test_idxs = \
         _get_data(_cache_fp=os.path.join(self.data_path, f"{self.file_name[:-4]}_{self.__class__.__name__}_sl{self.seq_len}_pl{self.pred_len}.pkl"))
         # total_len, start_point = len(df_raw), 0
