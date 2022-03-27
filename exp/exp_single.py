@@ -56,7 +56,7 @@ class Exp_Single(Exp_Basic):
                     pbar.set_postfix({'loss': running_loss/(idx_batch+1)})
                     pbar.update()
 
-                    if (idx_batch+1) % 100==0:
+                    if (idx_batch+1) % self.args.print_every==0:
                         logger.info("Epoch: {0}, epoch_train_steps: {1},  | loss: {2:.7f}".format(idx_epoch+1, idx_batch+1, loss.item()))
                     if self.args.use_amp:
                         scaler.scale(loss).backward()
@@ -88,7 +88,7 @@ class Exp_Single(Exp_Basic):
         
         preds, trues = [], []
         running_loss = 0
-        for i, batch in enumerate(val_loader):
+        for i, batch in tqdm(enumerate(val_loader), total=len(val_loader), desc="Validation"):
             pred, true = self.process_one_batch(batch)
             pred, true = pred.detach().cpu(), true.detach().cpu()
             preds.append(pred); trues.append(true)
@@ -117,7 +117,7 @@ class Exp_Single(Exp_Basic):
 
         self.model.eval()
         preds_lst, trues_lst = [], []
-        for batch in tqdm(test_loader):
+        for i, batch in tqdm(enumerate(test_loader), total=len(test_loader), desc="Test"):
             pred, true = self.process_one_batch(batch)
             preds_lst.append(pred.detach().cpu()); trues_lst.append(true.detach().cpu())
         
@@ -135,15 +135,16 @@ class Exp_Single(Exp_Basic):
         np.save(folder_path+'pred.npy', preds)
         np.save(folder_path+f'true.npy', trues)
         if plot:
-            # plot_pred(total_trues, preds)
+            plot_pred(trues, preds, pred_idx=0)
             if self.args.pred_len > 1:
                 # labels = test_data.dataset.labels["X"]
-                labels = "HUFL,HULL,MUFL,MULL,LUFL,LULL,OT".split(',')
+                # labels = "HUFL,HULL,MUFL,MULL,LUFL,LULL,OT".split(',')
+                labels =["Volatility"]
                 fig = map_plot_function(trues, preds, plot_visual_sample, labels, 168)
-                fig.savefig(f"./img/{self.args.model}_sample.jpg", bbox_inches='tight')
+                # fig.savefig(f"./img/{self.args.model}_sample.jpg", bbox_inches='tight')
 
                 fig = map_plot_function(trues, preds, plot_values_distribution, labels, 48)
-                fig.savefig(f"./img/{self.args.model}_distribution.jpg", bbox_inches='tight')
+                # fig.savefig(f"./img/{self.args.model}_distribution.jpg", bbox_inches='tight')
             else:
-                map_plot_function(trues.reshape(120, -1, 1), preds.reshape(120, -1, 1), 
-                plot_values_distribution, ['volitility'], [0], 6)
+                map_plot_function(trues.reshape(60, -1, 1), preds.reshape(60, -1, 1), 
+                plot_values_distribution, ['volitility'], 6)

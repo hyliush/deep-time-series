@@ -7,7 +7,7 @@ from torch.utils.data import Dataset, DataLoader
 from fastNLP import cache_results
 from utils.tools import StandardScaler
 from utils.timefeatures import time_features
-
+from joblib import Parallel,delayed
 import warnings
 warnings.filterwarnings('ignore')
 class DatasetBase(Dataset):
@@ -354,44 +354,66 @@ class VolatilityDataSetSeq2Seq(DatasetBase):
         self.__read_data__()
 
     def __read_data__(self):
-        self.scaler = StandardScaler()
-        df_raw = pd.read_csv(os.path.join(self.data_path, self.file_name))
-        df_raw = df_raw.drop(columns=["stock_id", "target", "weekday", "time_id", "holiday_name", "holiday_tag", "holiday_tag_cumsum"])
-        df_raw = df_raw.rename(columns={"Date":"date"})
+        def get_idxs(sample_id):
+            total_len, start_point = len(sample_id), sample_id[0]
+            length = total_len-self.seq_len-self.pred_len+1
+            cut_point1, cut_point2 = length-2*self.test_size, length-self.test_size
+            border1s = [i+start_point for i in [0, cut_point1, cut_point2]]
+            border2s = [i+start_point for i in [cut_point1, cut_point2, length]]
+            train_idxs = np.arange(border1s[0], border2s[0])
+            val_idxs = np.arange(border1s[1], border2s[1])
+            test_idxs = np.arange(border1s[2], border2s[2])
+            return train_idxs, val_idxs, test_idxs
+        from utils.tools import timer
+        @timer
+        @cache_results(_cache_fp=None)
+        def _get_data():
+            self.scaler = StandardScaler()
+            # @cache_results(os.path.join(self.data_path, self.file_name[:-4], '.pkl'))
+            df_raw = pd.read_csv(os.path.join(self.data_path, self.file_name))
+            sample_id_lst = [np.arange(len(df_raw))[df_raw["stock_id"]==i] 
+                        for i in df_raw["stock_id"].unique()]
+            _tmp = Parallel(n_jobs=-1)(delayed(get_idxs)(x) for x in sample_id_lst)
+            train_idxs, val_idxs, test_idxs = zip(*_tmp)
+            train_idxs, val_idxs, test_idxs = np.concatenate(train_idxs), np.concatenate(val_idxs), np.concatenate(test_idxs)
 
-        total_len, start_point = len(df_raw), 0
-        length = total_len-self.seq_len-self.pred_len+1
-        cut_point1, cut_point2 = length-3*self.test_size, length-2*self.test_size
-        border1s = [start_point, cut_point1, cut_point2]
-        border2s = [cut_point1, cut_point2, length]
-        self.train_idxs = np.arange(border1s[0], border2s[0])
-        self.val_idxs = np.arange(border1s[1], border2s[1])
-        self.test_idxs = np.arange(border1s[2], border2s[2])
+            df_raw = df_raw.drop(columns=["stock_id", "weekday", "time_id", "holiday_name", "holiday_tag", "holiday_tag_cumsum"])
+            df_raw = df_raw.rename(columns={"Date":"date"})
+            if isinstance(self.features, str):
+                if self.features=='M' or self.features=='MS':
+                    cols_data = df_raw.columns[1:]
+                    df_data = df_raw[cols_data]
+                elif self.features=='S':
+                    df_data = df_raw[[self.target]]
 
-        if isinstance(self.features, str):
-            if self.features=='M' or self.features=='MS':
-                cols_data = df_raw.columns[1:]
-                df_data = df_raw[cols_data]
-            elif self.features=='S':
-                df_data = df_raw[[self.target]]
+            if self.scale:
+                train_data = df_data.iloc[train_idxs]
+                self.scaler.fit(train_data.values)
+                data = self.scaler.transform(df_data.values)
+            else:
+                data = df_data.values
+            df_stamp = df_raw[['date']]
 
-        if self.scale:
-            train_data = df_data[border1s[0]:border2s[0]]
-            self.scaler.fit(train_data.values)
-            data = self.scaler.transform(df_data.values)
-        else:
-            data = df_data.values
-            
-        df_stamp = df_raw[['date']]
-        df_stamp['date'] = pd.to_datetime(df_stamp.date)
-        data_stamp = time_features(df_stamp, timeenc=self.timeenc, freq=self.freq)
-        self.data_stamp = data_stamp
+            df_stamp['date'] = pd.to_datetime(df_stamp.date)
+            df_stamp = time_features(df_stamp, timeenc=self.timeenc, freq=self.freq)
 
-        self.data_x = data
-        if self.inverse:
-            self.data_y = df_data.values
-        else:
-            self.data_y = data
+            if self.inverse:
+                data_y = df_data.values
+            else:
+                data_y = data
+            return df_stamp, data, data_y, train_idxs, val_idxs, test_idxs
+
+        self.data_stamp, self.data_x, self.data_y, \
+        self.train_idxs, self.val_idxs, self.test_idxs = \
+        _get_data(_cache_fp=os.path.join(self.data_path, f"{self.file_name[:-4]}_{self.__class__.__name__}_sl{self.seq_len}_pl{self.pred_len}.pkl"))
+        # total_len, start_point = len(df_raw), 0
+        # length = total_len-self.seq_len-self.pred_len+1
+        # cut_point1, cut_point2 = length-3*self.test_size, length-2*self.test_size
+        # border1s = [start_point, cut_point1, cut_point2]
+        # border2s = [cut_point1, cut_point2, length]
+        # self.train_idxs = np.arange(border1s[0], border2s[0])
+        # self.val_idxs = np.arange(border1s[1], border2s[1])
+        # self.test_idxs = np.arange(border1s[2], border2s[2])
         
     def __getitem__(self, index):
         s_begin = index
@@ -415,7 +437,6 @@ class VolatilityDataSetSeq2Seq(DatasetBase):
 
     def inverse_transform(self, data):
         return self.scaler.inverse_transform(data)
-
 
 class VolatilityDataSetNoraml(DatasetBase):
     def __init__(self, data_path, size=None, 

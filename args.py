@@ -26,7 +26,7 @@ parser.add_argument('--inverse', action='store_true', help='inverse output data'
 
 # training
 parser.add_argument('--train_epochs', type=int, default=100, help='train epochs')
-parser.add_argument('--batch_size', type=int, default=8, help='batch size of train input data')
+parser.add_argument('--batch_size', type=int, default=32, help='batch size of train input data')
 parser.add_argument('--activation', type=str, default='gelu',help='activation')
 parser.add_argument('--learning_rate', type=float, default=0.0001, help='optimizer learning rate')
 parser.add_argument('--loss', type=str, default='mse',help='loss function')
@@ -117,6 +117,7 @@ parser.add_argument('--use_multi_gpu', action='store_true', help='use multiple g
 parser.add_argument('--devices', type=str, default='0,1,2,3',help='device ids of multile gpus')
 parser.add_argument('--load', type=bool, default=True, help='load last trained model')
 
+parser.add_argument('--print_every', type=int, default=1000, help='print_every')
 parser.add_argument('--single_file', type=bool, default=True, help='single_file')
 args = parser.parse_args()
 
@@ -137,13 +138,13 @@ data_parser = {
     'WTH':{'T':'WetBulbCelsius','M':[12,12,12],'S':[1,1,1],'MS':[12,12,1]},
     'ECL':{'T':'MT_320','M':[321,321,321],'S':[1,1,1],'MS':[321,321,1]},
     'Solar':{'T':'POWER_136','M':[137,137,137],'S':[1,1,1],'MS':[137,137,1]},
-    'Volatility':{'data_path':'D:/News_topics/RV-predictability/save_file/volatility_tmp',
-    "single_file":False, 'file_name':"",# if multi_file, not to provide, 
-    'freq':'b', 'T':'rv',"features":"MS",'MS':[45,45,1],
-    'seq_len':60, 'label_len':20, "pred_len":20},
-    # 'Volatility':{'data_path':'./data/volatility',"file_name":"volatility",
-    # 'freq':'b', 'T':'rv',"features":"MS", 'MS':[45,45,1],
-    # 'seq_len':60, 'label_len':15, "pred_len":30},
+    # 'Volatility':{'data_path':'../../save_file/volatility_tmp',
+    # "single_file":False, 'file_name':"",# if multi_file, not to provide, 
+    # 'freq':'b', 'T':'rv',"features":"MS",'MS':[45,45,1],
+    # 'seq_len':60, 'label_len':20, "pred_len":20},
+    'Volatility':{'data_path':'./data/Volatility',"file_name":"tmpVolatility.csv",
+    'freq':'b', 'T':'rv',"features":"MS", 'MS':[33,33,1],
+    'seq_len':60, 'label_len':15, "pred_len":20},
     'Ubiquant':{'data_path':'D:/IDEA/Spatial-temporal/ubiquant/ubiquantSeg',
     'freq':'b', 'T':'target','M':[45,45,45],'S':[1,1,1],'MS':[45,45,1],
     'seq_len':25, 'label_len':0, "pred_len":1},
