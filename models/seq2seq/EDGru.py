@@ -12,11 +12,11 @@ class Encoder(nn.Module):
         self.embedding = DataEmbedding_ED(enc_in, emb_dim, embed, freq, dropout)
         self.rnn = nn.GRU(emb_dim, hid_dim, batch_first=True)
         
-    def forward(self, x_enc):
+    def forward(self, x_enc, x_enc_mark):
         
         #x_enc = [x_enc len, batch size]
         
-        embedded = self.embedding(x_enc)
+        embedded = self.embedding(x_enc, x_enc_mark)
         #embedded = [x_enc len, batch size, emb dim]
         
         outputs, hidden = self.rnn(embedded) #no cell state!
@@ -37,7 +37,7 @@ class Decoder(nn.Module):
         self.rnn = nn.GRU(emb_dim + hid_dim, hid_dim, batch_first=True)
         self.fc_out = nn.Linear(emb_dim + hid_dim * 2, dec_in)
         
-    def forward(self, input, hidden, context):
+    def forward(self, input, input_mark, hidden, context):
         
         #input = [batch size]
         #hidden = [n layers * n directions, batch size, hid dim]
@@ -47,7 +47,7 @@ class Decoder(nn.Module):
         #hidden = [1, batch size, hid dim]
         #context = [1, batch size, hid dim]
         
-        embedded = self.embedding(input)
+        embedded = self.embedding(input, input_mark)
         #embedded = [1, batch size, emb dim]
                 
         emb_con = torch.cat((embedded, context.transpose(0, 1)), dim = 2)
@@ -77,24 +77,17 @@ class Decoder(nn.Module):
 class Gru(nn.Module):
     def __init__(self, args):
         super().__init__()
-        
-        enc_in, dec_in, emb_dim, hid_dim, embed, freq, dropout = \
-        args.enc_in, args.dec_in, args.d_model, args.d_model, \
-        args.embed, args.freq, args.dropout
+        self.args = args
         self.teacher_forcing_ratio = args.teacher_forcing_ratio
         self.out_size = args.out_size
-        self.encoder = Encoder(enc_in, emb_dim, hid_dim, embed, freq, dropout)
-        self.decoder = Decoder(dec_in, emb_dim, hid_dim, embed, freq, dropout)
+        self.pred_len = args.pred_len
+        self.encoder = Encoder(args.enc_in, args.d_model, args.d_model,  args.embed, args.freq, args.dropout)
+        self.decoder = Decoder(args.dec_in, args.d_model, args.d_model,  args.embed, args.freq, args.dropout)
         
         assert self.encoder.hid_dim == self.decoder.hid_dim, \
             "Hidden dimensions of encoder and decoder must be equal!"
         
-    def forward(self, x_enc, x_dec):
-        
-        #x_enc = [x_enc len, batch size, n_features]
-        #x_dec = [x_dec len, batch size, n_features]
-        #teacher_forcing_ratio is probability to use teacher forcing
-        #e.g. if teacher_forcing_ratio is 0.75 we use ground-truth inputs 75% of the time
+    def forward(self, x_enc, x_enc_mark, x_dec, x_dec_mark):
         if self.training:
             teacher_forcing_ratio = self.teacher_forcing_ratio
         else:
@@ -105,21 +98,17 @@ class Gru(nn.Module):
         outputs = torch.zeros(batch_size, x_dec_len-1, dec_in).to(x_enc.device)
         
         #last hidden state of the encoder is the context
-        context = self.encoder(x_enc)
+        context = self.encoder(x_enc, x_enc_mark)
         
         #context also used as the initial hidden state of the decoder
         hidden = context
         
-        #first input to the decoder is the <sos> tokens
-        if isinstance(x_dec, list):
-            input = [i[:, 0, :].unsqueeze(dim=1) for i in x_dec]
-        else:
-            input = x_dec[:, 0, :].unsqueeze(dim=1)
+        input = x_dec[:, 0, :].unsqueeze(dim=1)
+        input_mark = x_dec_mark[:, 0, :].unsqueeze(dim=1)
         for t in range(1, x_dec_len):
-            
             #insert input token embedding, previous hidden state and the context state
             #receive output tensor (predictions) and new hidden state
-            output, hidden = self.decoder(input, hidden, context)
+            output, hidden = self.decoder(input, input_mark, hidden, context)
             
             #place predictions in a tensor holding predictions for each token
             outputs[:, t-1, :] = output.squeeze(dim=1)
@@ -128,13 +117,10 @@ class Gru(nn.Module):
             teacher_force = random.random() < teacher_forcing_ratio
             
             #if teacher forcing, use actual next token as next input
-            #if not, use predicted token
-            if isinstance(x_dec, list):
-                input0 = x_dec[0][:, t, :].unsqueeze(dim=1) if teacher_force else output
-                input = [input0, x_dec[1][:, t, :].unsqueeze(dim=1)]
-            else:
-                input = x_dec[:, t, :].unsqueeze(dim=1) if teacher_force else output
-        return outputs[:, :, -self.out_size:]
+            input = x_dec[:, t, :].unsqueeze(dim=1) if teacher_force else output
+            input_mark = x_dec_mark[:, t, :].unsqueeze(dim=1)
+
+        return outputs[:, -self.pred_len:, -self.out_size:]
 if __name__ == '__main__':
 
     enc_in, dec_in, emb_dim, hid_dim, n_layers = 45, 45, 512, 64, 2

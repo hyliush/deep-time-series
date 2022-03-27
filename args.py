@@ -144,7 +144,7 @@ data_parser = {
     # 'seq_len':60, 'label_len':20, "pred_len":20},
     'Volatility':{'data_path':'./data/Volatility',"file_name":"tmpVolatility.csv",
     'freq':'b', 'T':'rv',"features":"MS", 'MS':[33,33,1],
-    'seq_len':60, 'label_len':10, "pred_len":20},
+    'seq_len':60, 'label_len':1, "pred_len":20},
     'Ubiquant':{'data_path':'../ubiquant/ubiquantSeg',
     'freq':'b', 'T':'target','M':[45,45,45],'S':[1,1,1],'MS':[45,45,1],
     'seq_len':25, 'label_len':0, "pred_len":1},
@@ -152,9 +152,10 @@ data_parser = {
     'oze':{'seq_len':672, 'label_len':1, "pred_len":671, "M":[37,8,8], "T":"s", 'features':"M"}
 }
 
-args.model = "informer"
+args.model = "edgru"
 args.data = "Volatility"
 args.dataset = "VolatilitySeq2Seq"
+args.dataset = "Volatility"
 
 # args.model = "informer"
 # args.data = "ETTh1"

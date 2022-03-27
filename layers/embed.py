@@ -150,9 +150,7 @@ class DataEmbedding_ED(nn.Module):
 
         self.dropout = nn.Dropout(p=dropout)
 
-    def forward(self, x):
-        if isinstance(x, list):
-            x = self.value_embedding(x[0]) + self.temporal_embedding(x[1])
-        else:
-            x = self.value_embedding(x)
+    def forward(self, x, x_mark):
+        x = self.value_embedding(x) + self.temporal_embedding(x_mark)
+        
         return self.dropout(x)

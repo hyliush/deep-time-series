@@ -25,12 +25,12 @@ class Exp_Basic(object):
         return criterion
 
     def _move2device(self, data):
-        if isinstance(data, torch.Tensor):
-            return data.float().to(self.device)
         if isinstance(data, tuple):
             data = list(data)
+        if isinstance(data, torch.Tensor):
+            return data.float().to(self.device)
         for i in range(len(data)):
-            data[i] = data[i].float().to(self.device)
+            data[i] = self._move2device(data[i])
         return data
 
     def _build_model(self):

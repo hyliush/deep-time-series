@@ -59,15 +59,15 @@ class Exp_model(Exp):
                 self.dataset = self.tmp_dataset
 
         if flag == 'test':
-            drop_last = False; batch_size = 1; sampler = SubsetSequentialSampler
+            drop_last = False; self.args.batch_size = 1; sampler = SubsetSequentialSampler
         else:
-            drop_last = False; batch_size = self.args.batch_size; sampler = SubsetRandomSampler
+            drop_last = False; self.args.batch_size = self.args.batch_size; sampler = SubsetRandomSampler
         if hasattr(self.tmp_dataset, flag+"_idxs"):
             idxs = getattr(self.tmp_dataset, flag+"_idxs")
         else:
             raise("flag error")
 
-        data_loader = DataLoader(self.tmp_dataset, batch_size=batch_size, sampler=sampler(idxs),
+        data_loader = DataLoader(self.tmp_dataset, batch_size=self.args.batch_size, sampler=sampler(idxs),
             num_workers=self.args.num_workers, drop_last=drop_last)
         return data_loader
 
@@ -104,8 +104,8 @@ def _process_one_batch3(self, batch):
     return outputs, batch_y
 
 def _process_one_batch5(self, batch):
-    batch_x, batch_y = self._move2device(batch)
-    outputs = self.model(batch_x, batch_y)
+    batch_x, batch_y, batch_x_mark, batch_y_mark = self._move2device(batch)
+    outputs = self.model(batch_x, batch_x_mark, batch_y, batch_y_mark)
     return outputs, batch_y
 
 def _process_one_batch4(self, batch):

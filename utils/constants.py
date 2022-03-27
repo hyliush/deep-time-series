@@ -6,7 +6,7 @@ from models.seq2seq import Informer, Autoformer, Transformer, GruAttention, Gru,
 from models.DeepAR import DeepAR
 from models.Lstm import BenchmarkLstm
 from models.Mlp import BenchmarkMlp
-from data.data_loader import Dataset_ETT_hour, Dataset_ETT_minute, Dataset_Custom, Dataset_Pred, ToyDatasetSeq2Seq, UbiquantDataSetNoraml, VolatilityDataSetSeq2Seq, ToyDataset,VolatilityDataSetNoraml
+from data.data_loader import Dataset_ETT_hour, Dataset_ETT_minute, Dataset_Custom, Dataset_Pred, ToyDatasetSeq2Seq, UbiquantDataSetNoraml, VolatilityDataSet, ToyDataset
 
 dataset_dict = {
 'ETTh1':Dataset_ETT_hour,
@@ -17,8 +17,7 @@ dataset_dict = {
 'ECL':Dataset_Custom,
 'Solar':Dataset_Custom,
 'custom':Dataset_Custom,
-'Volatility':VolatilityDataSetNoraml,
-'VolatilitySeq2Seq':VolatilityDataSetSeq2Seq,
+'Volatility':VolatilityDataSet,
 'Ubiquant':UbiquantDataSetNoraml,
 'Toy': ToyDataset,
 'ToySeq2Seq': ToyDatasetSeq2Seq
