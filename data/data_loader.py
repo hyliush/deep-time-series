@@ -405,7 +405,7 @@ class VolatilityDataSet(DatasetBase):
 
         self.scaler, self.data_stamp, self.data_x, self.data_y, \
         self.train_idxs, self.val_idxs, self.test_idxs = \
-        _get_data(_cache_fp=os.path.join(self.data_path, f"{self.file_name[:-4]}_{self.__class__.__name__}_sl{self.seq_len}_pl{self.pred_len}.pkl"))
+        _get_data(_cache_fp=os.path.join('./cache', f"{self.file_name[:-4]}_{self.__class__.__name__}_sl{self.seq_len}_pl{self.pred_len}.pkl"))
         # total_len, start_point = len(df_raw), 0
         # length = total_len-self.seq_len-self.pred_len+1
         # cut_point1, cut_point2 = length-3*self.test_size, length-2*self.test_size

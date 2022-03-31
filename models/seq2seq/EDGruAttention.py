@@ -134,7 +134,7 @@ class GruAttention(nn.Module):
         args.freq, args.dropout
         self.pred_len = args.pred_len
         self.teacher_forcing_ratio = args.teacher_forcing_ratio
-        self.out_size = args.out_size
+        
         attention = Attention(enc_hid_dim, dec_hid_dim)
         self.encoder = Encoder(enc_in, emb_dim, enc_hid_dim, dec_hid_dim, embed, freq, dropout)
         self.decoder = Decoder(dec_in, emb_dim, enc_hid_dim, dec_hid_dim, embed, freq, dropout, attention)
@@ -173,7 +173,7 @@ class GruAttention(nn.Module):
             input = x_dec[:, t, :].unsqueeze(dim=1) if teacher_force else output
             input_mark = x_dec_mark[:, t, :].unsqueeze(dim=1)
 
-        return outputs[:, -self.pred_len:, -self.out_size:]
+        return outputs[:, -self.pred_len:, :]
        
 if __name__ == '__main__':
     enc_in, dec_in, emb_dim, enc_hid_dim, dec_hid_dim = 45, 45, 512, 512, 512

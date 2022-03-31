@@ -79,7 +79,7 @@ class Gru(nn.Module):
         super().__init__()
         self.args = args
         self.teacher_forcing_ratio = args.teacher_forcing_ratio
-        self.out_size = args.out_size
+        
         self.pred_len = args.pred_len
         self.encoder = Encoder(args.enc_in, args.d_model, args.d_model,  args.embed, args.freq, args.dropout)
         self.decoder = Decoder(args.dec_in, args.d_model, args.d_model,  args.embed, args.freq, args.dropout)
@@ -120,7 +120,7 @@ class Gru(nn.Module):
             input = x_dec[:, t, :].unsqueeze(dim=1) if teacher_force else output
             input_mark = x_dec_mark[:, t, :].unsqueeze(dim=1)
 
-        return outputs[:, -self.pred_len:, -self.out_size:]
+        return outputs[:, -self.pred_len:, :]
 if __name__ == '__main__':
 
     enc_in, dec_in, emb_dim, hid_dim, n_layers = 45, 45, 512, 64, 2

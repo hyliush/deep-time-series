@@ -152,7 +152,7 @@ data_parser = {
     'oze':{'seq_len':672, 'label_len':1, "pred_len":671, "M":[37,8,8], "T":"s", 'features':"M"}
 }
 
-args.model = "informer"
+args.model = "autoformer"
 args.data = "Volatility"
 args.dataset = "Volatility"
 # args.model = "informer"

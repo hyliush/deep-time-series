@@ -135,11 +135,11 @@ class Exp_Single(Exp_Basic):
             np.save(folder_path+f'true.npy', trues)
         if plot:
             from utils.metrics import CORR
-            plot_pred(trues, preds, pred_idx=0, col_idx=0)
+            plot_pred(trues, preds, pred_idx=0, col_idx=-1)
             if self.args.pred_len > 1:
                 # labels = test_data.dataset.labels["X"]
                 # labels = "HUFL,HULL,MUFL,MULL,LUFL,LULL,OT".split(',')
-                idx_labels = [-1, -2, -3]
+                idx_labels = [-1]
                 labels =["Volatility"] * len(idx_labels)
                 fig = map_plot_function(trues, preds, plot_visual_sample, labels, idx_labels, 168)
                 # fig.savefig(f"./img/{self.args.model}_sample.jpg", bbox_inches='tight')
