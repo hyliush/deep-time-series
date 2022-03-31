@@ -36,7 +36,6 @@ parser.add_argument('--patience', type=int, default=3, help='early stopping pati
 parser.add_argument('--use_amp', action='store_true', help='use automatic mixed precision training', default=False)
 parser.add_argument('--itr', type=int, default=2, help='experiments times')
 parser.add_argument('--output_hidden', action='store_true', help='whether to output hidden in ecoder')
-parser.add_argument('--checkpoints', type=str, default='./checkpoints/', help='location of model checkpoints')
 
 # Informer decoder input: concat[start token series(label_len), zero padding series(pred_len)]
 # Informer decoder input: concat[start token series(label_len), zero padding series(pred_len)]

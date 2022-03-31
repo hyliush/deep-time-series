@@ -13,16 +13,16 @@ for ii in range(args.itr):
                 args.des, ii)
     logger.info('Args in experiment:{}'.format(setting))
     # set experiments
-    exp = Exp_model(args)
+    exp = Exp_model(args, setting)
     
     if not args.do_predict:
         print('>>>>>>>start training : {}>>>>>>>>>>>>>>>>>>>>>>>>>>'.format(setting))
-        exp.train(setting)
+        exp.train()
         print('>>>>>>>testing : {}<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<'.format(setting))
-        exp.test(setting)
+        exp.test()
     else:
         print('>>>>>>>predicting : {}<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<'.format(setting))
-        exp.test(setting, load=True)
+        exp.test(load=True)
 
     torch.cuda.empty_cache()
     break

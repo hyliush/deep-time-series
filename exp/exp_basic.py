@@ -4,12 +4,29 @@ import torch.nn as nn
 import torch
 import os
 from utils.loss import OZELoss
+from utils.tools import Writer
 
 class Exp_Basic(object):
-    def __init__(self, args):
+    def __init__(self, args, setting):
         self.args = args
+        self._init_path(setting)
         self.device = self._acquire_device()
         self.model = self._build_model().to(self.device)
+        self.writer = Writer(self.run_path)
+
+    def _init_path(self, setting):
+        
+        self.model_path = os.path.join("./checkpoints/", setting)
+        if not os.path.exists(self.model_path):
+            os.makedirs(self.model_path)
+            
+        self.result_path = os.path.join("./results/", setting)
+        if not os.path.exists(self.result_path):
+            os.makedirs(self.result_path)
+
+        self.run_path = os.path.join("./runs/", setting)
+        if not os.path.exists(self.run_path):
+            os.makedirs(self.run_path)
 
     def _select_optimizer(self):
         model_optim = optim.Adam(self.model.parameters(), lr=self.args.learning_rate)

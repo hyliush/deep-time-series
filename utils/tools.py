@@ -1,7 +1,10 @@
 import numpy as np
+from soupsieve import Iterable
 import torch
 import time
-
+from torch.utils.tensorboard import SummaryWriter
+import os
+from datetime import datetime
 def timer(func):
     def deco(*args, **kwargs):
         # print('\n函数：{_funcname_}开始运行：'.format(_funcname_=func.__name__))
@@ -27,6 +30,25 @@ def adjust_learning_rate(optimizer, epoch, args):
         for param_group in optimizer.param_groups:
             param_group['lr'] = lr
         print('Updating learning rate to {}'.format(lr))
+
+class Writer:
+    def __init__(self, run_path):
+        self.writer = SummaryWriter(log_dir = os.path.join(run_path,
+            '{}'.format(str(datetime.now().strftime('%Y-%m-%d-%H-%M-%S')))))
+
+    def add_scalar(self, indictor_name, y, x):
+        self.writer.add_scalar(indictor_name, y, x)
+
+    def _record(self, indictor_name, y, x, type="scalar"):
+        if type == "scalar":
+            self.add_scalar(indictor_name, y, x)
+
+    def record(self, indictor_name, y, x, type="scalar"):
+        if isinstance(y, dict):
+            for key in y.keys():
+                self._record(indictor_name+"_"+key, y[key], x, type)
+        else:
+            self._record(indictor_name, y, x, type)
 
 class EarlyStopping:
     def __init__(self, patience=7, verbose=False, delta=0):

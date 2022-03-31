@@ -30,4 +30,4 @@ def metric(pred, true):
     mape = MAPE(pred, true)
     mspe = MSPE(pred, true)
     
-    return mae,mse,rmse,mape,mspe
+    return dict(zip(("mae","mse","rmse","mape","mspe"), (mae,mse,rmse,mape,mspe)))

@@ -10,18 +10,15 @@ from exp.exp_basic import Exp_Basic
 from utils.visualization import plot_pred, map_plot_function, \
 plot_values_distribution, plot_error_distribution, plot_errors_threshold, plot_visual_sample
 class Exp_Multi(Exp_Basic):
-    def __init__(self, args):
-        super().__init__(args)
-    def train(self, setting):
+    def __init__(self, args, setting):
+        super().__init__(args, setting)
 
-        path = os.path.join(self.args.checkpoints, setting)
-        if not os.path.exists(path):
-            os.makedirs(path)
-        best_model_path = path+'/'+'checkpoint.pth'
+    def train(self):
+        best_model_path = self.model_path+'/'+'checkpoint.pth'
 
         # 读取上次训练模型
         if self.args.load:
-            if "checkpoint.pth" in path:
+            if "checkpoint.pth" in self.model_path:
                 print("---------------------load last trained model--------------------------")
                 self.model.load_state_dict(torch.load(best_model_path))
 
@@ -74,7 +71,7 @@ class Exp_Multi(Exp_Basic):
             logger.info("Epoch: {}, epoch_train_steps: {} | Train Loss: {:.7f} Vali Loss: {:.7f} cost time: {}".format(
                 idx_epoch + 1, epoch_train_steps, total_train_loss, total_vali_loss, (time.time()-epoch_time)/60))
             
-            early_stopping(total_vali_loss, self.model, path)
+            early_stopping(total_vali_loss, self.model, self.model_path)
             if early_stopping.early_stop:
                 print("Early stopping")
                 break
@@ -113,11 +110,11 @@ class Exp_Multi(Exp_Basic):
             total_loss.append(loss)
 
         total_trues, total_preds = np.concatenate(total_trues), np.concatenate(total_preds)
-        mae, mse, rmse, mape, mspe = metric(total_preds, total_trues)
+        metrics = metric(total_preds, total_trues)
         total_loss = np.average(total_loss)
 
         self.model.train()
-        return total_loss, (mae, mse, rmse, mape, mspe)
+        return total_loss, metrics
 
     def _test(self, test_loader, file_path):                
         self.model.eval()
@@ -129,34 +126,27 @@ class Exp_Multi(Exp_Basic):
         preds, trues = np.concatenate(preds_lst), np.concatenate(trues_lst)
         logger.debug('test shape:{} {}'.format(preds.shape, trues.shape))
         
-        mae, mse, rmse, mape, mspe = metric(preds, trues)
-        print('mse:{}, mae:{}'.format(mse, mae))
+        metrics = metric(preds, trues)
+        logger.info('mse:{}, mae:{}'.format(metrics["mse"], metrics["mae"]))
 
         if file_path is not None:
-            np.save(f'{file_path}_metrics.npy', np.array([mae, mse, rmse, mape, mspe]))
             np.save(f'{file_path}_pred.npy', preds)
             np.save(f'{file_path}_true.npy', trues)
 
         return preds, trues
 
-    def test(self, setting, load=False, plot=True, save=False):
+    def test(self, load=False, plot=True, save=False):
         # test承接train之后模型，为保证单独使用test，增加load参数
         if load:
-            path = os.path.join(self.args.checkpoints, setting)
-            best_model_path = path+'/'+'checkpoint.pth'
+            best_model_path = self.model_path+'/'+'checkpoint.pth'
             self.model.load_state_dict(torch.load(best_model_path))
-
-        # result save
-        folder_path = './results/' + setting +'/'
-        if not os.path.exists(folder_path):
-            os.makedirs(folder_path)
         
         total_preds_lst, total_trues_lst = [], []
         
         for file_name in self.fileName_lst:
             test_loader = self._get_data(file_name, flag='test')
 
-            file_path = folder_path+f'{file_name[:-4]}'
+            file_path = self.result_path+f'{file_name[:-4]}'
             preds, trues = self._test(test_loader, file_path)
             # inverse
             if self.args.inverse:
@@ -169,12 +159,12 @@ class Exp_Multi(Exp_Basic):
         # total_preds = np.where(abs(total_preds)>10, 0, total_preds)
         # total_trues = np.where(abs(total_trues)>1, 0, total_trues)
         logger.info("test shape:{} {}".format(total_preds.shape, total_trues.shape))
-        mae, mse, rmse, mape, mspe = metric(total_preds, total_trues)
-        print('mse:{}, mae:{}'.format(mse, mae))
+        metrics = metric(total_preds, total_trues)
+        logger.info('mse:{}, mae:{}'.format(metrics["mse"], metrics["mae"]))
+        
         if save:
-            np.save(folder_path+'metrics.npy', np.array([mae, mse, rmse, mape, mspe]))
-            np.save(folder_path+'pred.npy', total_preds)
-            np.save(folder_path+f'true.npy', total_trues)
+            np.save(self.result_path+'pred.npy', preds)
+            np.save(self.result_path+f'true.npy', trues)
         if plot:
             # plot_pred(total_trues, total_preds)
             if self.args.pred_len > 1:

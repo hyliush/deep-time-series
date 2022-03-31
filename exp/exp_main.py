@@ -14,7 +14,7 @@ import warnings
 warnings.filterwarnings('ignore')
 
 class Exp_model(Exp):
-    def __init__(self, args):
+    def __init__(self, args, setting):
         # for multi
         self.fileName_lst = os.listdir(args.data_path)
         # for single
@@ -23,7 +23,7 @@ class Exp_model(Exp):
 
         self.tmp_dataset = None
         Exp_model.init_process_one_batch(args)
-        super().__init__(args)
+        super().__init__(args, setting)
 
     @classmethod    
     def init_process_one_batch(cls, args):
