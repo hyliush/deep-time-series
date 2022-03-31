@@ -1,8 +1,8 @@
+from models.seq2seq import Informer, Autoformer, Transformer, GruAttention, Gru, Lstm
 from models.Gdnn import Gdnn
 from models.TCN import TCN
 from models.TPA import TPA
 from models.Trans import Trans
-from models.seq2seq import Informer, Autoformer, Transformer, GruAttention, Gru, Lstm
 from models.DeepAR import DeepAR
 from models.Lstm import BenchmarkLstm
 from models.Mlp import BenchmarkMlp

@@ -124,27 +124,27 @@ class Exp_Single(Exp_Basic):
         preds, trues = np.concatenate(preds_lst), np.concatenate(trues_lst)
         logger.debug('test shape:{} {}'.format(preds.shape, trues.shape))
         
-        mae, mse, rmse, mape, mspe = metric(preds, trues)
-        logger.info('mse:{}, mae:{}'.format(mse, mae))
-
         if self.args.inverse:
             preds = np.sqrt(np.exp(test_loader.dataset.inverse_transform(preds)[..., -1:]))
             trues = np.sqrt(np.exp(test_loader.dataset.inverse_transform(trues)[..., -1:]))
+        mae, mse, rmse, mape, mspe = metric(preds, trues)
+        logger.info('mse:{}, mae:{}'.format(mse, mae))
         if save:
             np.save(folder_path+'metrics.npy', np.array([mae, mse, rmse, mape, mspe]))
             np.save(folder_path+'pred.npy', preds)
             np.save(folder_path+f'true.npy', trues)
         if plot:
             from utils.metrics import CORR
-            plot_pred(trues, preds, pred_idx=0)
+            plot_pred(trues, preds, pred_idx=0, col_idx=0)
             if self.args.pred_len > 1:
                 # labels = test_data.dataset.labels["X"]
                 # labels = "HUFL,HULL,MUFL,MULL,LUFL,LULL,OT".split(',')
-                labels =["Volatility"]
-                fig = map_plot_function(trues, preds, plot_visual_sample, labels, 168)
+                idx_labels = [-1, -2, -3]
+                labels =["Volatility"] * len(idx_labels)
+                fig = map_plot_function(trues, preds, plot_visual_sample, labels, idx_labels, 168)
                 # fig.savefig(f"./img/{self.args.model}_sample.jpg", bbox_inches='tight')
 
-                fig = map_plot_function(trues, preds, plot_values_distribution, labels, 48)
+                fig = map_plot_function(trues, preds, plot_values_distribution, labels, idx_labels, 48)
                 # fig.savefig(f"./img/{self.args.model}_distribution.jpg", bbox_inches='tight')
             else:
                 map_plot_function(trues.reshape(60, -1, 1), preds.reshape(60, -1, 1), 

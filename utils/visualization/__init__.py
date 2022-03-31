@@ -38,10 +38,10 @@ def map_plot_function_input(dataset, plot_function, plot_kwargs={}, dataset_indi
                 label.set_visible(False)
 
 
-def map_plot_function(trues, preds, plot_function, labels=None, limit=None, dataset=None, plot_kwargs={}):
+def map_plot_function(trues, preds, plot_function, labels=None, idx_labels=None, limit=None, dataset=None, plot_kwargs={}):
 
     labels = dataset.labels if dataset else labels
-    idx_labels = [dataset.labels.index(label) for label in labels] if dataset else range(len(labels))
+    idx_labels = [dataset.labels.index(label) for label in labels] if dataset else idx_labels
     limit = dataset.pred_len if dataset else limit
     
     # Create subplots

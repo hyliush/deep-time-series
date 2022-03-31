@@ -28,7 +28,7 @@ parser.add_argument('--inverse', action='store_true', help='inverse output data'
 parser.add_argument('--train_epochs', type=int, default=100, help='train epochs')
 parser.add_argument('--batch_size', type=int, default=32, help='batch size of train input data')
 parser.add_argument('--activation', type=str, default='gelu',help='activation')
-parser.add_argument('--learning_rate', type=float, default=0.0001, help='optimizer learning rate')
+parser.add_argument('--learning_rate', type=float, default=0.001, help='optimizer learning rate')
 parser.add_argument('--loss', type=str, default='mse',help='loss function')
 parser.add_argument('--lradj', type=str, default='type1',help='adjust learning rate')
 parser.add_argument('--num_workers', type=int, default=0, help='data loader num workers')
@@ -143,8 +143,8 @@ data_parser = {
     # 'freq':'b', 'T':'rv',"features":"MS",'MS':[45,45,1],
     # 'seq_len':60, 'label_len':20, "pred_len":20},
     'Volatility':{'data_path':'./data/Volatility',"file_name":"tmpVolatility.csv",
-    'freq':'b', 'T':'rv',"features":"MS", 'MS':[33,33,1],
-    'seq_len':60, 'label_len':1, "pred_len":20},
+    'freq':'b', 'T':'rv',"features":"MS", 'MS':[33,33,1],'M':[33,33,33], 
+    'seq_len':60, 'label_len':10, "pred_len":20},
     'Ubiquant':{'data_path':'../ubiquant/ubiquantSeg',
     'freq':'b', 'T':'target','M':[45,45,45],'S':[1,1,1],'MS':[45,45,1],
     'seq_len':25, 'label_len':0, "pred_len":1},
@@ -152,11 +152,9 @@ data_parser = {
     'oze':{'seq_len':672, 'label_len':1, "pred_len":671, "M":[37,8,8], "T":"s", 'features':"M"}
 }
 
-args.model = "edgru"
+args.model = "informer"
 args.data = "Volatility"
-args.dataset = "VolatilitySeq2Seq"
 args.dataset = "Volatility"
-
 # args.model = "informer"
 # args.data = "ETTh1"
 # args.dataset = "ETTh1"

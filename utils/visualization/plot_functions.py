@@ -2,13 +2,13 @@ import matplotlib.pyplot as plt
 import numpy as np 
 import seaborn as sns
 
-def plot_pred(total_trues, total_preds, pred_idx=0, span=300):
+def plot_pred(total_trues, total_preds, pred_idx=0, col_idx=0, span=300):
     lst1, lst2 = [], []
     for i in range(total_trues.shape[0]):
-        lst1.append(total_trues[i][pred_idx])
-        lst2.append(total_preds[i][pred_idx])
-    lst1 = np.concatenate(lst1)
-    lst2 = np.concatenate(lst2)
+        lst1.append(total_trues[i][pred_idx,col_idx])
+        lst2.append(total_preds[i][pred_idx,col_idx])
+    lst1 = np.array(lst1)
+    lst2 = np.array(lst2)
     span = min(total_trues.shape[0], span)
     start_idx = np.random.choice(total_trues.shape[0]-span+1, 1)[0]
     plt.plot(lst1[start_idx:start_idx+span])

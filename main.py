@@ -2,6 +2,7 @@ import torch
 from utils import logger
 from args import args
 from exp.exp_main import Exp_model
+args.do_predict = True
 
 for ii in range(args.itr):
     # setting record of experiments
@@ -14,19 +15,14 @@ for ii in range(args.itr):
     # set experiments
     exp = Exp_model(args)
     
-    train = False
-    if train:
+    if not args.do_predict:
         print('>>>>>>>start training : {}>>>>>>>>>>>>>>>>>>>>>>>>>>'.format(setting))
         exp.train(setting)
         print('>>>>>>>testing : {}<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<'.format(setting))
         exp.test(setting)
     else:
-        print('>>>>>>>testing : {}<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<'.format(setting))
-        exp.test(setting, load=True)
-
-    if args.do_predict:
         print('>>>>>>>predicting : {}<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<'.format(setting))
-        exp.test(setting, True)
+        exp.test(setting, load=True)
 
     torch.cuda.empty_cache()
     break
