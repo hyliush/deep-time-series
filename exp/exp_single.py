@@ -36,6 +36,7 @@ class Exp_Single(Exp_Basic):
         train_loader = self._get_data(file_name=self.train_filename, flag='train')
         val_loader = self._get_data(file_name=self.val_filename, flag='val')
         print_every = len(train_loader)//self.args.print_num
+        val_every = len(val_loader)//self.args.val_num
         for idx_epoch in range(self.args.train_epochs):
             self.model.train()
             epoch_time = time.time()
@@ -47,14 +48,10 @@ class Exp_Single(Exp_Basic):
                     batch_out= self.process_one_batch(batch)
                     loss = criterion(*batch_out)
                     running_loss += loss.item()
-
-                    pbar.set_postfix({'loss': running_loss/idx_batch})
+                    
+                    train_loss = running_loss/idx_batch
+                    pbar.set_postfix({'loss': train_loss})
                     pbar.update()
-
-                    if idx_batch % print_every==0:
-                        logger.info("Epoch: {0}, epoch_train_steps: {1},  | loss: {2:.7f}".format(idx_epoch+1, idx_batch, loss.item()))
-                        self.writer.add_scalar("Loss/train", running_loss/idx_batch, idx_epoch*len(train_loader)+idx_batch)
-
                     if self.args.use_amp:
                         scaler.scale(loss).backward()
                         scaler.step(model_optim)
@@ -63,15 +60,20 @@ class Exp_Single(Exp_Basic):
                         loss.backward()
                         model_optim.step()
 
-                train_loss = running_loss/len(train_loader)
-                vali_loss, vali_metrics_dict = self.vali(val_loader, criterion)
-                self.writer.add_scalar("Loss/val", vali_loss, idx_epoch+1)
-                self.writer.add_scalars("Val_metrics", vali_metrics_dict, idx_epoch+1)
+                    if idx_batch % print_every==0:
+                        # logger.info("Epoch: {0}, epoch_train_steps: {1},  | loss: {2:.7f}".format(idx_epoch+1, idx_batch, loss.item()))
+                        self.writer.add_scalar("Loss/train", train_loss, idx_epoch*len(train_loader)+idx_batch)
 
-                # epoch损失记录
-                logger.info("Epoch: {} | Train Loss: {:.7f} Vali Loss: {:.7f} cost time: {}".format(
-                    idx_epoch + 1, train_loss, vali_loss, (time.time()-epoch_time)/60))
-                
+                    if idx_batch % val_every==0:
+                        vali_loss, vali_metrics_dict = self.vali(val_loader, criterion)
+                        self.writer.add_scalar("Loss/val", vali_loss, idx_epoch*len(train_loader)+idx_batch)
+                        for key in vali_metrics_dict:
+                            self.writer.add_scalar("Val_metrics"+"_"+key, vali_metrics_dict[key], idx_epoch*len(train_loader)+idx_batch)
+
+                        logger.info("Epoch: {} Step:{}| Train Loss: {:.7f} Vali Loss: {:.7f} cost time: {}".format(
+                            idx_epoch + 1, idx_batch, train_loss, vali_loss, (time.time()-epoch_time)/60))
+                            
+                vali_loss, vali_metrics_dict = self.vali(val_loader, criterion)
                 early_stopping(vali_loss, self.model, self.model_path)
                 if early_stopping.early_stop:
                     logger.info("Early stopping")

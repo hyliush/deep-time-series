@@ -116,7 +116,8 @@ parser.add_argument('--use_multi_gpu', action='store_true', help='use multiple g
 parser.add_argument('--devices', type=str, default='0,1,2,3',help='device ids of multile gpus')
 parser.add_argument('--load', type=bool, default=True, help='load last trained model')
 
-parser.add_argument('--print_num', type=int, default=4, help='print_num')
+parser.add_argument('--print_num', type=int, default=4, help='print_num in one epoch')
+parser.add_argument('--val_num', type=int, default=2, help='val_num in one epoch')
 parser.add_argument('--single_file', type=bool, default=True, help='single_file')
 args = parser.parse_args()
 
@@ -129,7 +130,7 @@ if args.use_gpu and args.use_multi_gpu:
 
 data_parser = {
     'ETTh1':{'data_path':'./data/ETT/', 'file_name':'ETTh1.csv',
-    'seq_len':672, 'label_len':1, "pred_len":671,
+    'seq_len':15, 'label_len':3, "pred_len":7,
     "features":"M", 'T':'OT','M':[7,7,7],'S':[1,1,1],'MS':[7,7,1]},
     'ETTh2':{'T':'OT','M':[7,7,7],'S':[1,1,1],'MS':[7,7,1]},
     'ETTm1':{'T':'OT','M':[7,7,7],'S':[1,1,1],'MS':[7,7,1]},
@@ -151,7 +152,7 @@ data_parser = {
     'oze':{'seq_len':672, 'label_len':1, "pred_len":671, "M":[37,8,8], "T":"s", 'features':"M"}
 }
 
-args.model = "autoformer"
+args.model = "informer"
 args.data = "Volatility"
 args.dataset = "Volatility"
 # args.model = "informer"
