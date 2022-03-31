@@ -116,7 +116,7 @@ parser.add_argument('--use_multi_gpu', action='store_true', help='use multiple g
 parser.add_argument('--devices', type=str, default='0,1,2,3',help='device ids of multile gpus')
 parser.add_argument('--load', type=bool, default=True, help='load last trained model')
 
-parser.add_argument('--print_every', type=int, default=1000, help='print_every')
+parser.add_argument('--print_num', type=int, default=4, help='print_num')
 parser.add_argument('--single_file', type=bool, default=True, help='single_file')
 args = parser.parse_args()
 

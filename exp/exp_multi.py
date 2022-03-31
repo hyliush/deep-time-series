@@ -38,6 +38,7 @@ class Exp_Multi(Exp_Basic):
             total_train_loss = []
             for file_idx, file_name in enumerate(tqdm(self.fileName_lst), 1):
                 train_loader = self._get_data(file_name = file_name, flag = 'train')
+                print_every = len(train_loader)//self.args.print_num
                 train_steps = len(train_loader)
                 epoch_train_steps_count += train_steps
 
@@ -50,7 +51,7 @@ class Exp_Multi(Exp_Basic):
                     loss = criterion(*batch_out)
                     running_loss += loss.item()
                     
-                    if (idx_batch+1) % 1000==0:
+                    if (idx_batch+1) % print_every==0:
                         logger.info("Epoch: {0}, file_idx: {1}, epoch_train_steps: {2},  | loss: {3:.7f}".format(idx_epoch + 1, file_idx, epoch_train_steps, loss.item()))
                     
                     if self.args.use_amp:
@@ -65,7 +66,7 @@ class Exp_Multi(Exp_Basic):
                 total_train_loss.append(train_loss)
                 logger.info("Epoch: {} file_idx: {} train_loss: {}".format(idx_epoch+1, file_idx, train_loss))
 
-            total_vali_loss, vali_metrics = self.vali("val", criterion)
+            total_vali_loss, vali_metrics_dict = self.vali("val", criterion)
             total_train_loss = np.average(total_train_loss)
             # epoch损失记录
             logger.info("Epoch: {}, epoch_train_steps: {} | Train Loss: {:.7f} Vali Loss: {:.7f} cost time: {}".format(
@@ -110,11 +111,11 @@ class Exp_Multi(Exp_Basic):
             total_loss.append(loss)
 
         total_trues, total_preds = np.concatenate(total_trues), np.concatenate(total_preds)
-        metrics = metric(total_preds, total_trues)
+        metrics_dict = metric(total_preds, total_trues)
         total_loss = np.average(total_loss)
 
         self.model.train()
-        return total_loss, metrics
+        return total_loss, metrics_dict
 
     def _test(self, test_loader, file_path):                
         self.model.eval()
@@ -126,8 +127,8 @@ class Exp_Multi(Exp_Basic):
         preds, trues = np.concatenate(preds_lst), np.concatenate(trues_lst)
         logger.debug('test shape:{} {}'.format(preds.shape, trues.shape))
         
-        metrics = metric(preds, trues)
-        logger.info('mse:{}, mae:{}'.format(metrics["mse"], metrics["mae"]))
+        metrics_dict = metric(preds, trues)
+        logger.info('mse:{}, mae:{}'.format(metrics_dict["mse"], metrics_dict["mae"]))
 
         if file_path is not None:
             np.save(f'{file_path}_pred.npy', preds)
@@ -159,8 +160,8 @@ class Exp_Multi(Exp_Basic):
         # total_preds = np.where(abs(total_preds)>10, 0, total_preds)
         # total_trues = np.where(abs(total_trues)>1, 0, total_trues)
         logger.info("test shape:{} {}".format(total_preds.shape, total_trues.shape))
-        metrics = metric(total_preds, total_trues)
-        logger.info('mse:{}, mae:{}'.format(metrics["mse"], metrics["mae"]))
+        metrics_dict = metric(total_preds, total_trues)
+        logger.info('mse:{}, mae:{}'.format(metrics_dict["mse"], metrics_dict["mae"]))
         
         if save:
             np.save(self.result_path+'pred.npy', preds)

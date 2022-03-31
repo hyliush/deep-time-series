@@ -4,18 +4,21 @@ import torch.nn as nn
 import torch
 import os
 from utils.loss import OZELoss
-from utils.tools import Writer
+from torch.utils.tensorboard import SummaryWriter
+from datetime import datetime
 
 class Exp_Basic(object):
     def __init__(self, args, setting):
         self.args = args
+        self.setting = setting
         self._init_path(setting)
         self.device = self._acquire_device()
         self.model = self._build_model().to(self.device)
-        self.writer = Writer(self.run_path)
+        self.writer = SummaryWriter(log_dir = os.path.join(self.run_path,
+            '{}'.format(str(datetime.now().strftime('%Y-%m-%d %H-%M-%S')))))
+        # self.writer = SummaryWriter(log_dir = self.run_path)
 
     def _init_path(self, setting):
-        
         self.model_path = os.path.join("./checkpoints/", setting)
         if not os.path.exists(self.model_path):
             os.makedirs(self.model_path)

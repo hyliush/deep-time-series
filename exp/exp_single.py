@@ -35,7 +35,7 @@ class Exp_Single(Exp_Basic):
         
         train_loader = self._get_data(file_name=self.train_filename, flag='train')
         val_loader = self._get_data(file_name=self.val_filename, flag='val')
-        
+        print_every = len(train_loader)//self.args.print_num
         for idx_epoch in range(self.args.train_epochs):
             self.model.train()
             epoch_time = time.time()
@@ -51,9 +51,9 @@ class Exp_Single(Exp_Basic):
                     pbar.set_postfix({'loss': running_loss/idx_batch})
                     pbar.update()
 
-                    if idx_batch % self.args.print_every==0:
-                        logger.info("Epoch: {0}, epoch_train_steps: {1},  | loss: {2:.7f}".format(idx_epoch+1, idx_batch+1, loss.item()))
-                        self.writer.record("Loss/train", running_loss/idx_batch, idx_epoch*len(train_loader)+idx_batch)
+                    if idx_batch % print_every==0:
+                        logger.info("Epoch: {0}, epoch_train_steps: {1},  | loss: {2:.7f}".format(idx_epoch+1, idx_batch, loss.item()))
+                        self.writer.add_scalar("Loss/train", running_loss/idx_batch, idx_epoch*len(train_loader)+idx_batch)
 
                     if self.args.use_amp:
                         scaler.scale(loss).backward()
@@ -64,9 +64,9 @@ class Exp_Single(Exp_Basic):
                         model_optim.step()
 
                 train_loss = running_loss/len(train_loader)
-                vali_loss, vali_metrics = self.vali(val_loader, criterion)
-                self.writer.record("Loss/val", vali_loss, idx_epoch+1)
-                self.writer.record("Metrics/val", vali_metrics, idx_epoch+1)
+                vali_loss, vali_metrics_dict = self.vali(val_loader, criterion)
+                self.writer.add_scalar("Loss/val", vali_loss, idx_epoch+1)
+                self.writer.add_scalars("Val_metrics", vali_metrics_dict, idx_epoch+1)
 
                 # epoch损失记录
                 logger.info("Epoch: {} | Train Loss: {:.7f} Vali Loss: {:.7f} cost time: {}".format(
@@ -74,7 +74,7 @@ class Exp_Single(Exp_Basic):
                 
                 early_stopping(vali_loss, self.model, self.model_path)
                 if early_stopping.early_stop:
-                    print("Early stopping")
+                    logger.info("Early stopping")
                     break
 
                 adjust_learning_rate(model_optim, idx_epoch+1, self.args)
@@ -97,10 +97,10 @@ class Exp_Single(Exp_Basic):
 
         preds, trues = np.concatenate(preds), np.concatenate(trues)
         loss = running_loss/len(val_loader)
-        metrics = metric(preds, trues)
+        metrics_dict = metric(preds, trues)
 
         self.model.train()
-        return loss, metrics
+        return loss, metrics_dict
 
     def test(self, load=False, plot=True, save=False):
         # test承接train之后模型，为保证单独使用test，增加load参数
@@ -121,9 +121,10 @@ class Exp_Single(Exp_Basic):
         if self.args.inverse:
             preds = np.sqrt(np.exp(test_loader.dataset.inverse_transform(preds)[..., -1:]))
             trues = np.sqrt(np.exp(test_loader.dataset.inverse_transform(trues)[..., -1:]))
-        metrics = metric(preds, trues)
-        logger.info('mse:{}, mae:{}'.format(metrics["mse"], metrics["mae"]))
-        
+        metrics_dict = metric(preds, trues)
+        logger.info('mse:{}, mae:{}'.format(metrics_dict["mse"], metrics_dict["mae"]))
+        self.writer.add_hparams(hparam_dict={"setting" : self.setting}, metric_dict=metrics_dict)
+        self.writer.close()
         if save:
             np.save(self.result_path+'pred.npy', preds)
             np.save(self.result_path+f'true.npy', trues)

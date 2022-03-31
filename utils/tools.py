@@ -34,21 +34,23 @@ def adjust_learning_rate(optimizer, epoch, args):
 class Writer:
     def __init__(self, run_path):
         self.writer = SummaryWriter(log_dir = os.path.join(run_path,
-            '{}'.format(str(datetime.now().strftime('%Y-%m-%d-%H-%M-%S')))))
+            '{}'.format(str(datetime.now().strftime('%Y-%m-%d %H-%M-%S')))))
 
-    def add_scalar(self, indictor_name, y, x):
-        self.writer.add_scalar(indictor_name, y, x)
-
-    def _record(self, indictor_name, y, x, type="scalar"):
+    def record(self, type, **kwargs):
         if type == "scalar":
-            self.add_scalar(indictor_name, y, x)
-
-    def record(self, indictor_name, y, x, type="scalar"):
-        if isinstance(y, dict):
-            for key in y.keys():
-                self._record(indictor_name+"_"+key, y[key], x, type)
-        else:
-            self._record(indictor_name, y, x, type)
+            self.writer.add_scalar(kwargs)
+        if type == "scalars":
+            self.writer.add_scalars(kwargs)
+        if type == "hparams":
+            self.writer.add_hparams(kwargs)
+            
+    def record(self, indictor_name='', y='', x='', type="scalar"):
+        # if isinstance(y, dict):
+        #     # for key in y.keys():
+        #     #     self._record(indictor_name+"_"+key, y[key], x, type)
+        # else:
+            # self._record(indictor_name, y, x, type)
+        self._record(indictor_name, y, x, type)
 
 class EarlyStopping:
     def __init__(self, patience=7, verbose=False, delta=0):
