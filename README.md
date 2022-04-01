@@ -80,23 +80,23 @@ A simple model(Seq2Seq) result for the task (only 2 epoches for train, test 2 sa
 ## Models currently supported
 We will keep adding series forecasting models to expand this repo.
 
-| Year | Models |Tasks|
-| --- | --- |---|
-|---|Vanilla Lstm|many to one|
-|2014|[Sequence to Sequence Learning with Neural Networks](https://arxiv.org/abs/1409.3215)|many to many|
-|2014|[Learning Phrase Representations using RNN Encoder-Decoder for Statistical Machine Translation](https://arxiv.org/abs/1406.1078)|many to many|
-|2016|[Neural Machine Translation by Jointly Learning to Align and Translate](https://arxiv.org/abs/1409.0473)|many to many|
-2017|[Attention Is All You Need](https://arxiv.org/abs/1706.03762)|many to many|
-|2017|[DeepAR:Probabilistic Forecasting with Autoregressive Recurrent Networks](https://arxiv.org/abs/1704.04110)|many to many|
-2017|[Modeling Long- and Short-Term Temporal Patterns with Deep Neural Networks](https://arxiv.org/abs/1703.07015)|many-to-one|
-|2018|[TPA:Temporal Pattern Attention for Multivariate Time Series Forecasting](https://arxiv.org/abs/1809.04206)|many to one|
-|2018|[TCN:An Empirical Evaluation of Generic Convolutional and Recurrent Networks for Sequence Modeling](https://arxiv.org/abs/1803.01271)|many to one|
-|2019|[LogTrans:Enhancing the Locality and Breaking the Memory Bottleneck of Transformer on Time Series Forecasting](https://arxiv.org/abs/1907.00235)|many to many 
-|2020 | [Informer: Beyond Efficient Transformer for Long Sequence Time-Series Forecasting](https://arxiv.org/abs/2012.07436)|many to many
-|2021|[Autoformer: Decomposition Transformers with Auto-Correlation for Long-Term Series Forecasting](https://arxiv.org/abs/2106.13008)|many to many|
-||Reformer|many to many|
-||Transformer XL|many to many|
-|-2019|[N-BEATS: Neural basis expansion analysis for interpretable time series forecasting](https://arxiv.org/abs/1905.10437)|
+| Year |Model name| Models |Tasks|
+| --- | --- |---| --- |
+|---|LSTM|Vanilla Lstm|many to one|
+|2014|EDLstm|[Sequence to Sequence Learning with Neural Networks](https://arxiv.org/abs/1409.3215)|many to many|
+|2014|EDGru|[Learning Phrase Representations using RNN Encoder-Decoder for Statistical Machine Translation](https://arxiv.org/abs/1406.1078)|many to many|
+|2016|EDGruAtt|[Neural Machine Translation by Jointly Learning to Align and Translate](https://arxiv.org/abs/1409.0473)|many to many|
+2017|Transformer|[Attention Is All You Need](https://arxiv.org/abs/1706.03762)|many to many|
+|2017|DeepAR|[DeepAR:Probabilistic Forecasting with Autoregressive Recurrent Networks](https://arxiv.org/abs/1704.04110)|many to many|
+2017|LSTNet|[Modeling Long- and Short-Term Temporal Patterns with Deep Neural Networks](https://arxiv.org/abs/1703.07015)|many-to-one|
+|2018|TPA|[TPA:Temporal Pattern Attention for Multivariate Time Series Forecasting](https://arxiv.org/abs/1809.04206)|many to one|
+|2018|TCN|[TCN:An Empirical Evaluation of Generic Convolutional and Recurrent Networks for Sequence Modeling](https://arxiv.org/abs/1803.01271)|many to one|
+|2019|LogTrans|[LogTrans:Enhancing the Locality and Breaking the Memory Bottleneck of Transformer on Time Series Forecasting](https://arxiv.org/abs/1907.00235)|many to many 
+|2020 |Informer| [Informer: Beyond Efficient Transformer for Long Sequence Time-Series Forecasting](https://arxiv.org/abs/2012.07436)|many to many
+|2021|Autoformer|[Autoformer: Decomposition Transformers with Auto-Correlation for Long-Term Series Forecasting](https://arxiv.org/abs/2106.13008)|many to many|
+||Reformer|Reformer|many to many|
+||Transformer XL|Transformer XL|many to many|
+|-2019|N-BEATS|[N-BEATS: Neural basis expansion analysis for interpretable time series forecasting](https://arxiv.org/abs/1905.10437)|
 
 ## DOING and TODO
 1. Add probability estimation function.
