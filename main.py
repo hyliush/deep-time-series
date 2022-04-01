@@ -2,7 +2,7 @@ import torch
 from utils import logger
 from args import args
 from exp.exp_main import Exp_model
-args.do_predict = False
+args.do_predict = True
 
 for ii in range(args.itr):
     # setting record of experiments

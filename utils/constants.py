@@ -1,6 +1,6 @@
 from models.seq2seq import Informer, Autoformer, Transformer, GruAttention, Gru, Lstm
 from models import Gdnn, TCN, TPA, Trans, DeepAR, BenchmarkLstm, BenchmarkMlp, LSTNet
-from data.data_loader import Dataset_ETT_hour, Dataset_ETT_minute, Dataset_Custom, Dataset_Pred, ToyDatasetSeq2Seq, UbiquantDataSetNoraml, VolatilityDataSet, ToyDataset
+from data.data_loader import Dataset_ETT_hour, Dataset_ETT_minute, Dataset_Custom, Dataset_Pred, UbiquantInformer, VolatilityDataSet, ToyDataset
 
 dataset_dict = {
 'ETTh1':Dataset_ETT_hour,
@@ -12,9 +12,8 @@ dataset_dict = {
 'Solar':Dataset_Custom,
 'custom':Dataset_Custom,
 'Volatility':VolatilityDataSet,
-'Ubiquant':UbiquantDataSetNoraml,
+'Ubiquant':UbiquantInformer,
 'Toy': ToyDataset,
-'ToySeq2Seq': ToyDatasetSeq2Seq
 }
 
 model_dict = {

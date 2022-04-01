@@ -32,25 +32,22 @@ def adjust_learning_rate(optimizer, epoch, args):
         print('Updating learning rate to {}'.format(lr))
 
 class Writer:
-    def __init__(self, run_path):
-        self.writer = SummaryWriter(log_dir = os.path.join(run_path,
-            '{}'.format(str(datetime.now().strftime('%Y-%m-%d %H-%M-%S')))))
-
-    def record(self, type, **kwargs):
-        if type == "scalar":
-            self.writer.add_scalar(kwargs)
-        if type == "scalars":
-            self.writer.add_scalars(kwargs)
-        if type == "hparams":
-            self.writer.add_hparams(kwargs)
-            
+    def __init__(self):
+        pass
+    def add_scalar(self, **kwargs):
+        pass        
+    def add_scalars(self, **kwargs):
+        pass
+    def add_hparams(self, **kwargs):
+        pass
     def record(self, indictor_name='', y='', x='', type="scalar"):
         # if isinstance(y, dict):
         #     # for key in y.keys():
         #     #     self._record(indictor_name+"_"+key, y[key], x, type)
         # else:
             # self._record(indictor_name, y, x, type)
-        self._record(indictor_name, y, x, type)
+        # self._record(indictor_name, y, x, type)
+        pass
 
 class EarlyStopping:
     def __init__(self, patience=7, verbose=False, delta=0):

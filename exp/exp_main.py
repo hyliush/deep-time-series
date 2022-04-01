@@ -29,15 +29,10 @@ class Exp_model(Exp):
     def init_process_one_batch(cls, args):
         if 'former' in args.model:
             cls._process_one_batch = _process_one_batch2
-        elif 'ed' in args.model:
-            cls._process_one_batch = _process_one_batch5
-        elif args.model == "gdnn":
-            cls._process_one_batch = _process_one_batch3
         elif args.model == "deepar":
-            cls._process_one_batch = _process_one_batch4
+            cls._process_one_batch = _process_one_batch3
         else:
             cls._process_one_batch = _process_one_batch1
-        pass
 
     def _get_data(self, file_name, flag):
         if  not hasattr(self.tmp_dataset, "file_name") or self.tmp_dataset.file_name != file_name:
@@ -81,13 +76,11 @@ class Exp_model(Exp):
         return model
 
 def _process_one_batch1(self, batch):
-    batch_x, batch_y = self._move2device(batch)
-    outputs = self.model(batch_x)
-    return outputs, batch_y
+    outputs = self.model(*[batch.get(param) for param in self.input_params])
+    return outputs, batch.get(self.target_param)
 
 def _process_one_batch2(self, batch):
-    batch_x, batch_y, batch_x_mark, batch_y_mark = self._move2device(batch)
-
+    batch_x, batch_y, batch_x_mark, batch_y_mark = batch.values()
     # decoder input
     if self.args.padding==0: # batch_size * (label_len + pred_len) * out_size pred部分被padding
         dec_inp = torch.zeros([batch_y.shape[0], self.args.pred_len, batch_y.shape[-1]]).float().to(self.device)
@@ -99,16 +92,6 @@ def _process_one_batch2(self, batch):
     return outputs, batch_y
 
 def _process_one_batch3(self, batch):
-    batch_x, batch_x_temporal, batch_x_spatial, batch_y = self._move2device(batch)
-    outputs = self.model(batch_x, batch_x_temporal, batch_x_spatial)
-    return outputs, batch_y
-
-def _process_one_batch5(self, batch):
-    batch_x, batch_y, batch_x_mark, batch_y_mark = self._move2device(batch)
-    outputs = self.model(batch_x, batch_x_mark, batch_y, batch_y_mark)
-    return outputs, batch_y
-
-def _process_one_batch4(self, batch):
     train_batch, idx, labels_batch = batch
     batch_size = train_batch.shape[0]
 

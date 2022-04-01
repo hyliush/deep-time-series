@@ -6,6 +6,8 @@ import os
 from utils.loss import OZELoss
 from torch.utils.tensorboard import SummaryWriter
 from datetime import datetime
+from utils.tools import Writer
+import inspect
 
 class Exp_Basic(object):
     def __init__(self, args, setting):
@@ -14,8 +16,10 @@ class Exp_Basic(object):
         self._init_path(setting)
         self.device = self._acquire_device()
         self.model = self._build_model().to(self.device)
+        self.input_params = args.input_params or inspect.signature(self.model.forward).parameters.keys()
+        self.target_param = args.target_param
         self.writer = SummaryWriter(log_dir = os.path.join(self.run_path,
-            '{}'.format(str(datetime.now().strftime('%Y-%m-%d %H-%M-%S')))))
+            '{}'.format(str(datetime.now().strftime('%Y-%m-%d %H-%M-%S'))))) if not args.debug else Writer()
         # self.writer = SummaryWriter(log_dir = self.run_path)
 
     def _init_path(self, setting):
@@ -44,14 +48,21 @@ class Exp_Basic(object):
             criterion = OZELoss(alpha=0.3)
         return criterion
 
-    def _move2device(self, data):
-        if isinstance(data, tuple):
-            data = list(data)
-        if isinstance(data, torch.Tensor):
-            return data.float().to(self.device)
-        for i in range(len(data)):
-            data[i] = self._move2device(data[i])
-        return data
+    def _move2device(self, obj):
+        if isinstance(obj, torch.Tensor):
+            return obj.float().to(self.device)
+        if isinstance(obj, tuple):
+            obj = list(obj)
+            obj = self._move2device(obj)
+            return obj
+        if isinstance(obj, dict):
+            for key in obj.keys():
+                obj[key] = self._move2device(obj[key])
+            return obj
+        if isinstance(obj, list):
+            for i in range(len(obj)):
+                obj[i] = self._move2device(obj[i])
+            return obj
 
     def _build_model(self):
         raise NotImplementedError
@@ -61,6 +72,7 @@ class Exp_Basic(object):
          raise NotImplementedError
          return
     def process_one_batch(self, batch):
+        batch = self._move2device(batch)
         if self.args.use_amp:
             with torch.cuda.amp.autocast():
                 outputs, batch_y = self._process_one_batch(batch)

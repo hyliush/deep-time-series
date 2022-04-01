@@ -128,6 +128,9 @@ parser.add_argument('--load', type=bool, default=True, help='load last trained m
 parser.add_argument('--print_num', type=int, default=8, help='print_num in one epoch')
 parser.add_argument('--val_num', type=int, default=6, help='val_num in one epoch')
 parser.add_argument('--single_file', type=bool, default=True, help='single_file')
+parser.add_argument('--debug', type=bool, default=True, help='whether debug')
+parser.add_argument('--input_params', type=str, nargs="+", default=["x", 'x_mark', 'y', 'y_mark'], help='input_params')
+parser.add_argument('--target_param', type=str, default="y", help='target_params')
 args = parser.parse_args()
 
 args.use_gpu = True if torch.cuda.is_available() and args.use_gpu else False
@@ -161,9 +164,10 @@ data_parser = {
     'oze':{'seq_len':672, 'label_len':1, "pred_len":671, "M":[37,8,8], "T":"s", 'features':"M"}
 }
 
-args.model = "transformer"
+args.model = "edgru"
 args.data = "Volatility"
 args.dataset = "Volatility"
+# args.input_params = ["x"]
 # args.model = "informer"
 # args.data = "ETTh1"
 # args.dataset = "ETTh1"

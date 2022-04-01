@@ -14,11 +14,11 @@ class Encoder(nn.Module):
         self.embedding = DataEmbedding_ED(enc_in, emb_dim, embed, freq, dropout)
         self.rnn = nn.LSTM(emb_dim, hid_dim, n_layers, dropout = dropout, batch_first=True)
 
-    def forward(self, x_enc, x_enc_mark):
+    def forward(self, x_enc, x_mark_enc):
         
         #x_enc = [batch size, x_enc len, n_features]
         
-        embedded = self.embedding(x_enc, x_enc_mark)
+        embedded = self.embedding(x_enc, x_mark_enc)
         #embedded = [batch size, x_enc len, emb dim]
         
         outputs, (hidden, cell) = self.rnn(embedded)
@@ -93,7 +93,7 @@ class Lstm(nn.Module):
         assert self.encoder.n_layers == self.decoder.n_layers, \
             "Encoder and decoder must have equal number of layers!"
         
-    def forward(self, x_enc, x_enc_mark, x_dec, x_dec_mark):
+    def forward(self, x_enc, x_mark_enc, x_dec, x_mark_dec):
         if self.training:
             teacher_forcing_ratio = self.teacher_forcing_ratio
         else:
@@ -108,10 +108,10 @@ class Lstm(nn.Module):
         outputs = torch.zeros(batch_size, x_dec_len-1, dec_in).to(x_enc.device)
         
         #last hidden state of the encoder is used as the initial hidden state of the decoder
-        hidden, cell = self.encoder(x_enc, x_enc_mark)
+        hidden, cell = self.encoder(x_enc, x_mark_enc)
         
         input = x_dec[:, 0, :].unsqueeze(dim=1)
-        input_mark = x_dec_mark[:, 0, :].unsqueeze(dim=1)
+        input_mark = x_mark_dec[:, 0, :].unsqueeze(dim=1)
         for t in range(1, x_dec_len):
             #insert input token embedding, previous hidden state and the context state
             #receive output tensor (predictions) and new hidden state
@@ -125,7 +125,7 @@ class Lstm(nn.Module):
             
             #if teacher forcing, use actual next token as next input
             input = x_dec[:, t, :].unsqueeze(dim=1) if teacher_force else output
-            input_mark = x_dec_mark[:, t, :].unsqueeze(dim=1)
+            input_mark = x_mark_dec[:, t, :].unsqueeze(dim=1)
 
         return outputs[:, -self.pred_len:, :]
 

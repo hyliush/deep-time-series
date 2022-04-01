@@ -13,11 +13,11 @@ class Encoder(nn.Module):
         self.rnn = nn.GRU(emb_dim, enc_hid_dim, bidirectional = True, batch_first=True)
         self.fc = nn.Linear(enc_hid_dim * 2, dec_hid_dim)
         
-    def forward(self, x_enc, x_enc_mark):
+    def forward(self, x_enc, x_mark_enc):
         
         #x_enc = [x_enc len, batch size]
         
-        embedded = self.embedding(x_enc, x_enc_mark)
+        embedded = self.embedding(x_enc, x_mark_enc)
         #embedded = [x_enc len, batch size, emb dim]
         
         outputs, hidden = self.rnn(embedded)
@@ -139,7 +139,7 @@ class GruAttention(nn.Module):
         self.encoder = Encoder(enc_in, emb_dim, enc_hid_dim, dec_hid_dim, embed, freq, dropout)
         self.decoder = Decoder(dec_in, emb_dim, enc_hid_dim, dec_hid_dim, embed, freq, dropout, attention)
         
-    def forward(self, x_enc, x_enc_mark, x_dec, x_dec_mark):
+    def forward(self, x_enc, x_mark_enc, x_dec, x_mark_dec):
         
         #x_enc = [x_enc len, batch size, n_features]
         #x_dec = [x_dec len, batch size, n_features]
@@ -154,10 +154,10 @@ class GruAttention(nn.Module):
         outputs = torch.zeros(batch_size, x_dec_len-1, dec_in).to(x_enc.device)
         
         #last hidden state of the encoder is the context
-        encoder_outputs, hidden = self.encoder(x_enc, x_enc_mark)
+        encoder_outputs, hidden = self.encoder(x_enc, x_mark_enc)
         
         input = x_dec[:, 0, :].unsqueeze(dim=1)
-        input_mark = x_dec_mark[:, 0, :].unsqueeze(dim=1)
+        input_mark = x_mark_dec[:, 0, :].unsqueeze(dim=1)
         for t in range(1, x_dec_len):
             #insert input token embedding, previous hidden state and the context state
             #receive output tensor (predictions) and new hidden state
@@ -171,7 +171,7 @@ class GruAttention(nn.Module):
             
             #if teacher forcing, use actual next token as next input
             input = x_dec[:, t, :].unsqueeze(dim=1) if teacher_force else output
-            input_mark = x_dec_mark[:, t, :].unsqueeze(dim=1)
+            input_mark = x_mark_dec[:, t, :].unsqueeze(dim=1)
 
         return outputs[:, -self.pred_len:, :]
        
