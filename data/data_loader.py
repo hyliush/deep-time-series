@@ -10,6 +10,8 @@ from utils.timefeatures import time_features
 from joblib import Parallel,delayed
 import warnings
 warnings.filterwarnings('ignore')
+import random 
+
 class DatasetBase(Dataset):
     def __init__(self, data_path, size, features, file_name, 
                  target, scale, inverse, timeenc, freq, cols):
@@ -23,6 +25,21 @@ class DatasetBase(Dataset):
         self.timeenc = timeenc
         self.freq = freq
         self.cols = cols
+    def get_idxs(self, sample_id, shuffle=False):
+        total_len, start_point = len(sample_id), sample_id[0]
+        length = total_len-self.seq_len-self.pred_len+1
+        cut_point1, cut_point2 = length-2*self.test_size, length-self.test_size
+        border1s = [i+start_point for i in [0, cut_point1, cut_point2]]
+        border2s = [i+start_point for i in [cut_point1, cut_point2, length]]
+        train_idxs = np.arange(border1s[0], border2s[0]).tolist()
+        val_idxs = np.arange(border1s[1], border2s[1]).tolist()
+        train_val_idxs = train_idxs + val_idxs
+        if shuffle:
+            random.seed(125)
+            random.shuffle(train_val_idxs)
+        train_idxs, val_idxs = train_val_idxs[:len(train_idxs)], train_val_idxs[len(train_idxs):]
+        test_idxs = np.arange(border1s[2], border2s[2])
+        return train_idxs, val_idxs, test_idxs
 
 class Dataset_ETT_hour(DatasetBase):
     def __init__(self, data_path, size=None, 
@@ -354,16 +371,6 @@ class VolatilityDataSet(DatasetBase):
         self.__read_data__()
 
     def __read_data__(self):
-        def get_idxs(sample_id):
-            total_len, start_point = len(sample_id), sample_id[0]
-            length = total_len-self.seq_len-self.pred_len+1
-            cut_point1, cut_point2 = length-2*self.test_size, length-self.test_size
-            border1s = [i+start_point for i in [0, cut_point1, cut_point2]]
-            border2s = [i+start_point for i in [cut_point1, cut_point2, length]]
-            train_idxs = np.arange(border1s[0], border2s[0])
-            val_idxs = np.arange(border1s[1], border2s[1])
-            test_idxs = np.arange(border1s[2], border2s[2])
-            return train_idxs, val_idxs, test_idxs
         from utils.tools import timer
         @timer
         @cache_results(_cache_fp=None)
@@ -373,7 +380,7 @@ class VolatilityDataSet(DatasetBase):
             df_raw = pd.read_csv(os.path.join(self.data_path, self.file_name))
             sample_id_lst = [np.arange(len(df_raw))[df_raw["stock_id"]==i] 
                         for i in df_raw["stock_id"].unique()]
-            _tmp = Parallel(n_jobs=-1)(delayed(get_idxs)(x) for x in sample_id_lst)
+            _tmp = Parallel(n_jobs=-1)(delayed(self.get_idxs)(x) for x in sample_id_lst)
             train_idxs, val_idxs, test_idxs = zip(*_tmp)
             train_idxs, val_idxs, test_idxs = np.concatenate(train_idxs), np.concatenate(val_idxs), np.concatenate(test_idxs)
 

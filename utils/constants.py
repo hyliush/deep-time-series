@@ -1,11 +1,5 @@
 from models.seq2seq import Informer, Autoformer, Transformer, GruAttention, Gru, Lstm
-from models.Gdnn import Gdnn
-from models.TCN import TCN
-from models.TPA import TPA
-from models.Trans import Trans
-from models.DeepAR import DeepAR
-from models.Lstm import BenchmarkLstm
-from models.Mlp import BenchmarkMlp
+from models import Gdnn, TCN, TPA, Trans, DeepAR, BenchmarkLstm, BenchmarkMlp, LSTNet
 from data.data_loader import Dataset_ETT_hour, Dataset_ETT_minute, Dataset_Custom, Dataset_Pred, ToyDatasetSeq2Seq, UbiquantDataSetNoraml, VolatilityDataSet, ToyDataset
 
 dataset_dict = {
@@ -35,6 +29,7 @@ model_dict = {
 'tcn':TCN,
 'tpa':TPA,
 'trans':Trans,
+'lstnet':LSTNet,
 'gated':Gdnn,
 'deepar':DeepAR
 }

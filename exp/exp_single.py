@@ -36,7 +36,7 @@ class Exp_Single(Exp_Basic):
         train_loader = self._get_data(file_name=self.train_filename, flag='train')
         val_loader = self._get_data(file_name=self.val_filename, flag='val')
         print_every = len(train_loader)//self.args.print_num
-        val_every = len(val_loader)//self.args.val_num
+        val_every = len(train_loader)//self.args.val_num
         for idx_epoch in range(self.args.train_epochs):
             self.model.train()
             epoch_time = time.time()
@@ -68,11 +68,11 @@ class Exp_Single(Exp_Basic):
                         vali_loss, vali_metrics_dict = self.vali(val_loader, criterion)
                         self.writer.add_scalar("Loss/val", vali_loss, idx_epoch*len(train_loader)+idx_batch)
                         for key in vali_metrics_dict:
-                            self.writer.add_scalar("Val_metrics"+"_"+key, vali_metrics_dict[key], idx_epoch*len(train_loader)+idx_batch)
+                            self.writer.add_scalar(f"Val_metrics/{key}", vali_metrics_dict[key], idx_epoch*len(train_loader)+idx_batch)
 
                         logger.info("Epoch: {} Step:{}| Train Loss: {:.7f} Vali Loss: {:.7f} cost time: {}".format(
                             idx_epoch + 1, idx_batch, train_loss, vali_loss, (time.time()-epoch_time)/60))
-                            
+
                 vali_loss, vali_metrics_dict = self.vali(val_loader, criterion)
                 early_stopping(vali_loss, self.model, self.model_path)
                 if early_stopping.early_stop:
@@ -123,8 +123,8 @@ class Exp_Single(Exp_Basic):
         if self.args.inverse:
             preds = np.sqrt(np.exp(test_loader.dataset.inverse_transform(preds)[..., -1:]))
             trues = np.sqrt(np.exp(test_loader.dataset.inverse_transform(trues)[..., -1:]))
-        metrics_dict = metric(preds, trues)
-        logger.info('mse:{}, mae:{}'.format(metrics_dict["mse"], metrics_dict["mae"]))
+        metrics_dict = metric(preds, trues, "Test_metrics/")
+        logger.info('mse:{}, mae:{}'.format(metrics_dict["Test_metrics/mse"], metrics_dict["Test_metrics/mae"]))
         self.writer.add_hparams(hparam_dict={"setting" : self.setting}, metric_dict=metrics_dict)
         self.writer.close()
         if save:

@@ -22,6 +22,7 @@ parser.add_argument('--freq', type=str, default='h', help='freq for time feature
 parser.add_argument('--seq_len', type=int, default=672, help='input sequence length of Informer encoder')
 parser.add_argument('--label_len', type=int, default=1, help='start token length of Informer decoder')
 parser.add_argument('--pred_len', type=int, default=671, help='prediction sequence length')
+parser.add_argument('--horizon', type=int, default=0, help='predict timeseries (horizon+1)-th in head, many-to-one')
 parser.add_argument('--inverse', action='store_true', help='inverse output data', default=False)
 
 # training
@@ -32,7 +33,7 @@ parser.add_argument('--learning_rate', type=float, default=0.001, help='optimize
 parser.add_argument('--loss', type=str, default='mse',help='loss function')
 parser.add_argument('--lradj', type=str, default='type1',help='adjust learning rate')
 parser.add_argument('--num_workers', type=int, default=0, help='data loader num workers')
-parser.add_argument('--patience', type=int, default=3, help='early stopping patience')
+parser.add_argument('--patience', type=int, default=5, help='early stopping patience')
 parser.add_argument('--use_amp', action='store_true', help='use automatic mixed precision training', default=False)
 parser.add_argument('--itr', type=int, default=2, help='experiments times')
 parser.add_argument('--output_hidden', action='store_true', help='whether to output hidden in ecoder')
@@ -69,6 +70,14 @@ parser.add_argument('--output_attention', action='store_true', help='whether to 
 
 # nonseq2seq comon
 parser.add_argument('--input_size', type=int, default=300, help='input features dim')
+## LSTNet
+parser.add_argument('--hidRNN', default=100, help='RNN hidden zie')
+parser.add_argument('--hidCNN', type=int, default=100, help='CNN hidden size')
+parser.add_argument('--hidSkip', type=float, default=5)
+parser.add_argument('--skip', type=int, default=20)
+parser.add_argument('--CNN_kernel', default=6, help='kernel size')
+parser.add_argument('--highway_window', type=float, default=20, help='ar regression used last * items')
+
 ## tcn
 parser.add_argument('--tcn_n_layers', default=3, help='num_layers')
 parser.add_argument('--tcn_hidden_size', type=int, default=64, help='tcn hidden size')
@@ -116,8 +125,8 @@ parser.add_argument('--use_multi_gpu', action='store_true', help='use multiple g
 parser.add_argument('--devices', type=str, default='0,1,2,3',help='device ids of multile gpus')
 parser.add_argument('--load', type=bool, default=True, help='load last trained model')
 
-parser.add_argument('--print_num', type=int, default=4, help='print_num in one epoch')
-parser.add_argument('--val_num', type=int, default=2, help='val_num in one epoch')
+parser.add_argument('--print_num', type=int, default=8, help='print_num in one epoch')
+parser.add_argument('--val_num', type=int, default=6, help='val_num in one epoch')
 parser.add_argument('--single_file', type=bool, default=True, help='single_file')
 args = parser.parse_args()
 
@@ -152,7 +161,7 @@ data_parser = {
     'oze':{'seq_len':672, 'label_len':1, "pred_len":671, "M":[37,8,8], "T":"s", 'features':"M"}
 }
 
-args.model = "informer"
+args.model = "transformer"
 args.data = "Volatility"
 args.dataset = "Volatility"
 # args.model = "informer"
