@@ -14,7 +14,7 @@ import random
 
 class DatasetBase(Dataset):
     def __init__(self, data_path, size, features, file_name, 
-                 target, scale, inverse, timeenc, freq, cols):
+                 target, scale, inverse, timeenc, freq, cols, horizon=1):
         self.data_path = data_path
         self.size = size
         self.features = features
@@ -25,9 +25,12 @@ class DatasetBase(Dataset):
         self.timeenc = timeenc
         self.freq = freq
         self.cols = cols
+        self.horizon = horizon
+        
     def get_idxs(self, sample_id, shuffle=False):
+        self.len = max(self.horizon, self.pred_len)
         total_len, start_point = len(sample_id), sample_id[0]
-        length = total_len-self.seq_len-self.pred_len+1
+        length = total_len-self.seq_len-self.len+1
         cut_point1, cut_point2 = length-2*self.test_size, length-self.test_size
         border1s = [i+start_point for i in [0, cut_point1, cut_point2]]
         border2s = [i+start_point for i in [cut_point1, cut_point2, length]]
@@ -44,7 +47,8 @@ class DatasetBase(Dataset):
 class Dataset_ETT_hour(DatasetBase):
     def __init__(self, data_path, size=None, 
                  features='S', file_name='ETTh1.csv', 
-                 target='OT', scale=True, inverse=False, timeenc=0, freq='h', cols=None):
+                 target='OT', scale=True, inverse=False,
+                  timeenc=0, freq='h', cols=None, **kwargs):
 
         super().__init__(data_path, size, features, file_name, 
                         target, scale, inverse, timeenc, freq, cols)
@@ -119,7 +123,8 @@ class Dataset_ETT_hour(DatasetBase):
 class Dataset_ETT_minute(DatasetBase):
     def __init__(self, data_path, size=None, 
                  features='S', file_name='ETTm1.csv', 
-                 target='OT', scale=True, inverse=False, timeenc=0, freq='t', cols=None):
+                 target='OT', scale=True, inverse=False, 
+                 timeenc=0, freq='t', cols=None, **kwargs):
 
         super().__init__(data_path, size, features, file_name, 
                         target, scale, inverse, timeenc, freq, cols)
@@ -193,7 +198,8 @@ class Dataset_ETT_minute(DatasetBase):
 class Dataset_Custom(DatasetBase):
     def __init__(self, data_path, size=None, 
                  features='S', file_name='ETTh1.csv', 
-                 target='OT', scale=True, inverse=False, timeenc=0, freq='h', cols=None):
+                 target='OT', scale=True, inverse=False, 
+                 timeenc=0, freq='h', cols=None, **kwargs):
         super().__init__(data_path, size, features, file_name, 
                         target, scale, inverse, timeenc, freq, cols)
         if size == None:
@@ -279,7 +285,8 @@ class Dataset_Custom(DatasetBase):
 class Dataset_Pred(DatasetBase):
     def __init__(self, data_path, size=None, 
                  features='S', file_name='ETTh1.csv', 
-                 target='OT', scale=True, inverse=False, timeenc=0, freq='15min', cols=None):
+                 target='OT', scale=True, inverse=False, 
+                 timeenc=0, freq='15min', cols=None, **kwargs):
         super().__init__(data_path, size, features, file_name, 
                         target, scale, inverse, timeenc, freq, cols)
         if size == None:
@@ -363,9 +370,10 @@ class Dataset_Pred(DatasetBase):
 class VolatilityDataSet(DatasetBase):
     def __init__(self, data_path, size=None, 
                  features='S', file_name='ETTh1.csv', 
-                 target='OT', scale=True, inverse=False, timeenc=0, freq='d', cols=None):
+                 target='OT', scale=True, inverse=False,
+                  timeenc=0, freq='d', cols=None, horizon=1):
         super().__init__(data_path, size, features, file_name, 
-                        target, scale, inverse, timeenc, freq, cols)
+                        target, scale, inverse, timeenc, freq, cols, horizon)
         self.test_size = 60
         self.seq_len, self.label_len, self.pred_len = size
         self.__read_data__()
@@ -412,7 +420,7 @@ class VolatilityDataSet(DatasetBase):
 
         self.scaler, self.data_stamp, self.data_x, self.data_y, \
         self.train_idxs, self.val_idxs, self.test_idxs = \
-        _get_data(_cache_fp=os.path.join('./cache', f"{self.file_name[:-4]}_{self.__class__.__name__}_sl{self.seq_len}_pl{self.pred_len}.pkl"))
+        _get_data(_cache_fp=os.path.join('./cache', f"{self.file_name[:-4]}_{self.__class__.__name__}_sl{self.seq_len}_pl{self.pred_len}_hn{self.horizon}.pkl"))
         # total_len, start_point = len(df_raw), 0
         # length = total_len-self.seq_len-self.pred_len+1
         # cut_point1, cut_point2 = length-3*self.test_size, length-2*self.test_size
@@ -425,7 +433,7 @@ class VolatilityDataSet(DatasetBase):
     def __getitem__(self, index):
         s_begin = index
         s_end = s_begin + self.seq_len
-        r_begin = s_end - self.label_len 
+        r_begin = s_end - self.label_len + self.horizon-1
         r_end = r_begin + self.label_len + self.pred_len
 
         seq_x = self.data_x[s_begin:s_end]
@@ -449,7 +457,8 @@ class VolatilityDataSet(DatasetBase):
 class VolatilityDataSetGate(Dataset):
     def __init__(self, data_path, size=None, 
                  features='S', file_name='ETTh1.csv', 
-                 target='OT', scale=True, inverse=False, timeenc=0, freq='d', cols=None):
+                 target='OT', scale=True, inverse=False,
+                  timeenc=0, freq='d', cols=None, **kwargs):
         super().__init__(data_path, size, features, file_name, 
                         target, scale, inverse, timeenc, freq, cols)
         self.test_size = 60
@@ -606,7 +615,8 @@ class OzeDataset(Dataset):
 class UbiquantInformer(Dataset):
     def __init__(self, data_path, flag, size=None, 
                  features='S', file_name='ETTh1.csv', 
-                 target='OT', scale=True, inverse=False, timeenc=0, freq='d', cols=None, test_size=60):
+                 target='OT', scale=True, inverse=False,
+                  timeenc=0, freq='d', cols=None, **kwargs):
         super().__init__(data_path, size, features, file_name, 
                         target, scale, inverse, timeenc, freq, cols)
         self.test_size = 30
@@ -689,7 +699,8 @@ class UbiquantInformer(Dataset):
 class ToyDataset(DatasetBase):
     def __init__(self,data_path="", flag='train', size=None, 
                  features='S', file_name='ETTh1.csv', 
-                 target='OT', scale=True, inverse=False, timeenc=0, freq='h', cols=None):
+                 target='OT', scale=True, inverse=False, 
+                 timeenc=0, freq='h', cols=None, **kwargs):
         super().__init__(data_path, size, features, file_name, 
                         target, scale, inverse, timeenc, freq, cols)
         self.seq_len, self.label_len, self.pred_len = size

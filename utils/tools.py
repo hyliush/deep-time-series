@@ -34,11 +34,11 @@ def adjust_learning_rate(optimizer, epoch, args):
 class Writer:
     def __init__(self):
         pass
-    def add_scalar(self, **kwargs):
+    def add_scalar(self, *args, **kwargs):
         pass        
-    def add_scalars(self, **kwargs):
+    def add_scalars(self, *args, **kwargs):
         pass
-    def add_hparams(self, **kwargs):
+    def add_hparams(self, *args, **kwargs):
         pass
     def record(self, indictor_name='', y='', x='', type="scalar"):
         # if isinstance(y, dict):

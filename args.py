@@ -22,7 +22,7 @@ parser.add_argument('--freq', type=str, default='h', help='freq for time feature
 parser.add_argument('--seq_len', type=int, default=672, help='input sequence length of Informer encoder')
 parser.add_argument('--label_len', type=int, default=1, help='start token length of Informer decoder')
 parser.add_argument('--pred_len', type=int, default=671, help='prediction sequence length')
-parser.add_argument('--horizon', type=int, default=0, help='predict timeseries (horizon+1)-th in head, many-to-one')
+parser.add_argument('--horizon', type=int, default=1, help='predict timeseries horizon-th in head.When many2many, means from 1(default) to pred_len')
 parser.add_argument('--inverse', action='store_true', help='inverse output data', default=False)
 
 # training
@@ -128,7 +128,7 @@ parser.add_argument('--load', type=bool, default=True, help='load last trained m
 parser.add_argument('--print_num', type=int, default=8, help='print_num in one epoch')
 parser.add_argument('--val_num', type=int, default=6, help='val_num in one epoch')
 parser.add_argument('--single_file', type=bool, default=True, help='single_file')
-parser.add_argument('--debug', type=bool, default=True, help='whether debug')
+parser.add_argument('--debug', type=bool, default=False, help='whether debug')
 parser.add_argument('--input_params', type=str, nargs="+", default=["x", 'x_mark', 'y', 'y_mark'], help='input_params')
 parser.add_argument('--target_param', type=str, default="y", help='target_params')
 args = parser.parse_args()
@@ -156,7 +156,7 @@ data_parser = {
     # 'seq_len':60, 'label_len':20, "pred_len":20},
     'Volatility':{'data_path':'./data/Volatility',"file_name":"tmpVolatility.csv",
     'freq':'b', 'T':'rv',"features":"MS", 'MS':[33,33,1],'M':[33,33,33], 
-    'seq_len':60, 'label_len':10, "pred_len":20},
+    'seq_len':60, 'label_len':0, "pred_len":1, "horizon":2},
     'Ubiquant':{'data_path':'../ubiquant/ubiquantSeg',
     'freq':'b', 'T':'target','M':[45,45,45],'S':[1,1,1],'MS':[45,45,1],
     'seq_len':25, 'label_len':0, "pred_len":1},
@@ -164,10 +164,8 @@ data_parser = {
     'oze':{'seq_len':672, 'label_len':1, "pred_len":671, "M":[37,8,8], "T":"s", 'features':"M"}
 }
 
-args.model = "edgru"
 args.data = "Volatility"
 args.dataset = "Volatility"
-# args.input_params = ["x"]
 # args.model = "informer"
 # args.data = "ETTh1"
 # args.dataset = "ETTh1"
@@ -177,6 +175,7 @@ if args.data in data_parser.keys():
     args.data_path = data_info.get("data_path")
     args.file_name = data_info.get("file_name")
     args.features = data_info.get("features") or args.features
+    args.horizon = data_info.get("horizon") or args.horizon
     args.single_file = data_info.get("single_file") if data_info.get("single_file") is not None else args.single_file
     args.seq_len, args.label_len, args.pred_len = data_info['seq_len'], data_info['label_len'], data_info['pred_len']
     args.target = data_info['T']
