@@ -6,8 +6,8 @@ parser = argparse.ArgumentParser(description='Time Series Forecasting')
 parser.add_argument('--model', type=str, default='tpa',help='model of experiment, options: [lstm, \
 mlp, tpa, tcn, trans, gated, informerstack, informerlight(TBD)], autoformer, transformer,\
 edlstm, edgru, edgruattention')
-parser.add_argument('--data', type=str, default='ETTh1', help='only for revising some params related to the data, [ETTh1, Ubiquant]')
-parser.add_argument('--dataset', type=str, default='ETTh1', help='dataset, [ETTh1, Ubiquant]')
+parser.add_argument('--data', type=str, default='Mydata', help='only for revising some params related to the data, [ETTh1, Ubiquant]')
+parser.add_argument('--dataset', type=str, default='Mydata', help='dataset, [ETTh1, Ubiquant]')
 parser.add_argument('--data_path', type=str, default='./data/ETT/', help='root path of the data file')
 parser.add_argument('--file_name', type=str, default='ETTh1.csv', help='file_name')
 parser.add_argument('--criterion', type=str, default='mse', help='loss function')    
@@ -152,7 +152,7 @@ data_parser = {
     'Solar':{'T':'POWER_136','M':[137,137,137],'S':[1,1,1],'MS':[137,137,1]},
     'Mydata':{'data_path':'./data/Mydata',"file_name":"tmpMydata.csv",
     'freq':'b', 'T':'rv',"features":"MS", 'MS':[33,33,1],'M':[33,33,33], 
-    'seq_len':60, 'label_len':0, "pred_len":1, "horizon":3},
+    'seq_len':60, 'label_len':10, "pred_len":20, "horizon":1},
     'Ubiquant':{'data_path':'../ubiquant/ubiquantSeg',
     'freq':'b', 'T':'target','M':[45,45,45],'S':[1,1,1],'MS':[45,45,1],
     'seq_len':25, 'label_len':0, "pred_len":1},
@@ -160,7 +160,6 @@ data_parser = {
     'oze':{'seq_len':672, 'label_len':1, "pred_len":671, "M":[37,8,8], "T":"s", 'features':"M"}
 }
 
-args.data = "Mydata"
 if args.data in data_parser.keys():
     data_info = data_parser[args.data]
     args.data_path = data_info.get("data_path")

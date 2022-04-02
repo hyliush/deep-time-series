@@ -133,11 +133,11 @@ class Exp_Single(Exp_Basic):
         if plot:
             from utils.metrics import CORR
             plot_pred(trues, preds, pred_idx=0, col_idx=-1)
+            idx_labels = [-1]
+            labels =["mydata"] * len(idx_labels)
             if self.args.pred_len > 1:
                 # labels = test_data.dataset.labels["X"]
                 # labels = "HUFL,HULL,MUFL,MULL,LUFL,LULL,OT".split(',')
-                idx_labels = [-1]
-                labels =["mydata"] * len(idx_labels)
                 fig = map_plot_function(trues, preds, plot_visual_sample, labels, idx_labels, 168)
                 # fig.savefig(f"./img/{self.args.model}_sample.jpg", bbox_inches='tight')
 
@@ -145,4 +145,4 @@ class Exp_Single(Exp_Basic):
                 # fig.savefig(f"./img/{self.args.model}_distribution.jpg", bbox_inches='tight')
             else:
                 map_plot_function(trues.reshape(60, -1, 1), preds.reshape(60, -1, 1), 
-                plot_values_distribution, ['volitility'], 6)
+                plot_values_distribution, labels, idx_labels, 6)

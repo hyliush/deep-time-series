@@ -3,12 +3,12 @@ from utils import logger
 from args import args
 from exp.exp_main import Exp_model
 
-args.model = "tcn"
+args.model = "autoformer"
 args.dataset = "Mydata"
-args.input_params = ["x"]
 args.do_predict = False
-args.debug = False
-args.horizon = 5
+args.debug = True
+# args.input_params = ["x"]
+# args.horizon = 3
 
 for ii in range(args.itr):
     # setting record of experiments
