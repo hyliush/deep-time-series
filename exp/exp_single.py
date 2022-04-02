@@ -137,7 +137,7 @@ class Exp_Single(Exp_Basic):
                 # labels = test_data.dataset.labels["X"]
                 # labels = "HUFL,HULL,MUFL,MULL,LUFL,LULL,OT".split(',')
                 idx_labels = [-1]
-                labels =["Volatility"] * len(idx_labels)
+                labels =["mydata"] * len(idx_labels)
                 fig = map_plot_function(trues, preds, plot_visual_sample, labels, idx_labels, 168)
                 # fig.savefig(f"./img/{self.args.model}_sample.jpg", bbox_inches='tight')
 

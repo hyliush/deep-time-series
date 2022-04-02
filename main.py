@@ -2,10 +2,14 @@ import torch
 from utils import logger
 from args import args
 from exp.exp_main import Exp_model
-args.input_params = ["x"]
+
 args.model = "tcn"
+args.dataset = "Mydata"
+args.input_params = ["x"]
 args.do_predict = False
-args.debug = True
+args.debug = False
+args.horizon = 5
+
 for ii in range(args.itr):
     # setting record of experiments
     setting = '{}_{}_ft{}_sl{}_ll{}_pl{}_is{}_os{}_hn{}_bs{}_lr{}_{}_{}'.format(

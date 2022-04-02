@@ -6,9 +6,9 @@ parser = argparse.ArgumentParser(description='Time Series Forecasting')
 parser.add_argument('--model', type=str, default='tpa',help='model of experiment, options: [lstm, \
 mlp, tpa, tcn, trans, gated, informerstack, informerlight(TBD)], autoformer, transformer,\
 edlstm, edgru, edgruattention')
-parser.add_argument('--data', type=str, default='', help='only for revising some params related to the data, [ETTh1, Ubiquant, Volatility]')
-parser.add_argument('--dataset', type=str, default='Volatility', help='dataset, [ETTh1, Ubiquant, Volatility]')
-parser.add_argument('--data_path', type=str, default='./data/ToyData/', help='root path of the data file')
+parser.add_argument('--data', type=str, default='ETTh1', help='only for revising some params related to the data, [ETTh1, Ubiquant]')
+parser.add_argument('--dataset', type=str, default='ETTh1', help='dataset, [ETTh1, Ubiquant]')
+parser.add_argument('--data_path', type=str, default='./data/ETT/', help='root path of the data file')
 parser.add_argument('--file_name', type=str, default='ETTh1.csv', help='file_name')
 parser.add_argument('--criterion', type=str, default='mse', help='loss function')    
 
@@ -150,13 +150,9 @@ data_parser = {
     'WTH':{'T':'WetBulbCelsius','M':[12,12,12],'S':[1,1,1],'MS':[12,12,1]},
     'ECL':{'T':'MT_320','M':[321,321,321],'S':[1,1,1],'MS':[321,321,1]},
     'Solar':{'T':'POWER_136','M':[137,137,137],'S':[1,1,1],'MS':[137,137,1]},
-    # 'Volatility':{'data_path':'../../save_file/volatility_tmp',
-    # "single_file":False, 'file_name':"",# if multi_file, not to provide, 
-    # 'freq':'b', 'T':'rv',"features":"MS",'MS':[45,45,1],
-    # 'seq_len':60, 'label_len':20, "pred_len":20},
-    'Volatility':{'data_path':'./data/Volatility',"file_name":"tmpVolatility.csv",
+    'Mydata':{'data_path':'./data/Mydata',"file_name":"tmpMydata.csv",
     'freq':'b', 'T':'rv',"features":"MS", 'MS':[33,33,1],'M':[33,33,33], 
-    'seq_len':60, 'label_len':0, "pred_len":1, "horizon":2},
+    'seq_len':60, 'label_len':0, "pred_len":1, "horizon":3},
     'Ubiquant':{'data_path':'../ubiquant/ubiquantSeg',
     'freq':'b', 'T':'target','M':[45,45,45],'S':[1,1,1],'MS':[45,45,1],
     'seq_len':25, 'label_len':0, "pred_len":1},
@@ -164,12 +160,7 @@ data_parser = {
     'oze':{'seq_len':672, 'label_len':1, "pred_len":671, "M":[37,8,8], "T":"s", 'features':"M"}
 }
 
-args.data = "Volatility"
-args.dataset = "Volatility"
-# args.model = "informer"
-# args.data = "ETTh1"
-# args.dataset = "ETTh1"
-
+args.data = "Mydata"
 if args.data in data_parser.keys():
     data_info = data_parser[args.data]
     args.data_path = data_info.get("data_path")

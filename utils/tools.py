@@ -40,6 +40,8 @@ class Writer:
         pass
     def add_hparams(self, *args, **kwargs):
         pass
+    def close(self, *args, **kwargs):
+        pass
     def record(self, indictor_name='', y='', x='', type="scalar"):
         # if isinstance(y, dict):
         #     # for key in y.keys():

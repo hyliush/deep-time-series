@@ -367,11 +367,11 @@ class Dataset_Pred(DatasetBase):
         return self.scaler.inverse_transform(data)
 
 
-class VolatilityDataSet(DatasetBase):
+class MyDataSet(DatasetBase):
     def __init__(self, data_path, size=None, 
                  features='S', file_name='ETTh1.csv', 
                  target='OT', scale=True, inverse=False,
-                  timeenc=0, freq='d', cols=None, horizon=1):
+                  timeenc=0, freq='d', cols=None, horizon=1,**kwargs):
         super().__init__(data_path, size, features, file_name, 
                         target, scale, inverse, timeenc, freq, cols, horizon)
         self.test_size = 60
@@ -382,13 +382,13 @@ class VolatilityDataSet(DatasetBase):
         from utils.tools import timer
         @timer
         @cache_results(_cache_fp=None)
-        def _get_data():
+        def _get_data(shuffle=False):
             self.scaler = StandardScaler()
             # @cache_results(os.path.join(self.data_path, self.file_name[:-4], '.pkl'))
             df_raw = pd.read_csv(os.path.join(self.data_path, self.file_name))
             sample_id_lst = [np.arange(len(df_raw))[df_raw["stock_id"]==i] 
                         for i in df_raw["stock_id"].unique()]
-            _tmp = Parallel(n_jobs=-1)(delayed(self.get_idxs)(x) for x in sample_id_lst)
+            _tmp = Parallel(n_jobs=-1)(delayed(self.get_idxs)(x, shuffle) for x in sample_id_lst)
             train_idxs, val_idxs, test_idxs = zip(*_tmp)
             train_idxs, val_idxs, test_idxs = np.concatenate(train_idxs), np.concatenate(val_idxs), np.concatenate(test_idxs)
 
@@ -417,10 +417,11 @@ class VolatilityDataSet(DatasetBase):
             else:
                 data_y = data
             return self.scaler, df_stamp, data, data_y, train_idxs, val_idxs, test_idxs
-
+        shuffle = True
         self.scaler, self.data_stamp, self.data_x, self.data_y, \
         self.train_idxs, self.val_idxs, self.test_idxs = \
-        _get_data(_cache_fp=os.path.join('./cache', f"{self.file_name[:-4]}_{self.__class__.__name__}_sl{self.seq_len}_pl{self.pred_len}_hn{self.horizon}.pkl"))
+        _get_data(shuffle=shuffle, _cache_fp=os.path.join('./cache', 
+        f"{self.file_name[:-4]}_{self.__class__.__name__}_sl{self.seq_len}_pl{self.pred_len}_hn{self.horizon}_sf{int(shuffle)}.pkl"))
         # total_len, start_point = len(df_raw), 0
         # length = total_len-self.seq_len-self.pred_len+1
         # cut_point1, cut_point2 = length-3*self.test_size, length-2*self.test_size
@@ -454,7 +455,7 @@ class VolatilityDataSet(DatasetBase):
         return self.scaler.inverse_transform(data)
 
 
-class VolatilityDataSetGate(Dataset):
+class MyDataSetGate(Dataset):
     def __init__(self, data_path, size=None, 
                  features='S', file_name='ETTh1.csv', 
                  target='OT', scale=True, inverse=False,
