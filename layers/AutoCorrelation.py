@@ -33,9 +33,9 @@ class AutoCorrelation(nn.Module):
         length = values.shape[3]
         # find top k
         top_k = int(self.factor * math.log(length))
-        mean_value = torch.mean(torch.mean(corr, dim=1), dim=1)
+        mean_value = torch.mean(torch.mean(corr, dim=1), dim=1)# batch_size * seq_len
         index = torch.topk(torch.mean(mean_value, dim=0), top_k, dim=-1)[1]
-        weights = torch.stack([mean_value[:, index[i]] for i in range(top_k)], dim=-1)
+        weights = torch.stack([mean_value[:, index[i]] for i in range(top_k)], dim=-1) # batch_size * top_k
         # update corr
         tmp_corr = torch.softmax(weights, dim=-1)
         # aggregation

@@ -151,7 +151,7 @@ data_parser = {
     'ECL':{'T':'MT_320','M':[321,321,321],'S':[1,1,1],'MS':[321,321,1]},
     'Solar':{'T':'POWER_136','M':[137,137,137],'S':[1,1,1],'MS':[137,137,1]},
     'Mydata':{'data_path':'./data/Mydata',"file_name":"tmpMydata.csv",
-    'freq':'b', 'T':'rv',"features":"MS", 'MS':[33,33,1],'M':[33,33,33], 
+    'freq':'b', 'T':'rv',"features":"MS", 'MS':[42,42,1],'M':[42,42,42], 
     'seq_len':60, 'label_len':10, "pred_len":20, "horizon":1},
     'Ubiquant':{'data_path':'../ubiquant/ubiquantSeg',
     'freq':'b', 'T':'target','M':[45,45,45],'S':[1,1,1],'MS':[45,45,1],

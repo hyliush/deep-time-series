@@ -27,13 +27,14 @@ class Exp_Basic(object):
         if not os.path.exists(self.model_path):
             os.makedirs(self.model_path)
             
-        self.result_path = os.path.join("./results/", setting)
-        if not os.path.exists(self.result_path):
-            os.makedirs(self.result_path)
+        if not self.args.debug:
+            self.result_path = os.path.join("./results/", setting)
+            if not os.path.exists(self.result_path):
+                os.makedirs(self.result_path)
 
-        self.run_path = os.path.join("./runs/", setting)
-        if not os.path.exists(self.run_path):
-            os.makedirs(self.run_path)
+            self.run_path = os.path.join("./runs/", setting)
+            if not os.path.exists(self.run_path):
+                os.makedirs(self.run_path)
 
     def _select_optimizer(self):
         model_optim = optim.Adam(self.model.parameters(), lr=self.args.learning_rate)

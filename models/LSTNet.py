@@ -1,11 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-_dict = {"seq_len":60, "input_size":33, "hidRNN":100, "hidCNN":100, "hidSkip":5,
-"CNN_kernel":6, "skip":24, "highway_window":24, "dropout":0.1}
 from collections import namedtuple
-args = namedtuple("args", _dict.keys())
-args = args._make(_dict.values())
 
 class LSTNet(nn.Module):
     def __init__(self, args):
@@ -72,6 +68,10 @@ class LSTNet(nn.Module):
         return res
 
 if __name__ == '__main__':
+    _dict = {"seq_len":60, "input_size":33, "hidRNN":100, "hidCNN":100, "hidSkip":5,
+    "CNN_kernel":6, "skip":24, "highway_window":24, "dropout":0.1}
+    args = namedtuple("args", _dict.keys())
+    args = args._make(_dict.values())
     x = torch.randn(32, args.seq_len, args.input_size)
     model = LSTNet(args)
     out = model(x)

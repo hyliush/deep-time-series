@@ -26,11 +26,11 @@ class DatasetBase(Dataset):
         self.freq = freq
         self.cols = cols
         self.horizon = horizon
-        
-    def get_idxs(self, sample_id, shuffle=False):
         self.len = max(self.horizon, self.pred_len)
+
+    def get_idxs(self, sample_id, shuffle=False):
         total_len, start_point = len(sample_id), sample_id[0]
-        length = total_len-self.seq_len-self.len+1
+        length = total_len - self.seq_len - self.len + 1
         cut_point1, cut_point2 = length-2*self.test_size, length-self.test_size
         border1s = [i+start_point for i in [0, cut_point1, cut_point2]]
         border2s = [i+start_point for i in [cut_point1, cut_point2, length]]
@@ -392,7 +392,8 @@ class MyDataSet(DatasetBase):
             train_idxs, val_idxs, test_idxs = zip(*_tmp)
             train_idxs, val_idxs, test_idxs = np.concatenate(train_idxs), np.concatenate(val_idxs), np.concatenate(test_idxs)
 
-            df_raw = df_raw.drop(columns=["stock_id", "weekday", "time_id", "holiday_name", "holiday_tag", "holiday_tag_cumsum"])
+            df_raw = df_raw.drop(columns=["stock_id", "weekday", "time_id", 
+            "holiday_name", "holiday_tag", "holiday_tag_cumsum", "industry"])
             df_raw = df_raw.rename(columns={"Date":"date"})
             if isinstance(self.features, str):
                 if self.features=='M' or self.features=='MS':
@@ -417,7 +418,7 @@ class MyDataSet(DatasetBase):
             else:
                 data_y = data
             return self.scaler, df_stamp, data, data_y, train_idxs, val_idxs, test_idxs
-        shuffle = True
+        shuffle = False
         self.scaler, self.data_stamp, self.data_x, self.data_y, \
         self.train_idxs, self.val_idxs, self.test_idxs = \
         _get_data(shuffle=shuffle, _cache_fp=os.path.join('./cache', 
@@ -449,7 +450,7 @@ class MyDataSet(DatasetBase):
         return dict(zip(["x", "y", "x_mark", "y_mark"],[seq_x, seq_y, seq_x_mark, seq_y_mark]))
     
     def __len__(self):
-        return len(self.data_x) - self.seq_len- self.pred_len + 1
+        return len(self.data_x) - self.seq_len- self.len + 1
 
     def inverse_transform(self, data):
         return self.scaler.inverse_transform(data)
