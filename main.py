@@ -3,10 +3,10 @@ from utils import logger
 from args import args
 from exp.exp_main import Exp_model
 
-args.model = "autoformer"
-args.dataset = "Mydata"
-args.do_predict = False
-args.debug = True
+# args.model = "autoformer"
+# args.dataset = "Mydata"
+# args.do_predict = False
+# args.debug = True
 # args.input_params = ["x"]
 # args.horizon = 3
 
