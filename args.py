@@ -133,7 +133,7 @@ parser.add_argument('--input_params', type=str, nargs="+", default=["x", 'x_mark
 parser.add_argument('--target_param', type=str, default="y", help='target_params')
 args = parser.parse_args()
 
-args.use_gpu = False# True if torch.cuda.is_available() and args.use_gpu else False
+args.use_gpu = True if torch.cuda.is_available() and args.use_gpu else False
 if args.use_gpu and args.use_multi_gpu:
     args.devices = args.devices.replace(' ','')
     device_ids = args.devices.split(',')
