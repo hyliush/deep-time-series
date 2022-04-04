@@ -12,8 +12,8 @@ from exp.exp_main import Exp_model
 logger.info(args)
 for ii in range(args.itr):
     # setting record of experiments
-    setting = '{}_{}_ft{}_sl{}_ll{}_pl{}_is{}_os{}_hn{}_bs{}_lr{}_{}_{}'.format(
-                args.model, args.dataset, args.features, 
+    setting = '{}_{}_ty{}_ft{}_sl{}_ll{}_pl{}_is{}_os{}_hn{}_bs{}_lr{}_{}_{}'.format(
+                args.model, args.dataset, args.test_year, args.features, 
                 args.seq_len, args.label_len, args.pred_len,
                 args.input_size, args.out_size, args.horizon,
                 args.batch_size, args.learning_rate,

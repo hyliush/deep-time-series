@@ -375,6 +375,7 @@ class MyDataSet(DatasetBase):
         super().__init__(data_path, size, features, file_name, 
                         target, scale, inverse, timeenc, freq, cols, horizon)
         self.test_size = 60
+        self.test_year = kwargs.get("test_year", 2018)
         self.seq_len, self.label_len, self.pred_len = size
         self.__read_data__()
 
@@ -386,11 +387,20 @@ class MyDataSet(DatasetBase):
             self.scaler = StandardScaler()
             # @cache_results(os.path.join(self.data_path, self.file_name[:-4], '.pkl'))
             df_raw = pd.read_csv(os.path.join(self.data_path, self.file_name))
-            sample_id_lst = [np.arange(len(df_raw))[df_raw["stock_id"]==i] 
-                        for i in df_raw["stock_id"].unique()]
-            _tmp = Parallel(n_jobs=-1)(delayed(self.get_idxs)(x, shuffle) for x in sample_id_lst)
-            train_idxs, val_idxs, test_idxs = zip(*_tmp)
-            train_idxs, val_idxs, test_idxs = np.concatenate(train_idxs), np.concatenate(val_idxs), np.concatenate(test_idxs)
+            # method 1
+            # sample_id_lst = [np.arange(len(df_raw))[df_raw["stock_id"]==i] 
+            #             for i in df_raw["stock_id"].unique()]
+            # _tmp = Parallel(n_jobs=-1)(delayed(self.get_idxs)(x, shuffle) for x in sample_id_lst)
+            # train_idxs, val_idxs, test_idxs = zip(*_tmp)
+            # train_idxs, val_idxs, test_idxs = np.concatenate(train_idxs), np.concatenate(val_idxs), np.concatenate(test_idxs)
+            # method 2
+            import datetime
+            self.len = max(self.horizon, self.pred_len)
+            delta = datetime.timedelta(self.seq_len+self.len-1)
+            train_date = pd.date_range("2010-01-01", datetime.datetime.strptime(f"{self.test_year-2}-12-31", "%Y-%m-%d") - delta).astype(str)
+            val_date = pd.date_range(datetime.datetime.strptime(f"{self.test_year-1}-01-01", "%Y-%m-%d") - datetime.timedelta(self.seq_len), datetime.datetime.strptime(f"{self.test_year-1}-12-31", "%Y-%m-%d") - delta).astype(str)
+            test_date = pd.date_range(datetime.datetime.strptime(f"{self.test_year}-01-01", "%Y-%m-%d") - datetime.timedelta(self.seq_len), datetime.datetime.strptime(f"{self.test_year}-12-31", "%Y-%m-%d") - delta).astype(str)
+            train_idxs, val_idxs, test_idxs = np.where(df_raw["Date"].isin(train_date))[0], np.where(df_raw["Date"].isin(val_date))[0], np.where(df_raw["Date"].isin(test_date))[0]
 
             df_raw = df_raw.drop(columns=["stock_id", "weekday", "time_id", 
             "holiday_name", "holiday_tag", "holiday_tag_cumsum", "industry"])
@@ -422,15 +432,7 @@ class MyDataSet(DatasetBase):
         self.scaler, self.data_stamp, self.data_x, self.data_y, \
         self.train_idxs, self.val_idxs, self.test_idxs = \
         _get_data(shuffle=shuffle, _cache_fp=os.path.join('./cache', 
-        f"{self.file_name[:-4]}_{self.__class__.__name__}_sl{self.seq_len}_pl{self.pred_len}_hn{self.horizon}_sf{int(shuffle)}.pkl"))
-        # total_len, start_point = len(df_raw), 0
-        # length = total_len-self.seq_len-self.pred_len+1
-        # cut_point1, cut_point2 = length-3*self.test_size, length-2*self.test_size
-        # border1s = [start_point, cut_point1, cut_point2]
-        # border2s = [cut_point1, cut_point2, length]
-        # self.train_idxs = np.arange(border1s[0], border2s[0])
-        # self.val_idxs = np.arange(border1s[1], border2s[1])
-        # self.test_idxs = np.arange(border1s[2], border2s[2])
+        f"{self.file_name[:-4]}_{self.__class__.__name__}_sl{self.seq_len}_pl{self.pred_len}_ty{self.test_year}_hn{self.horizon}_sf{int(shuffle)}.pkl"))
         
     def __getitem__(self, index):
         s_begin = index

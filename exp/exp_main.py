@@ -49,7 +49,8 @@ class Exp_model(Exp):
                 timeenc=timeenc,
                 freq=self.args.freq,
                 cols=self.args.cols,
-                horizon=self.args.horizon)
+                horizon=self.args.horizon,
+                test_year=self.args.test_year)
             logger.debug(flag, len(self.tmp_dataset))
             if flag == "train":
                 self.dataset = self.tmp_dataset
