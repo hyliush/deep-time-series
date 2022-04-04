@@ -90,7 +90,7 @@ class Exp_Single(Exp_Basic):
         
         preds, trues = [], []
         running_loss = 0
-        for idx_batch, batch in tqdm(enumerate(val_loader, 1), total=len(val_loader), desc="Validation"):
+        for idx_batch, batch in enumerate(val_loader, 1):
             pred, true = self.process_one_batch(batch)
             pred, true = pred.detach().cpu(), true.detach().cpu()
             preds.append(pred); trues.append(true)

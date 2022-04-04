@@ -9,7 +9,7 @@ from exp.exp_main import Exp_model
 # args.debug = True
 # args.input_params = ["x"]
 # args.horizon = 3
-
+logger.info(args)
 for ii in range(args.itr):
     # setting record of experiments
     setting = '{}_{}_ft{}_sl{}_ll{}_pl{}_is{}_os{}_hn{}_bs{}_lr{}_{}_{}'.format(

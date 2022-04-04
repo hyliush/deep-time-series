@@ -26,9 +26,9 @@ class DatasetBase(Dataset):
         self.freq = freq
         self.cols = cols
         self.horizon = horizon
-        self.len = max(self.horizon, self.pred_len)
 
     def get_idxs(self, sample_id, shuffle=False):
+        self.len = max(self.horizon, self.pred_len)
         total_len, start_point = len(sample_id), sample_id[0]
         length = total_len - self.seq_len - self.len + 1
         cut_point1, cut_point2 = length-2*self.test_size, length-self.test_size
@@ -450,7 +450,7 @@ class MyDataSet(DatasetBase):
         return dict(zip(["x", "y", "x_mark", "y_mark"],[seq_x, seq_y, seq_x_mark, seq_y_mark]))
     
     def __len__(self):
-        return len(self.data_x) - self.seq_len- self.len + 1
+        return len(self.data_x) - self.seq_len- max(self.horizon, self.pred_len) + 1
 
     def inverse_transform(self, data):
         return self.scaler.inverse_transform(data)

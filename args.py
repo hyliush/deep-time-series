@@ -3,7 +3,7 @@ import torch
 parser = argparse.ArgumentParser(description='Time Series Forecasting')
 
 # basic
-parser.add_argument('--model', type=str, default='tpa',help='model of experiment, options: [lstm, \
+parser.add_argument('--model', type=str, default='autoformer',help='model of experiment, options: [lstm, \
 mlp, tpa, tcn, trans, gated, informerstack, informerlight(TBD)], autoformer, transformer,\
 edlstm, edgru, edgruattention')
 parser.add_argument('--data', type=str, default='Mydata', help='only for revising some params related to the data, [ETTh1, Ubiquant]')
@@ -133,7 +133,7 @@ parser.add_argument('--input_params', type=str, nargs="+", default=["x", 'x_mark
 parser.add_argument('--target_param', type=str, default="y", help='target_params')
 args = parser.parse_args()
 
-args.use_gpu = True if torch.cuda.is_available() and args.use_gpu else False
+args.use_gpu = False# True if torch.cuda.is_available() and args.use_gpu else False
 if args.use_gpu and args.use_multi_gpu:
     args.devices = args.devices.replace(' ','')
     device_ids = args.devices.split(',')
