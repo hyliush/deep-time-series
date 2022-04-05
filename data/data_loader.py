@@ -44,6 +44,20 @@ class DatasetBase(Dataset):
         test_idxs = np.arange(border1s[2], border2s[2])
         return train_idxs, val_idxs, test_idxs
 
+    def get_idxs2(self, date):
+        date = pd.to_datetime(date)
+        self.len = max(self.horizon, self.pred_len)
+        delta = self.seq_len+self.len-1
+        train_date = date[(date>="2010-01-01")&(date<=f"{self.test_year-2}-12-31")][:-delta]
+        val_date = date[(date>train_date.values[-1]) & (date<=f"{self.test_year-1}-12-31")][:-delta]
+        test_date = date[(date>val_date.values[-1]) & (date<=f"{self.test_year}-12-31")][:-delta]
+
+        train_idxs  = date.index[np.where(date.isin(train_date))[0]];
+        val_idxs = date.index[np.where(date.isin(val_date))[0]]
+        test_idxs = date.index[np.where(date.isin(test_date))[0]]
+
+        return train_idxs, val_idxs, test_idxs
+
 class Dataset_ETT_hour(DatasetBase):
     def __init__(self, data_path, size=None, 
                  features='S', file_name='ETTh1.csv', 
@@ -394,13 +408,11 @@ class MyDataSet(DatasetBase):
             # train_idxs, val_idxs, test_idxs = zip(*_tmp)
             # train_idxs, val_idxs, test_idxs = np.concatenate(train_idxs), np.concatenate(val_idxs), np.concatenate(test_idxs)
             # method 2
-            import datetime
-            self.len = max(self.horizon, self.pred_len)
-            delta = datetime.timedelta(self.seq_len+self.len-1)
-            train_date = pd.date_range("2010-01-01", datetime.datetime.strptime(f"{self.test_year-2}-12-31", "%Y-%m-%d") - delta).astype(str)
-            val_date = pd.date_range(datetime.datetime.strptime(f"{self.test_year-1}-01-01", "%Y-%m-%d") - datetime.timedelta(self.seq_len), datetime.datetime.strptime(f"{self.test_year-1}-12-31", "%Y-%m-%d") - delta).astype(str)
-            test_date = pd.date_range(datetime.datetime.strptime(f"{self.test_year}-01-01", "%Y-%m-%d") - datetime.timedelta(self.seq_len), datetime.datetime.strptime(f"{self.test_year}-12-31", "%Y-%m-%d") - delta).astype(str)
-            train_idxs, val_idxs, test_idxs = np.where(df_raw["Date"].isin(train_date))[0], np.where(df_raw["Date"].isin(val_date))[0], np.where(df_raw["Date"].isin(test_date))[0]
+            date_lst = [df_raw["Date"][df_raw["stock_id"]==i] 
+                        for i in df_raw["stock_id"].unique()]
+            _tmp = Parallel(n_jobs=-1)(delayed(self.get_idxs2)(date) for date in date_lst)
+            train_idxs, val_idxs, test_idxs = zip(*_tmp)
+            train_idxs, val_idxs, test_idxs = np.concatenate(train_idxs), np.concatenate(val_idxs), np.concatenate(test_idxs)
 
             df_raw = df_raw.drop(columns=["stock_id", "weekday", "time_id", 
             "holiday_name", "holiday_tag", "holiday_tag_cumsum", "industry"])
