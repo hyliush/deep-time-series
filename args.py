@@ -13,7 +13,7 @@ parser.add_argument('--file_name', type=str, default='tmpMydata.csv', help='file
 parser.add_argument('--criterion', type=str, default='mse', help='loss function')    
 
 # data
-parser.add_argument('--features', type=str, default='MS', help='forecasting task, options:[M, S, MS]; M:multivariate predict multivariate, S:univariate predict univariate, MS:multivariate predict univariate')
+parser.add_argument('--features', type=str, default='M', help='forecasting task, options:[M, S, MS]; M:multivariate predict multivariate, S:univariate predict univariate, MS:multivariate predict univariate')
 # if features == "MS" or "S", need to provide target and target_pos
 parser.add_argument('--target', type=str, default='OT', help='target feature in S or MS task')
 parser.add_argument('--target_pos', type=int, default=-1, help='target feature position')
@@ -24,7 +24,7 @@ parser.add_argument('--label_len', type=int, default=10, help='start token lengt
 parser.add_argument('--pred_len', type=int, default=20, help='prediction sequence length')
 parser.add_argument('--horizon', type=int, default=1, help='predict timeseries horizon-th in head.When many2many, means from 1(default) to pred_len')
 parser.add_argument('--inverse', action='store_true', help='inverse output data', default=False)
-
+parser.add_argument('--out_inverse', action='store_true', help='inverse output data', default=False)
 # training
 parser.add_argument('--train_epochs', type=int, default=100, help='train epochs')
 parser.add_argument('--batch_size', type=int, default=32, help='batch size of train input data')
@@ -36,7 +36,6 @@ parser.add_argument('--num_workers', type=int, default=0, help='data loader num 
 parser.add_argument('--patience', type=int, default=5, help='early stopping patience')
 parser.add_argument('--use_amp', action='store_true', help='use automatic mixed precision training', default=False)
 parser.add_argument('--itr', type=int, default=2, help='experiments times')
-parser.add_argument('--output_hidden', action='store_true', help='whether to output hidden in ecoder')
 
 # Informer decoder input: concat[start token series(label_len), zero padding series(pred_len)]
 # Informer decoder input: concat[start token series(label_len), zero padding series(pred_len)]
@@ -86,7 +85,7 @@ parser.add_argument('--tcn_dropout', type=float, default=0.05, help='dropout')
 ## tpa
 parser.add_argument('--tpa_n_layers', default=3, help='num_layers')
 parser.add_argument('--tpa_hidden_size', type=int, default=64, help='tpa hidden size')
-parser.add_argument('--tpa_ar_len', type=int, default=5, help='ar regression used last * items')
+parser.add_argument('--tpa_ar_len', type=int, default=10, help='ar regression used last * items')
 
 ## trans
 parser.add_argument('--trans_n_layers', default=3, help='num_layers')
@@ -128,7 +127,7 @@ parser.add_argument('--load', type=bool, default=True, help='load last trained m
 parser.add_argument('--print_num', type=int, default=8, help='print_num in one epoch')
 parser.add_argument('--val_num', type=int, default=6, help='val_num in one epoch')
 parser.add_argument('--single_file', type=bool, default=True, help='single_file')
-parser.add_argument('--debug', type=bool, default=False, help='whether debug')
+parser.add_argument('--debug', action='store_true', help='whether debug')
 parser.add_argument('--input_params', type=str, nargs="+", default=["x", 'x_mark', 'y', 'y_mark'], help='input_params')
 parser.add_argument('--target_param', type=str, default="y", help='target_params')
 parser.add_argument('--test_year', type=int, default=2017, help='test year')
@@ -142,8 +141,8 @@ if args.use_gpu and args.use_multi_gpu:
     args.gpu = args.device_ids[0]
 
 data_parser = {
-    'ETTh1':{'data_path':'./data/ETT/', 'file_name':'ETTh1.csv',
-    'seq_len':15, 'label_len':3, "pred_len":7,
+    'ETTh1':{'data_path':'./data/ETT/', 'file_name':'ETTh1.csv',"dataset":"ETTh1",
+    'seq_len':96, 'label_len':48, "pred_len":24,
     "features":"M", 'T':'OT','M':[7,7,7],'S':[1,1,1],'MS':[7,7,1]},
     'ETTh2':{'T':'OT','M':[7,7,7],'S':[1,1,1],'MS':[7,7,1]},
     'ETTm1':{'T':'OT','M':[7,7,7],'S':[1,1,1],'MS':[7,7,1]},
@@ -151,9 +150,7 @@ data_parser = {
     'WTH':{'T':'WetBulbCelsius','M':[12,12,12],'S':[1,1,1],'MS':[12,12,1]},
     'ECL':{'T':'MT_320','M':[321,321,321],'S':[1,1,1],'MS':[321,321,1]},
     'Solar':{'T':'POWER_136','M':[137,137,137],'S':[1,1,1],'MS':[137,137,1]},
-    'Mydata':{'data_path':'./data/Mydata',"file_name":"tmpMydata.csv",
-    'freq':'b', 'T':'rv',"features":"MS", 'MS':[42,42,1],'M':[42,42,42], 
-    'seq_len':60, 'label_len':10, "pred_len":20, "horizon":1},
+    'Mydata':{'freq':'b', 'T':'rv',"features":"MS", 'MS':[42,42,1],'M':[42,42,42], "horizon":1},
     'Ubiquant':{'data_path':'../ubiquant/ubiquantSeg',
     'freq':'b', 'T':'target','M':[45,45,45],'S':[1,1,1],'MS':[45,45,1],
     'seq_len':25, 'label_len':0, "pred_len":1},
@@ -164,13 +161,17 @@ data_parser = {
 if args.data in data_parser.keys():
     data_info = data_parser[args.data]
     args.features = data_info.get("features") or args.features
+    args.enc_in, args.dec_in, args.out_size = data_info[args.features]
+    args.data_path = data_info.get("data_path") or args.data_path
+    args.file_name = data_info.get("file_name") or args.file_name
+    args.dataset = data_info.get("dataset") or args.dataset
     args.horizon = data_info.get("horizon") or args.horizon
     args.single_file = data_info.get("single_file") if data_info.get("single_file") is not None else args.single_file
-    # args.data_path = data_info.get("data_path")
-    # args.file_name = data_info.get("file_name")
-    # args.seq_len, args.label_len, args.pred_len = data_info['seq_len'], data_info['label_len'], data_info['pred_len']
+    args.seq_len = data_info.get('seq_len') or args.seq_len
+    args.label_len = data_info.get('label_len') or args.label_len
+    args.pred_len = data_info.get('pred_len') or args.pred_len
     args.target = data_info['T']
-    args.enc_in, args.dec_in, args.out_size = data_info[args.features]
+
     if 'freq' in data_info:
         args.freq = data_info["freq"]
 args.input_size = args.enc_in

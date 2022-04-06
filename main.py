@@ -4,11 +4,12 @@ from args import args
 from exp.exp_main import Exp_model
 
 # args.model = "autoformer"
-# args.dataset = "Mydata"
-# args.do_predict = False
+# args.do_predict = True
 # args.debug = True
-# args.input_params = ["x"]
-# args.horizon = 3
+# # args.input_params = ["x"]
+# args.horizon = 1
+# args.output_attention = True
+# args.file_name = "Mydata.csv"
 logger.info(args)
 for ii in range(args.itr):
     # setting record of experiments

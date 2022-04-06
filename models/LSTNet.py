@@ -62,9 +62,9 @@ class LSTNet(nn.Module):
             z = self.highway(z)
             z = z.view(-1,self.m)
             res = res + z
-            
-        if (self.output):
-            res = self.output(res)
+        res = res.unsqueeze(dim=1)
+        # if (self.output):
+        #     res = self.output(res)
         return res
 
 if __name__ == '__main__':

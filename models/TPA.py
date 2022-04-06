@@ -66,7 +66,7 @@ class TPA(nn.Module):
         hs, (ht, _) = self.lstm(px) # hs 最后一层，所有步， batch_size * seq_len * hidden_size
         ht = ht[-1] # 最后一层，最后一步的hidden_state, batch_size * hidden_size
         final_h = self.att(hs, ht)  # 最后一步的ht'， fig2
-        ar_out = self.ar(x[:, -self.ar_len:, self.target_pos].transpose(1, 2))[:, :, 0]
+        ar_out = self.ar(x[:, -self.ar_len:, [self.target_pos]].transpose(1, 2))[:, :, 0]
         out = self.out_proj(final_h) + ar_out
         out = out.unsqueeze(1) # add timesereis dim 
         return out

@@ -79,7 +79,7 @@ class Exp_Basic(object):
                 outputs, batch_y = self._process_one_batch(batch)
         else:
             outputs, batch_y = self._process_one_batch(batch)
-        if self.args.output_hidden:
+        if self.args.output_attention:
             outputs = outputs[0]
         if self.args.inverse:
             outputs = self.dataset.inverse_transform(outputs)

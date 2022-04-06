@@ -56,7 +56,7 @@ class Exp_model(Exp):
                 self.dataset = self.tmp_dataset
 
         if flag == 'test':
-            drop_last = False; self.args.batch_size = 1; sampler = SubsetSequentialSampler
+            drop_last = False; self.args.batch_size = self.args.batch_size; sampler = SubsetSequentialSampler
         else:
             drop_last = False; self.args.batch_size = self.args.batch_size; sampler = SubsetRandomSampler
         if hasattr(self.tmp_dataset, flag+"_idxs"):

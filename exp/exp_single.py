@@ -117,12 +117,13 @@ class Exp_Single(Exp_Basic):
             pred, true = self.process_one_batch(batch)
             preds_lst.append(pred.detach().cpu()); trues_lst.append(true.detach().cpu())
         
-        preds, trues = np.concatenate(preds_lst), np.concatenate(trues_lst)
+        preds = np.concatenate(preds_lst)
+        trues = np.concatenate(trues_lst)
         logger.debug('test shape:{} {}'.format(preds.shape, trues.shape))
         
-        if self.args.inverse:
-            preds = np.sqrt(np.exp(test_loader.dataset.inverse_transform(preds)[..., -1:]))
-            trues = np.sqrt(np.exp(test_loader.dataset.inverse_transform(trues)[..., -1:]))
+        if self.args.out_inverse:
+            preds = test_loader.dataset.inverse_transform(preds)[..., -1:]
+            trues = test_loader.dataset.inverse_transform(trues)[..., -1:]
         metrics_dict = metric(preds, trues, "Test_metrics/")
         logger.info('mse:{}, mae:{}'.format(metrics_dict["Test_metrics/mse"], metrics_dict["Test_metrics/mae"]))
         self.writer.add_hparams(hparam_dict={"setting" : self.setting}, metric_dict=metrics_dict)
