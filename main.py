@@ -6,7 +6,7 @@ from exp.exp_main import Exp_model
 # args.model = "informer"
 # args.do_predict = False
 # args.debug = True
-# # args.input_params = ["x"]
+# #args.input_params = ["x"]
 # args.horizon = 1
 # args.seq_len, args.label_len, args.pred_len = 144, 36, 288
 # args.output_attention = False
