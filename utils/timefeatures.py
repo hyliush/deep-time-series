@@ -76,8 +76,8 @@ def time_features_from_frequency_str(freq_str: str) -> List[TimeFeature]:
             MinuteOfHour,
             HourOfDay,
             DayOfWeek,
-            DayOfMonth,
-            DayOfYear,
+            #DayOfMonth,
+            #DayOfYear,
         ],
         offsets.Second: [
             SecondOfMinute,
@@ -144,6 +144,7 @@ def time_features(dates, timeenc=1, freq='h'):
             'y':[],'m':['month'],'w':['month'],'d':['month','day','weekday'],
             'b':['month','day','weekday'],'h':['month','day','weekday','hour'],
             't':['month','day','weekday','hour','minute'],
+            'ot':['day','weekday','hour','minute']
         }
         return dates[freq_map[freq.lower()]].values
     if timeenc==1:

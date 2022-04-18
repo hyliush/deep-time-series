@@ -55,6 +55,7 @@ class TemporalBlock(nn.Module):
 class TCN(nn.Module):
     def __init__(self, args):
         super(TCN, self).__init__()
+        self.args = args
         input_size, tcn_hidden_size, tcn_n_layers, tcn_dropout, out_size = \
                 args.input_size,\
                 args.tcn_hidden_size, \
@@ -81,6 +82,11 @@ class TCN(nn.Module):
         Args:
             x: batch_size * seq_len, input_size
         '''
+        if self.args.importance:
+            if not isinstance(x, torch.Tensor):
+                x = torch.from_numpy(x)
+            x = x.transpose(1, 2)
+            x = x.to(torch.device("cuda"))
         x = x.transpose(1, 2)
         out = self.network(x)[:, :, -1:] # 最后一步
         out = self.out_proj(out.transpose(1, 2))

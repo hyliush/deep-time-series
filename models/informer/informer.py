@@ -12,11 +12,11 @@ class Informer(nn.Module):
     def __init__(self, enc_in, dec_in, out_size, seq_len, label_len, out_len, 
                 factor=5, d_model=512, n_heads=8, e_layers=3, d_layers=2, d_ff=512, 
                 dropout=0.0, attn='prob', embed='fixed', freq='h', activation='gelu', 
-                output_hidden = False, distil=True, mix=True):
+                output_attention = False, distil=True, mix=True):
         super(Informer, self).__init__()
         self.pred_len = out_len
         self.attn = attn
-        self.output_hidden = output_hidden
+        self.output_attention = output_attention
 
         # Encoding
         self.enc_embedding = DataEmbedding(enc_in, d_model, embed, freq, dropout)
@@ -27,7 +27,7 @@ class Informer(nn.Module):
         self.encoder = Encoder(
             [
                 EncoderLayer(
-                    AttentionLayer(Attn(False, factor, attention_dropout=dropout, output_hidden=output_hidden), 
+                    AttentionLayer(Attn(False, factor, attention_dropout=dropout, output_attention=output_attention), 
                                 d_model, n_heads, mix=False),
                     d_model,
                     d_ff,
@@ -46,9 +46,9 @@ class Informer(nn.Module):
         self.decoder = Decoder(
             [
                 DecoderLayer(
-                    AttentionLayer(Attn(True, factor, attention_dropout=dropout, output_hidden=False), 
+                    AttentionLayer(Attn(True, factor, attention_dropout=dropout, output_attention=False), 
                                 d_model, n_heads, mix=mix),
-                    AttentionLayer(FullAttention(False, factor, attention_dropout=dropout, output_hidden=False), 
+                    AttentionLayer(FullAttention(False, factor, attention_dropout=dropout, output_attention=False), 
                                 d_model, n_heads, mix=False),
                     d_model,
                     d_ff,
@@ -74,7 +74,7 @@ class Informer(nn.Module):
         
         # deout_size = self.end_conv1(deout_size)
         # deout_size = self.end_conv2(deout_size.transpose(2,1)).transpose(1,2)
-        if self.output_hidden:
+        if self.output_attention:
             return deout_size[:,-self.pred_len:,:], attns
         else:
             return deout_size[:,-self.pred_len:,:] # [B, L, D]
@@ -84,11 +84,11 @@ class InformerStack(nn.Module):
     def __init__(self, enc_in, dec_in, out_size, seq_len, label_len, out_len, 
                 factor=5, d_model=512, n_heads=8, e_layers=[3,2,1], d_layers=2, d_ff=512, 
                 dropout=0.0, attn='prob', embed='fixed', freq='h', activation='gelu',
-                output_hidden = False, distil=True, mix=True):
+                output_attention = False, distil=True, mix=True):
         super(InformerStack, self).__init__()
         self.pred_len = out_len
         self.attn = attn
-        self.output_hidden = output_hidden
+        self.output_attention = output_attention
 
         # Encoding
         self.enc_embedding = DataEmbedding(enc_in, d_model, embed, freq, dropout)
@@ -102,7 +102,7 @@ class InformerStack(nn.Module):
             Encoder(
                 [
                     EncoderLayer(
-                        AttentionLayer(Attn(False, factor, attention_dropout=dropout, output_hidden=output_hidden), 
+                        AttentionLayer(Attn(False, factor, attention_dropout=dropout, output_attention=output_attention), 
                                     d_model, n_heads, mix=False),
                         d_model,
                         d_ff,
@@ -122,9 +122,9 @@ class InformerStack(nn.Module):
         self.decoder = Decoder(
             [
                 DecoderLayer(
-                    AttentionLayer(Attn(True, factor, attention_dropout=dropout, output_hidden=False), 
+                    AttentionLayer(Attn(True, factor, attention_dropout=dropout, output_attention=False), 
                                 d_model, n_heads, mix=mix),
-                    AttentionLayer(FullAttention(False, factor, attention_dropout=dropout, output_hidden=False), 
+                    AttentionLayer(FullAttention(False, factor, attention_dropout=dropout, output_attention=False), 
                                 d_model, n_heads, mix=False),
                     d_model,
                     d_ff,
@@ -150,7 +150,7 @@ class InformerStack(nn.Module):
         
         # deout_size = self.end_conv1(deout_size)
         # deout_size = self.end_conv2(deout_size.transpose(2,1)).transpose(1,2)
-        if self.output_hidden:
+        if self.output_attention:
             return deout_size[:,-self.pred_len:,:], attns
         else:
             return deout_size[:,-self.pred_len:,:] # [B, L, D]

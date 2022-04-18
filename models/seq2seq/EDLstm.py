@@ -2,7 +2,7 @@ import torch.nn as nn
 import random
 import torch
 import sys
-from layers.Embed import DataEmbedding_ED
+from layers.Embed import DataEmbedding
 
 class Encoder(nn.Module):
     def __init__(self, enc_in, emb_dim, hid_dim, n_layers, embed, freq, dropout):
@@ -11,7 +11,7 @@ class Encoder(nn.Module):
         self.hid_dim = hid_dim
         self.n_layers = n_layers
         
-        self.embedding = DataEmbedding_ED(enc_in, emb_dim, embed, freq, dropout)
+        self.embedding = DataEmbedding(enc_in, emb_dim, embed, freq, dropout)
         self.rnn = nn.LSTM(emb_dim, hid_dim, n_layers, dropout = dropout, batch_first=True)
 
     def forward(self, x_enc, x_mark_enc):
@@ -38,7 +38,7 @@ class Decoder(nn.Module):
         self.hid_dim = hid_dim
         self.n_layers = n_layers
         
-        self.embedding = DataEmbedding_ED(dec_in, emb_dim, embed, freq, dropout)
+        self.embedding = DataEmbedding(dec_in, emb_dim, embed, freq, dropout)
         self.rnn = nn.LSTM(emb_dim, hid_dim, n_layers, dropout = dropout, batch_first=True)
         
         self.fc_out = nn.Linear(hid_dim, dec_in)

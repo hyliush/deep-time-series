@@ -3,13 +3,13 @@ import random
 import torch
 import torch.nn.functional as F
 import sys
-from layers.Embed import DataEmbedding_ED
+from layers.Embed import DataEmbedding
 
 class Encoder(nn.Module):
     def __init__(self, enc_in, emb_dim, enc_hid_dim, dec_hid_dim, embed, freq, dropout):
         super().__init__()
         
-        self.embedding = DataEmbedding_ED(enc_in, emb_dim, embed, freq, dropout)
+        self.embedding = DataEmbedding(enc_in, emb_dim, embed, freq, dropout)
         self.rnn = nn.GRU(emb_dim, enc_hid_dim, bidirectional = True, batch_first=True)
         self.fc = nn.Linear(enc_hid_dim * 2, dec_hid_dim)
         
@@ -78,7 +78,7 @@ class Decoder(nn.Module):
 
         self.attention = attention
         
-        self.embedding = DataEmbedding_ED(dec_in, emb_dim, embed, freq, dropout)
+        self.embedding = DataEmbedding(dec_in, emb_dim, embed, freq, dropout)
         
         self.rnn = nn.GRU((enc_hid_dim * 2) + emb_dim, dec_hid_dim, batch_first=True)
         

@@ -37,27 +37,15 @@ class Exp_model(Exp):
     def _get_data(self, file_name, flag):
         if  not hasattr(self.tmp_dataset, "file_name") or self.tmp_dataset.file_name != file_name:
             DataSet = dataset_dict[self.args.dataset]
-            timeenc = 0 if self.args.embed!='timeF' else 1
-
-            self.tmp_dataset = DataSet(
-                data_path=self.args.data_path,
-                file_name=file_name, # 决定了全部数据集还是部分数据集
-                size=[self.args.seq_len, self.args.label_len, self.args.pred_len],
-                features=self.args.features,
-                target=self.args.target,
-                inverse=self.args.inverse,
-                timeenc=timeenc,
-                freq=self.args.freq,
-                cols=self.args.cols,
-                horizon=self.args.horizon)
+            self.tmp_dataset = DataSet(self.args)
             logger.debug(flag, len(self.tmp_dataset))
             if flag == "train":
                 self.dataset = self.tmp_dataset
 
         if flag == 'test':
-            drop_last = False; self.args.batch_size = 1; sampler = SubsetSequentialSampler
+            drop_last = False; sampler = SubsetSequentialSampler
         else:
-            drop_last = False; self.args.batch_size = self.args.batch_size; sampler = SubsetRandomSampler
+            drop_last = False; sampler = SubsetRandomSampler
         if hasattr(self.tmp_dataset, flag+"_idxs"):
             idxs = getattr(self.tmp_dataset, flag+"_idxs")
         else:

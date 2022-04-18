@@ -2,14 +2,14 @@ import torch.nn as nn
 import random
 import torch
 import sys
-from layers.Embed import DataEmbedding_ED
+from layers.Embed import DataEmbedding
 
 class Encoder(nn.Module):
     def __init__(self, enc_in, emb_dim, hid_dim, embed, freq, dropout):
         super().__init__()
 
         self.hid_dim = hid_dim
-        self.embedding = DataEmbedding_ED(enc_in, emb_dim, embed, freq, dropout)
+        self.embedding = DataEmbedding(enc_in, emb_dim, embed, freq, dropout)
         self.rnn = nn.GRU(emb_dim, hid_dim, batch_first=True)
         
     def forward(self, x_enc, x_mark_enc):
@@ -33,7 +33,7 @@ class Decoder(nn.Module):
 
         self.hid_dim = hid_dim
         
-        self.embedding = DataEmbedding_ED(dec_in, emb_dim, embed, freq, dropout)
+        self.embedding = DataEmbedding(dec_in, emb_dim, embed, freq, dropout)
         self.rnn = nn.GRU(emb_dim + hid_dim, hid_dim, batch_first=True)
         self.fc_out = nn.Linear(emb_dim + hid_dim * 2, dec_in)
         

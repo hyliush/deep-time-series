@@ -24,15 +24,15 @@ class Exp_Basic(object):
 
     def _init_path(self, setting):
         self.model_path = os.path.join("./checkpoints/", setting)
-        if not os.path.exists(self.model_path):
-            os.makedirs(self.model_path)
-            
+        self.result_path = os.path.join("./results/", setting)
+        self.run_path = os.path.join("./runs/", setting)
         if not self.args.debug:
-            self.result_path = os.path.join("./results/", setting)
+            if not os.path.exists(self.model_path):
+                os.makedirs(self.model_path)
+
             if not os.path.exists(self.result_path):
                 os.makedirs(self.result_path)
 
-            self.run_path = os.path.join("./runs/", setting)
             if not os.path.exists(self.run_path):
                 os.makedirs(self.run_path)
 
@@ -79,7 +79,7 @@ class Exp_Basic(object):
                 outputs, batch_y = self._process_one_batch(batch)
         else:
             outputs, batch_y = self._process_one_batch(batch)
-        if self.args.output_hidden:
+        if self.args.output_attention:
             outputs = outputs[0]
         if self.args.inverse:
             outputs = self.dataset.inverse_transform(outputs)

@@ -75,19 +75,19 @@ class AVWDCRNN(nn.Module):
         assert x.shape[2] == self.node_num and x.shape[3] == self.input_size
         seq_length = x.shape[1]
         current_inputs = x
-        output_hidden = []
+        output_attention = []
         for i in range(self.num_layers):
             state = init_state[i]
             inner_states = []
             for t in range(seq_length):
                 state = self.dcrnn_cells[i](current_inputs[:, t, :, :], state, node_embeddings)
                 inner_states.append(state)
-            output_hidden.append(state)
+            output_attention.append(state)
             current_inputs = torch.stack(inner_states, dim=1)
         #current_inputs: the outputs of last layer: (B, T, N, hidden_size)
-        #output_hidden: the last state for each layer: (num_layers, B, N, hidden_size)
+        #output_attention: the last state for each layer: (num_layers, B, N, hidden_size)
         #last_state: (B, N, hidden_size)
-        return current_inputs, output_hidden
+        return current_inputs, output_attention
 
     def init_hidden(self, batch_size):
         init_states = []
