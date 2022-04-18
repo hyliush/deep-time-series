@@ -6,6 +6,7 @@ from collections import namedtuple
 class LSTNet(nn.Module):
     def __init__(self, args):
         super(LSTNet, self).__init__()
+        self.args = args
         self.P = args.seq_len
         self.m = args.input_size
         self.hidR = args.hidRNN
@@ -29,6 +30,10 @@ class LSTNet(nn.Module):
         self.output = F.tanh
  
     def forward(self, x):
+        if self.args.importance:
+            if not isinstance(x, torch.Tensor):
+                x = torch.from_numpy(x)
+            x = x.transpose(1, 2)
         batch_size = x.size(0)
         
         #CNN

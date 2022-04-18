@@ -49,7 +49,7 @@ class TPA(nn.Module):
                 args.out_size
         self.target_pos = args.target_pos
         self.ar_len = tpa_ar_len
-
+        self.args = args
         self.input_proj = nn.Linear(input_size, tpa_hidden_size)
         self.lstm = nn.LSTM(input_size=tpa_hidden_size, hidden_size=tpa_hidden_size,
                             num_layers=tpa_n_layers, batch_first=True)
@@ -62,6 +62,12 @@ class TPA(nn.Module):
 
     def forward(self, x):
         # batch_size, seq_len, input_size = x.size()
+        if self.args.importance:
+            if not isinstance(x, torch.Tensor):
+                x = torch.from_numpy(x)
+            x = x.transpose(1, 2)
+            x = x.to(torch.device("cuda"))
+
         px = F.relu(self.input_proj(x))
         hs, (ht, _) = self.lstm(px) # hs 最后一层，所有步， batch_size * seq_len * hidden_size
         ht = ht[-1] # 最后一层，最后一步的hidden_state, batch_size * hidden_size

@@ -6,10 +6,10 @@ parser = argparse.ArgumentParser(description='Time Series Forecasting')
 parser.add_argument('--model', type=str, default='autoformer',help='model of experiment, options: [lstm, \
 mlp, tpa, tcn, trans, gated, informerstack, informerlight(TBD)], autoformer, transformer,\
 edlstm, edgru, edgruattention')
-parser.add_argument('--data', type=str, default='Mydata', help='only for revising some params related to the data, [ETTh1, Ubiquant]')
+parser.add_argument('--data', type=str, default='SDWPF', help='only for revising some params related to the data, [ETTh1, Ubiquant]')
 parser.add_argument('--dataset', type=str, default='Mydata', help='dataset, [ETTh1, Ubiquant]')
 parser.add_argument('--data_path', type=str, default='./data/Mydata/', help='root path of the data file')
-parser.add_argument('--file_name', type=str, default='tmpMydata.csv', help='file_name')
+parser.add_argument('--file_name', type=str, default='Mydata.csv', help='file_name')
 parser.add_argument('--criterion', type=str, default='mse', help='loss function')    
 
 # data
@@ -25,6 +25,7 @@ parser.add_argument('--pred_len', type=int, default=20, help='prediction sequenc
 parser.add_argument('--horizon', type=int, default=1, help='predict timeseries horizon-th in head.When many2many, means from 1(default) to pred_len')
 parser.add_argument('--inverse', action='store_true', help='inverse output data', default=False)
 parser.add_argument('--out_inverse', action='store_true', help='inverse output data', default=False)
+parser.add_argument('--start_col', type=int, default=1, help='Index of the start column of the variables')
 # training
 parser.add_argument('--train_epochs', type=int, default=100, help='train epochs')
 parser.add_argument('--batch_size', type=int, default=32, help='batch size of train input data')
@@ -131,6 +132,7 @@ parser.add_argument('--debug', action='store_true', help='whether debug')
 parser.add_argument('--input_params', type=str, nargs="+", default=["x", 'x_mark', 'y', 'y_mark'], help='input_params')
 parser.add_argument('--target_param', type=str, default="y", help='target_params')
 parser.add_argument('--test_year', type=int, default=2017, help='test year')
+parser.add_argument('--importance', type=bool, default=False, help='importance')
 args = parser.parse_args()
 
 args.use_gpu = True if torch.cuda.is_available() and args.use_gpu else False
@@ -150,10 +152,8 @@ data_parser = {
     'WTH':{'T':'WetBulbCelsius','M':[12,12,12],'S':[1,1,1],'MS':[12,12,1]},
     'ECL':{'T':'MT_320','M':[321,321,321],'S':[1,1,1],'MS':[321,321,1]},
     'Solar':{'T':'POWER_136','M':[137,137,137],'S':[1,1,1],'MS':[137,137,1]},
-    'Mydata':{'freq':'b', 'T':'rv',"features":"MS", 'MS':[42,42,1],'M':[42,42,42], "horizon":1},
-    'Ubiquant':{'data_path':'../ubiquant/ubiquantSeg',
-    'freq':'b', 'T':'target','M':[45,45,45],'S':[1,1,1],'MS':[45,45,1],
-    'seq_len':25, 'label_len':0, "pred_len":1},
+    'Mydata':{'freq':'b', 'T':'rv',"features":"MS", 'MS':[42,42,1],'M':[42,42,42]},
+    "SDWPF":{'freq':'ot', 'T':'Patv',"features":"MS", 'MS':[10,10,10],'M':[10,10,10]},
     'Toy':{'data_path':'./data/ToyData', 'seq_len':96, 'label_len':0, "pred_len":24, "MS":[1,1,1], "T":"s"},
     'oze':{'seq_len':672, 'label_len':1, "pred_len":671, "M":[37,8,8], "T":"s", 'features':"M"}
 }
