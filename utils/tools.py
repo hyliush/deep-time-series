@@ -5,6 +5,7 @@ import time
 from torch.utils.tensorboard import SummaryWriter
 import os
 from datetime import datetime
+import pandas as pd
 def timer(func):
     def deco(*args, **kwargs):
         # print('\n函数：{_funcname_}开始运行：'.format(_funcname_=func.__name__))
@@ -106,3 +107,48 @@ class StandardScaler():
         mean = torch.from_numpy(self.mean).type_as(data).to(data.device) if torch.is_tensor(data) else self.mean
         std = torch.from_numpy(self.std).type_as(data).to(data.device) if torch.is_tensor(data) else self.std
         return (data * std) + mean
+
+def filter_extreme(df, type="Percentile", **kwargs):
+    '''
+    args
+    type: Percentile, MAD, Sigma
+    kwargs: n_mad, n_sigma, _min, _max
+    '''
+    flag = 0
+    n_mad, n_sigma, _min, _max = kwargs.get("n_mad",5), kwargs.get("n_sigma",3), kwargs.get("_min", 0.1), kwargs.get("_max",0.9)
+    train_df = kwargs.get("train_df", df)
+    if not isinstance(df, pd.DataFrame):
+        df = pd.DataFrame(df)
+        train_df = pd.DataFrame(train_df)
+        flag = 1
+    if type == "MAD":
+        df, min_range, max_range = filter_extreme_MAD(train_df, df, n_mad)
+    if type == "Sigma":
+        df, min_range, max_range = filter_extreme_3sigma(train_df, df, n_sigma)
+    if type == "Percentile":
+        df, min_range, max_range = filter_extreme_percentile(train_df, df, _min, _max)
+    # if flag == 1:
+        # df = df.iloc[:, 0]
+    return df, min_range, max_range
+
+def filter_extreme_MAD(train_df, df, n=5): #MAD:中位数去极值
+    median = train_df.quantile(0.5)
+    new_median = ((train_df - median).abs()).quantile(0.50)
+    max_range = median + n*new_median
+    min_range = median - n*new_median
+    df.iloc[:] = np.clip(df,min_range, max_range, axis=1)
+    return df, min_range, max_range
+
+def filter_extreme_3sigma(train_df, df, n=3): #3 sigma
+    mean = train_df.mean()
+    std = train_df.std()
+    max_range = mean + n*std
+    min_range = mean - n*std
+    df.iloc[:] = np.clip(df, min_range, max_range, axis=1)
+    return df, min_range, max_range
+
+def filter_extreme_percentile(train_df, df, min = 0.10,max = 0.90): #百分位法
+    q = train_df.quantile([min,max])
+    min_range, max_range = q.iloc[0],q.iloc[1]
+    df.iloc[:] = np.clip(df, min_range, max_range, axis=1)
+    return df, min_range, max_range

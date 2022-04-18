@@ -12,13 +12,13 @@ import warnings
 warnings.filterwarnings('ignore')
 import random 
 from datetime import datetime, timedelta
+from utils.tools import filter_extreme
 
 class DatasetBase(Dataset):
     def __init__(self, args):
         self.args = args
         self.data_path = args.data_path
-        self.size = args.size
-        self.seq_len, self.label_len, self.pred_len = args.size
+        self.seq_len, self.label_len, self.pred_len = args.seq_len, args.label_len, args.pred_len
         self.features = args.features
         self.file_name = args.file_name
         self.target = args.target
@@ -361,8 +361,6 @@ class MyDataSet(DatasetBase):
                     df_data = df_raw[cols_data]
                 elif self.features=='S':
                     df_data = df_raw[[self.target]]
-            pd.set_option('mode.chained_assignment', None)
-            df_data.replace(to_replace=np.nan, value=0, inplace=True)
 
             if self.scale:
                 train_data = df_data.iloc[train_idxs]
@@ -588,7 +586,7 @@ class SDWPFDataSet(DatasetBase):
     def __init__(self, args):
         super().__init__(args)
         self.test_size = 15*24*6
-        self.val_size = 15*24*6
+        self.val_size = 16*24*6
         self.__read_data__()
 
     def __read_data__(self):
@@ -629,10 +627,14 @@ class SDWPFDataSet(DatasetBase):
                     df_data = df_raw[cols_data]
                 elif self.features=='S':
                     df_data = df_raw[[self.target]]
+            pd.set_option('mode.chained_assignment', None)
+            df_data.replace(to_replace=np.nan, value=0, inplace=True)
 
             if self.scale:
                 train_data = df_data.iloc[train_idxs]
-                self.scaler.fit(train_data.values)
+                df_data, min_range, max_range = filter_extreme(df_data, "MAD", train_df = train_data)
+
+                self.scaler.fit(df_data.iloc[train_idxs].values)
                 data = self.scaler.transform(df_data.values)
             else:
                 data = df_data.values
@@ -643,9 +645,9 @@ class SDWPFDataSet(DatasetBase):
                 data_y = df_data.values
             else:
                 data_y = data
-            return self.scaler, df_stamp, data, data_y, train_idxs, val_idxs, test_idxs
+            return self.scaler, min_range, max_range, df_stamp, data, data_y, train_idxs, val_idxs, test_idxs
         shuffle = False
-        self.scaler, self.data_stamp, self.data_x, self.data_y, \
+        self.scaler, self.min_range, self.max_range, self.data_stamp, self.data_x, self.data_y, \
         self.train_idxs, self.val_idxs, self.test_idxs = \
         _get_data(shuffle=shuffle, _cache_fp=os.path.join('./cache', 
         f"{self.file_name[:-4]}_{self.args.dataset}_sl{self.seq_len}_pl{self.pred_len}_hn{self.horizon}_sf{int(shuffle)}.pkl"))

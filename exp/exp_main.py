@@ -43,9 +43,9 @@ class Exp_model(Exp):
                 self.dataset = self.tmp_dataset
 
         if flag == 'test':
-            drop_last = False; self.args.batch_size = self.args.batch_size; sampler = SubsetSequentialSampler
+            drop_last = False; sampler = SubsetSequentialSampler
         else:
-            drop_last = False; self.args.batch_size = self.args.batch_size; sampler = SubsetRandomSampler
+            drop_last = False; sampler = SubsetRandomSampler
         if hasattr(self.tmp_dataset, flag+"_idxs"):
             idxs = getattr(self.tmp_dataset, flag+"_idxs")
         else:

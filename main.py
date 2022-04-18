@@ -35,7 +35,7 @@ for ii in range(args.itr):
         exp.test()
     else:
         print('>>>>>>>predicting : {}<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<'.format(setting))
-        exp.test(load=True)
+        exp.test(load=args.load)
 
     torch.cuda.empty_cache()
     break

@@ -13,7 +13,7 @@ parser.add_argument('--file_name', type=str, default='Mydata.csv', help='file_na
 parser.add_argument('--criterion', type=str, default='mse', help='loss function')    
 
 # data
-parser.add_argument('--features', type=str, default='M', help='forecasting task, options:[M, S, MS]; M:multivariate predict multivariate, S:univariate predict univariate, MS:multivariate predict univariate')
+parser.add_argument('--features', type=str, default='MS', help='forecasting task, options:[M, S, MS]; M:multivariate predict multivariate, S:univariate predict univariate, MS:multivariate predict univariate')
 # if features == "MS" or "S", need to provide target and target_pos
 parser.add_argument('--target', type=str, default='OT', help='target feature in S or MS task')
 parser.add_argument('--target_pos', type=int, default=-1, help='target feature position')
@@ -23,8 +23,9 @@ parser.add_argument('--seq_len', type=int, default=60, help='input sequence leng
 parser.add_argument('--label_len', type=int, default=10, help='start token length of Informer decoder')
 parser.add_argument('--pred_len', type=int, default=20, help='prediction sequence length')
 parser.add_argument('--horizon', type=int, default=1, help='predict timeseries horizon-th in head.When many2many, means from 1(default) to pred_len')
-parser.add_argument('--inverse', action='store_true', help='inverse output data', default=False)
-parser.add_argument('--out_inverse', action='store_true', help='inverse output data', default=False)
+parser.add_argument('--inverse', action='store_true', help='inverse output data')
+parser.add_argument('--scale', default=True, type=bool, help='scale input data')
+parser.add_argument('--out_inverse', action='store_true', help='inverse output data')
 parser.add_argument('--start_col', type=int, default=1, help='Index of the start column of the variables')
 # training
 parser.add_argument('--train_epochs', type=int, default=100, help='train epochs')
@@ -153,7 +154,7 @@ data_parser = {
     'ECL':{'T':'MT_320','M':[321,321,321],'S':[1,1,1],'MS':[321,321,1]},
     'Solar':{'T':'POWER_136','M':[137,137,137],'S':[1,1,1],'MS':[137,137,1]},
     'Mydata':{'freq':'b', 'T':'rv',"features":"MS", 'MS':[42,42,1],'M':[42,42,42]},
-    "SDWPF":{'freq':'ot', 'T':'Patv',"features":"MS", 'MS':[10,10,10],'M':[10,10,10]},
+    "SDWPF":{'freq':'10min', 'T':'Patv',"features":"MS", 'MS':[10,10,10],'M':[10,10,10]},
     'Toy':{'data_path':'./data/ToyData', 'seq_len':96, 'label_len':0, "pred_len":24, "MS":[1,1,1], "T":"s"},
     'oze':{'seq_len':672, 'label_len':1, "pred_len":671, "M":[37,8,8], "T":"s", 'features':"M"}
 }
