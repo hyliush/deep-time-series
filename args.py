@@ -124,7 +124,7 @@ parser.add_argument('--use_gpu', type=bool, default=True, help='use gpu')
 parser.add_argument('--gpu', type=int, default=0, help='gpu')
 parser.add_argument('--use_multi_gpu', action='store_true', help='use multiple gpus', default=False)
 parser.add_argument('--devices', type=str, default='0,1,2,3',help='device ids of multile gpus')
-parser.add_argument('--load', type=bool, default=True, help='load last trained model')
+parser.add_argument('--load', action='store_true', help='load last trained model')
 
 parser.add_argument('--print_num', type=int, default=8, help='print_num in one epoch')
 parser.add_argument('--val_num', type=int, default=6, help='val_num in one epoch')

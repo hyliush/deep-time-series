@@ -35,8 +35,8 @@ class Exp_Single(Exp_Basic):
         
         train_loader = self._get_data(file_name=self.train_filename, flag='train')
         val_loader = self._get_data(file_name=self.val_filename, flag='val')
-        print_every = len(train_loader)//self.args.print_num
-        val_every = len(train_loader)//self.args.val_num
+        print_every = len(train_loader)//self.args.print_num if self.args.print_num>0 else np.inf
+        val_every = len(train_loader)//self.args.val_num if self.args.val_num>0 else np.inf
         for idx_epoch in range(self.args.train_epochs):
             self.model.train()
             epoch_time = time.time()
