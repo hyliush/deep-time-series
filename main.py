@@ -4,17 +4,18 @@ from args import args
 from exp.exp_main import Exp_model
 
 # args.model = "informer"
-# args.do_predict = False
+# args.do_predict = True
 # args.debug = True
-# #args.input_params = ["x"]
+# args.input_params = ["x"]
 # args.horizon = 1
 # args.seq_len, args.label_len, args.pred_len = 144, 36, 288
 # args.output_attention = False
 # args.des = "test_tmpdata"
 # args.file_name = "tmpMydata.csv"
 # args.data_path = "./data/SDWPF"
-# args.file_name = "sdwpf_baidukddcup2022_full.CSV"
+# args.file_name = "sdwpf_baidukddcup2022_turb1.csv"
 # args.dataset = "SDWPF"
+
 logger.info(args)
 for ii in range(args.itr):
     # setting record of experiments
