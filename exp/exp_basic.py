@@ -23,9 +23,9 @@ class Exp_Basic(object):
         # self.writer = SummaryWriter(log_dir = self.run_path)
 
     def _init_path(self, setting):
-        self.model_path = os.path.join("./checkpoints/", setting)
-        self.result_path = os.path.join("./results/", setting)
-        self.run_path = os.path.join("./runs/", setting)
+        self.model_path = os.path.join(f"./checkpoints/{self.args.data}/", setting)
+        self.result_path = os.path.join(f"./results/{self.args.data}/", setting)
+        self.run_path = os.path.join(f"./runs/{self.args.data}/", setting)
         if not self.args.debug:
             if not os.path.exists(self.model_path):
                 os.makedirs(self.model_path)

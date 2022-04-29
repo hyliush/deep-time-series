@@ -6,7 +6,7 @@ parser = argparse.ArgumentParser(description='Time Series Forecasting')
 parser.add_argument('--model', type=str, default='autoformer',help='model of experiment, options: [lstm, \
 mlp, tpa, tcn, trans, gated, informerstack, informerlight(TBD)], autoformer, transformer,\
 edlstm, edgru, edgruattention')
-parser.add_argument('--data', type=str, default='SDWPF', help='only for revising some params related to the data, [ETTh1, Ubiquant]')
+parser.add_argument('--data', type=str, default='ETTh1', help='only for revising some params related to the data, [ETTh1, Ubiquant]')
 parser.add_argument('--dataset', type=str, default='Mydata', help='dataset, [ETTh1, Ubiquant]')
 parser.add_argument('--data_path', type=str, default='./data/Mydata/', help='root path of the data file')
 parser.add_argument('--file_name', type=str, default='Mydata.csv', help='file_name')
@@ -35,7 +35,7 @@ parser.add_argument('--learning_rate', type=float, default=0.001, help='optimize
 parser.add_argument('--loss', type=str, default='mse',help='loss function')
 parser.add_argument('--lradj', type=str, default='type1',help='adjust learning rate')
 parser.add_argument('--num_workers', type=int, default=0, help='data loader num workers')
-parser.add_argument('--patience', type=int, default=5, help='early stopping patience')
+parser.add_argument('--patience', type=int, default=3, help='early stopping patience')
 parser.add_argument('--use_amp', action='store_true', help='use automatic mixed precision training', default=False)
 parser.add_argument('--itr', type=int, default=2, help='experiments times')
 
@@ -57,6 +57,8 @@ parser.add_argument('--teacher_forcing_ratio', type=float, default=0.5, help='te
 parser.add_argument('--moving_avg', type=int, default=25, help='window size of moving average')
 parser.add_argument('--embed', type=str, default='timeF', help='time features encoding, options:[timeF, fixed, learned]')
 parser.add_argument('--d_model', type=int, default=512, help='dimension of model')
+parser.add_argument('--uv_size', type=int, default=2048, help='dimension of uv')
+parser.add_argument('--qk_size', type=int, default=512, help='dimension of qk')
 parser.add_argument('--n_heads', type=int, default=8, help='num of heads')
 parser.add_argument('--e_layers', type=int, default=2, help='num of encoder layers')
 parser.add_argument('--d_layers', type=int, default=1, help='num of decoder layers')
@@ -145,10 +147,10 @@ if args.use_gpu and args.use_multi_gpu:
 
 data_parser = {
     'ETTh1':{'data_path':'./data/ETT/', 'file_name':'ETTh1.csv',"dataset":"ETTh1",
-    'seq_len':96, 'label_len':48, "pred_len":24,
+    "freq":'h', #'seq_len':96, 'label_len':48, "pred_len":24, 
     "features":"M", 'T':'OT','M':[7,7,7],'S':[1,1,1],'MS':[7,7,1]},
     'ETTh2':{'T':'OT','M':[7,7,7],'S':[1,1,1],'MS':[7,7,1]},
-    'ETTm1':{'T':'OT','M':[7,7,7],'S':[1,1,1],'MS':[7,7,1]},
+    'ETTm1':{'T':'OT','M':[7,7,7],'S':[1,1,1],'MS':[7,7,1], "freq":'t'},
     'ETTm2':{'T':'OT','M':[7,7,7],'S':[1,1,1],'MS':[7,7,1]},
     'WTH':{'T':'WetBulbCelsius','M':[12,12,12],'S':[1,1,1],'MS':[12,12,1]},
     'ECL':{'T':'MT_320','M':[321,321,321],'S':[1,1,1],'MS':[321,321,1]},

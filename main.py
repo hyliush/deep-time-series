@@ -3,9 +3,11 @@ from utils import logger
 from args import args
 from exp.exp_main import Exp_model
 
-# args.model = "informer"
+# args.model = "gau"
 # args.do_predict = True
 # args.debug = True
+# args.load = True
+# args.seq_len, args.label_len, args.pred_len = 96, 48, 24
 # args.input_params = ["x"]
 # args.horizon = 1
 # args.seq_len, args.label_len, args.pred_len = 144, 36, 288
@@ -19,11 +21,11 @@ from exp.exp_main import Exp_model
 logger.info(args)
 for ii in range(args.itr):
     # setting record of experiments
-    setting = '{}_{}_ty{}_ft{}_sl{}_ll{}_pl{}_is{}_os{}_hn{}_bs{}_lr{}_{}_{}'.format(
+    setting = '{}_{}_ty{}_ft{}_sl{}_ll{}_pl{}_is{}_os{}_hn{}_bs{}_lr{}_uv{}_{}_{}'.format(
                 args.model, args.dataset, args.test_year, args.features, 
                 args.seq_len, args.label_len, args.pred_len,
                 args.input_size, args.out_size, args.horizon,
-                args.batch_size, args.learning_rate,
+                args.batch_size, args.learning_rate,args.uv_size,
                 args.des, ii)
     logger.info('Args in experiment:{}'.format(setting))
     # set experiments

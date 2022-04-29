@@ -27,7 +27,7 @@ class Exp_model(Exp):
 
     @classmethod    
     def init_process_one_batch(cls, args):
-        if 'former' in args.model:
+        if 'former' in args.model or "gau" in args.model:
             cls._process_one_batch = _process_one_batch2
         elif args.model == "deepar":
             cls._process_one_batch = _process_one_batch3
@@ -43,15 +43,15 @@ class Exp_model(Exp):
                 self.dataset = self.tmp_dataset
 
         if flag == 'test':
-            drop_last = False; sampler = SubsetSequentialSampler
+            drop_last = False; sampler = SubsetSequentialSampler; batch_size = self.args.batch_size//2
         else:
-            drop_last = False; sampler = SubsetRandomSampler
+            drop_last = False; sampler = SubsetRandomSampler; batch_size = self.args.batch_size
         if hasattr(self.tmp_dataset, flag+"_idxs"):
             idxs = getattr(self.tmp_dataset, flag+"_idxs")
         else:
             raise("flag error")
 
-        data_loader = DataLoader(self.tmp_dataset, batch_size=self.args.batch_size, sampler=sampler(idxs),
+        data_loader = DataLoader(self.tmp_dataset, batch_size=batch_size, sampler=sampler(idxs),
             num_workers=self.args.num_workers, drop_last=drop_last)
         return data_loader
 

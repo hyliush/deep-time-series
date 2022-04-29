@@ -139,6 +139,7 @@ class Exp_Single(Exp_Basic):
             if self.args.pred_len > 1:
                 # labels = test_data.dataset.labels["X"]
                 # labels = "HUFL,HULL,MUFL,MULL,LUFL,LULL,OT".split(',')
+                idx_labels = range(len(labels))
                 fig = map_plot_function(trues, preds, plot_visual_sample, labels, idx_labels, 168)
                 # fig.savefig(f"./img/{self.args.model}_sample.jpg", bbox_inches='tight')
 

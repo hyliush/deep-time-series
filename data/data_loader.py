@@ -71,9 +71,9 @@ class Dataset_ETT_hour(DatasetBase):
 
         border1s = [0, 12*30*24 - self.seq_len, 12*30*24+4*30*24 - self.seq_len]
         border2s = [12*30*24, 12*30*24+4*30*24, 12*30*24+8*30*24]
-        self.train_idxs = np.arange(border1s[0], border2s[0]-self.seq_len)
-        self.val_idxs = np.arange(border1s[1], border2s[1]-self.seq_len)
-        self.test_idxs = np.arange(border1s[2], border2s[2]-self.seq_len)
+        self.train_idxs = np.arange(border1s[0], border2s[0]-self.seq_len-self.pred_len+1)
+        self.val_idxs = np.arange(border1s[1], border2s[1]-self.seq_len-self.pred_len+1)
+        self.test_idxs = np.arange(border1s[2], border2s[2]-self.seq_len-self.pred_len+1)
 
         if self.features=='M' or self.features=='MS':
             cols_data = df_raw.columns[self.start_col:]
@@ -83,7 +83,7 @@ class Dataset_ETT_hour(DatasetBase):
 
         # scale处理后为data，未处理为df_data
         if self.scale:
-            train_data = df_data[border1s[0]:border2s[0]]
+            train_data = df_data.iloc[self.train_idxs]
             self.scaler.fit(train_data.values)
             data = self.scaler.transform(df_data.values)
         else:
@@ -91,14 +91,13 @@ class Dataset_ETT_hour(DatasetBase):
             
         df_stamp = df_raw[['date']]
         df_stamp['date'] = pd.to_datetime(df_stamp.date)
-        data_stamp = time_features(df_stamp, timeenc=self.timeenc, freq=self.freq)
+        self.data_stamp = time_features(df_stamp, timeenc=self.timeenc, freq=self.freq)
 
         self.data_x = data
         if self.inverse:
             self.data_y = df_data.values
         else:
             self.data_y = data
-        self.data_stamp = data_stamp
     
     def __getitem__(self, index):
         s_begin = index
