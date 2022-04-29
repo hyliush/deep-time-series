@@ -7,76 +7,94 @@ from .encoder import Encoder, EncoderLayer, ConvLayer, EncoderStack
 from .decoder import Decoder, DecoderLayer
 from .attn import FullAttention, ProbAttention, AttentionLayer
 from .embed import DataEmbedding
+
 class Informer(nn.Module):
-    """
-    Informer with Propspare attention in O(LlogL) complexity
-    """
     def __init__(self, args):
+        enc_in = args.enc_in
+        dec_in = args.dec_in
+        out_size = args.out_size
+        seq_len = args.seq_len
+        label_len = args.label_len
+        out_len = args.pred_len
+        factor=args.factor
+        d_model=args.d_model
+        n_heads=args.n_heads
+        e_layers=args.e_layers
+        d_layers=args.d_layers
+        d_ff=args.d_ff
+        dropout=args.dropout
+        attn=args.attn
+        embed=args.embed
+        freq=args.freq
+        activation=args.activation
+        output_attention=args.output_attention
+        distil=args.distil; mix=args.mix
+                
         super(Informer, self).__init__()
-        self.pred_len = args.pred_len
-        self.output_attention = args.output_attention
+        self.pred_len = out_len
+        self.attn = attn
+        self.output_attention = output_attention
 
-        # Embedding
-        self.enc_embedding = DataEmbedding(args.enc_in, args.d_model, args.embed, args.freq,
-                                           args.dropout)
-        self.dec_embedding = DataEmbedding(args.dec_in, args.d_model, args.embed, args.freq,
-                                           args.dropout)
-
+        # Encoding
+        self.enc_embedding = DataEmbedding(enc_in, d_model, embed, freq, dropout)
+        self.dec_embedding = DataEmbedding(dec_in, d_model, embed, freq, dropout)
+        # Attention
+        Attn = ProbAttention if attn=='prob' else FullAttention
         # Encoder
         self.encoder = Encoder(
             [
                 EncoderLayer(
-                    AttentionLayer(
-                        ProbAttention(False, args.factor, attention_dropout=args.dropout,
-                                      output_attention=args.output_attention),
-                        args.d_model, args.n_heads),
-                    args.d_model,
-                    args.d_ff,
-                    dropout=args.dropout,
-                    activation=args.activation
-                ) for l in range(args.e_layers)
+                    AttentionLayer(Attn(False, factor, attention_dropout=dropout, output_attention=output_attention), 
+                                d_model, n_heads, mix=False),
+                    d_model,
+                    d_ff,
+                    dropout=dropout,
+                    activation=activation
+                ) for l in range(e_layers)
             ],
             [
                 ConvLayer(
-                    args.d_model
-                ) for l in range(args.e_layers - 1)
-            ] if args.distil else None,
-            norm_layer=torch.nn.LayerNorm(args.d_model)
+                    d_model
+                ) for l in range(e_layers-1)
+            ] if distil else None,
+            norm_layer=torch.nn.LayerNorm(d_model)
         )
         # Decoder
         self.decoder = Decoder(
             [
                 DecoderLayer(
-                    AttentionLayer(
-                        ProbAttention(True, args.factor, attention_dropout=args.dropout, output_attention=False),
-                        args.d_model, args.n_heads),
-                    AttentionLayer(
-                        ProbAttention(False, args.factor, attention_dropout=args.dropout, output_attention=False),
-                        args.d_model, args.n_heads),
-                    args.d_model,
-                    args.d_ff,
-                    dropout=args.dropout,
-                    activation=args.activation,
+                    AttentionLayer(Attn(True, factor, attention_dropout=dropout, output_attention=False), 
+                                d_model, n_heads, mix=mix),
+                    AttentionLayer(FullAttention(False, factor, attention_dropout=dropout, output_attention=False), 
+                                d_model, n_heads, mix=False),
+                    d_model,
+                    d_ff,
+                    dropout=dropout,
+                    activation=activation,
                 )
-                for l in range(args.d_layers)
+                for l in range(d_layers)
             ],
-            norm_layer=torch.nn.LayerNorm(args.d_model),
-            projection=nn.Linear(args.d_model, args.out_size, bias=True)
+            norm_layer=torch.nn.LayerNorm(d_model)
         )
-
-    def forward(self, x_enc, x_mark_enc, x_dec, x_mark_dec,
+        # self.end_conv1 = nn.Conv1d(in_channels=label_len+out_len, out_channels=out_len, kernel_size=1, bias=True)
+        # self.end_conv2 = nn.Conv1d(in_channels=d_model, out_channels=out_size, kernel_size=1, bias=True)
+        self.projection = nn.Linear(d_model, out_size, bias=True)
+        
+    def forward(self, x_enc, x_mark_enc, x_dec, x_mark_dec, 
                 enc_self_mask=None, dec_self_mask=None, dec_enc_mask=None):
+        enout_size = self.enc_embedding(x_enc, x_mark_enc)
+        enout_size, attns = self.encoder(enout_size, attn_mask=enc_self_mask)
 
-        enc_out = self.enc_embedding(x_enc, x_mark_enc)
-        enc_out, attns = self.encoder(enc_out, attn_mask=enc_self_mask)
-
-        dec_out = self.dec_embedding(x_dec, x_mark_dec)
-        dec_out = self.decoder(dec_out, enc_out, x_mask=dec_self_mask, cross_mask=dec_enc_mask)
-
+        deout_size = self.dec_embedding(x_dec, x_mark_dec)
+        deout_size = self.decoder(deout_size, enout_size, x_mask=dec_self_mask, cross_mask=dec_enc_mask)
+        deout_size = self.projection(deout_size)
+        
+        # deout_size = self.end_conv1(deout_size)
+        # deout_size = self.end_conv2(deout_size.transpose(2,1)).transpose(1,2)
         if self.output_attention:
-            return dec_out[:, -self.pred_len:, :], attns
+            return deout_size[:,-self.pred_len:,:], attns
         else:
-            return dec_out[:, -self.pred_len:, :]  # [B, L, D]
+            return deout_size[:,-self.pred_len:,:] # [B, L, D]
 
 
 class InformerStack(nn.Module):

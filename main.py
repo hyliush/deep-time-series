@@ -3,11 +3,11 @@ from utils import logger
 from args import args
 from exp.exp_main import Exp_model
 
-# args.model = "gau"
+args.model = "informer1"
 # args.do_predict = True
 # args.debug = True
 # args.load = True
-# args.seq_len, args.label_len, args.pred_len = 96, 48, 24
+args.seq_len, args.label_len, args.pred_len = 96, 48, 24
 # args.input_params = ["x"]
 # args.horizon = 1
 # args.seq_len, args.label_len, args.pred_len = 144, 36, 288
