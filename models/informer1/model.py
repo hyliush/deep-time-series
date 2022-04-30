@@ -29,7 +29,7 @@ class Informer(nn.Module):
         activation=args.activation
         output_attention=args.output_attention
         distil=args.distil; mix=args.mix
-                
+        c_out = args.out_size
         super(Informer, self).__init__()
         self.pred_len = out_len
         self.attn = attn
@@ -77,31 +77,32 @@ class Informer(nn.Module):
             norm_layer=torch.nn.LayerNorm(d_model)
         )
         # self.end_conv1 = nn.Conv1d(in_channels=label_len+out_len, out_channels=out_len, kernel_size=1, bias=True)
-        # self.end_conv2 = nn.Conv1d(in_channels=d_model, out_channels=out_size, kernel_size=1, bias=True)
-        self.projection = nn.Linear(d_model, out_size, bias=True)
+        # self.end_conv2 = nn.Conv1d(in_channels=d_model, out_channels=c_out, kernel_size=1, bias=True)
+        self.projection = nn.Linear(d_model, c_out, bias=True)
         
     def forward(self, x_enc, x_mark_enc, x_dec, x_mark_dec, 
                 enc_self_mask=None, dec_self_mask=None, dec_enc_mask=None):
-        enout_size = self.enc_embedding(x_enc, x_mark_enc)
-        enout_size, attns = self.encoder(enout_size, attn_mask=enc_self_mask)
+        enc_out = self.enc_embedding(x_enc, x_mark_enc)
+        enc_out, attns = self.encoder(enc_out, attn_mask=enc_self_mask)
 
-        deout_size = self.dec_embedding(x_dec, x_mark_dec)
-        deout_size = self.decoder(deout_size, enout_size, x_mask=dec_self_mask, cross_mask=dec_enc_mask)
-        deout_size = self.projection(deout_size)
+        dec_out = self.dec_embedding(x_dec, x_mark_dec)
+        dec_out = self.decoder(dec_out, enc_out, x_mask=dec_self_mask, cross_mask=dec_enc_mask)
+        dec_out = self.projection(dec_out)
         
-        # deout_size = self.end_conv1(deout_size)
-        # deout_size = self.end_conv2(deout_size.transpose(2,1)).transpose(1,2)
+        # dec_out = self.end_conv1(dec_out)
+        # dec_out = self.end_conv2(dec_out.transpose(2,1)).transpose(1,2)
         if self.output_attention:
-            return deout_size[:,-self.pred_len:,:], attns
+            return dec_out[:,-self.pred_len:,:], attns
         else:
-            return deout_size[:,-self.pred_len:,:] # [B, L, D]
+            return dec_out[:,-self.pred_len:,:] # [B, L, D]
 
 
 class InformerStack(nn.Module):
-    def __init__(self, enc_in, dec_in, out_size, seq_len, label_len, out_len, 
+    def __init__(self, enc_in, dec_in, c_out, seq_len, label_len, out_len, 
                 factor=5, d_model=512, n_heads=8, e_layers=[3,2,1], d_layers=2, d_ff=512, 
                 dropout=0.0, attn='prob', embed='fixed', freq='h', activation='gelu',
-                output_attention = False, distil=True, mix=True):
+                output_attention = False, distil=True, mix=True,
+                device=torch.device('cuda:0')):
         super(InformerStack, self).__init__()
         self.pred_len = out_len
         self.attn = attn
@@ -153,21 +154,21 @@ class InformerStack(nn.Module):
             norm_layer=torch.nn.LayerNorm(d_model)
         )
         # self.end_conv1 = nn.Conv1d(in_channels=label_len+out_len, out_channels=out_len, kernel_size=1, bias=True)
-        # self.end_conv2 = nn.Conv1d(in_channels=d_model, out_channels=out_size, kernel_size=1, bias=True)
-        self.projection = nn.Linear(d_model, out_size, bias=True)
+        # self.end_conv2 = nn.Conv1d(in_channels=d_model, out_channels=c_out, kernel_size=1, bias=True)
+        self.projection = nn.Linear(d_model, c_out, bias=True)
         
     def forward(self, x_enc, x_mark_enc, x_dec, x_mark_dec, 
                 enc_self_mask=None, dec_self_mask=None, dec_enc_mask=None):
-        enout_size = self.enc_embedding(x_enc, x_mark_enc)
-        enout_size, attns = self.encoder(enout_size, attn_mask=enc_self_mask)
+        enc_out = self.enc_embedding(x_enc, x_mark_enc)
+        enc_out, attns = self.encoder(enc_out, attn_mask=enc_self_mask)
 
-        deout_size = self.dec_embedding(x_dec, x_mark_dec)
-        deout_size = self.decoder(deout_size, enout_size, x_mask=dec_self_mask, cross_mask=dec_enc_mask)
-        deout_size = self.projection(deout_size)
+        dec_out = self.dec_embedding(x_dec, x_mark_dec)
+        dec_out = self.decoder(dec_out, enc_out, x_mask=dec_self_mask, cross_mask=dec_enc_mask)
+        dec_out = self.projection(dec_out)
         
-        # deout_size = self.end_conv1(deout_size)
-        # deout_size = self.end_conv2(deout_size.transpose(2,1)).transpose(1,2)
+        # dec_out = self.end_conv1(dec_out)
+        # dec_out = self.end_conv2(dec_out.transpose(2,1)).transpose(1,2)
         if self.output_attention:
-            return deout_size[:,-self.pred_len:,:], attns
+            return dec_out[:,-self.pred_len:,:], attns
         else:
-            return deout_size[:,-self.pred_len:,:] # [B, L, D]
+            return dec_out[:,-self.pred_len:,:] # [B, L, D]
