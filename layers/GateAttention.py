@@ -51,8 +51,9 @@ class GatedAttentionLayer(nn.Module):
         self.use_bias = use_bias
         self.use_conv = use_conv
 
-        self.query_projection = nn.Sequential(nn.Linear(d_model, self.qk_size, self.use_bias), Swish())
-        self.key_projection = nn.Sequential(nn.Linear(d_model, self.qk_size, self.use_bias), Swish())
+        # self.query_projection = nn.Sequential(nn.Linear(d_model, self.qk_size, self.use_bias), Swish())
+        # self.key_projection = nn.Sequential(nn.Linear(d_model, self.qk_size, self.use_bias), Swish())
+        self.qk_projection = nn.Sequential(nn.Linear(d_model, self.qk_size, self.use_bias), Swish())
         self.value_projection = nn.Sequential(nn.Linear(d_model, self.uv_size, self.use_bias), Swish())
         self.rotary_emb = RotaryEmbedding(dim = self.qk_size)
         
@@ -69,14 +70,15 @@ class GatedAttentionLayer(nn.Module):
     def forward(self, u, queries, keys, values, attn_mask=None):
             
         # 投影变换
-        q = self.query_projection(queries)
-        k = self.key_projection(keys)
+        # q = self.query_projection(queries)
+        # k = self.key_projection(keys)
+        qk = self.qk_projection(queries)
         v = self.value_projection(values)
         if self.use_conv:
             u = self.u_projection(u.permute(0, 2, 1)).transpose(1, 2)
         else:
             u = self.u_projection(u)
-        # q, k = self.q_scaleoffset(q), self.k_scaleoffset(k)
+        q, k = self.q_scaleoffset(qk), self.k_scaleoffset(qk)
         # 加入RoPE
         q, k = self.rotary_emb.rotate_queries_or_keys(q), self.rotary_emb.rotate_queries_or_keys(k)
         # Attention

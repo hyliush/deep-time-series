@@ -201,16 +201,14 @@ class ScaleOffset(nn.Module):
         hidden_units=None,
         hidden_activation='linear',
         hidden_initializer='glorot_uniform',
-        **kwargs
-    ):
+        **kwargs):
+        
         super(ScaleOffset, self).__init__(**kwargs)
         self.key_size = key_size
         self.scale = scale
         self.offset = offset
         self.conditional = conditional
         self.hidden_units = hidden_units
-        if self.conditional:
-            input_shape = input_shape[0]
 
         if self.offset is True:
             self.beta = nn.Parameter(torch.zeros(self.key_size,))
@@ -220,30 +218,17 @@ class ScaleOffset(nn.Module):
 
         if self.conditional:
             if self.hidden_units is not None:
-                self.hidden_dense = nn.Linear(
-                    self.key_size,
-                    self.key_size,
-                    bias=False)
+                self.hidden_dense = nn.Sequential(
+                    nn.Linear(self.hidden_units, self.hidden_units, bias=False),
+                    hidden_activation)
 
             if self.offset is not False and self.offset is not None:
-                self.beta_dense = nn.Linear(
-                    self.key_size,
-                    self.key_size,
-                    bias=False,
-                )
-            if self.scale is not False and self.scale is not None:
-                self.gamma_dense = nn.Linear(
-                    self.key_size,
-                    self.key_size,
-                    bias=False,
-                    kernel_initializer='zeros'
-                )
+                self.beta_dense = nn.Linear(self.key_size, self.key_size, bias=False)
+                self.beta_dense.weight = nn.Parameter(torch.zeros(self.key_size, self.size))
 
-    def compute_mask(self, inputs, mask=None):
-        if self.conditional:
-            return mask if mask is None else mask[0]
-        else:
-            return mask
+            if self.scale is not False and self.scale is not None:
+                self.gamma_dense = nn.Linear(self.key_size, self.key_size, bias=False)
+                self.gamma_dense.weight = nn.Parameter(torch.zeros(self.key_size, self.size))
 
     def forward(self, inputs):
         """如果带有条件，则默认以list为输入，第二个是条件
