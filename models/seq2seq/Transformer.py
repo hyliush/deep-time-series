@@ -13,6 +13,7 @@ class Transformer(nn.Module):
     """
     def __init__(self, args):
         super(Transformer, self).__init__()
+        self.args = args
         self.pred_len = args.pred_len
         self.output_attention = args.output_attention
 
@@ -27,13 +28,19 @@ class Transformer(nn.Module):
                 EncoderLayer(
                     AttentionLayer(
                         FullAttention(False, args.factor, attention_dropout=args.dropout,
-                                      output_attention=args.output_attention), args.d_model, args.n_heads),
+                                      output_attention=args.output_attention), 
+                        args.d_model, args.n_heads, mix=False),
                     args.d_model,
                     args.d_ff,
                     dropout=args.dropout,
                     activation=args.activation
                 ) for l in range(args.e_layers)
             ],
+            [
+                ConvLayer(
+                    args.d_model
+                ) for l in range(args.e_layers - 1)
+            ] if args.distil else None,
             norm_layer=torch.nn.LayerNorm(args.d_model)
         )
         # Decoder
@@ -42,10 +49,10 @@ class Transformer(nn.Module):
                 DecoderLayer(
                     AttentionLayer(
                         FullAttention(True, args.factor, attention_dropout=args.dropout, output_attention=False),
-                        args.d_model, args.n_heads),
+                        args.d_model, args.n_heads, mix=args.mix),
                     AttentionLayer(
                         FullAttention(False, args.factor, attention_dropout=args.dropout, output_attention=False),
-                        args.d_model, args.n_heads),
+                        args.d_model, args.n_heads, mix=False),
                     args.d_model,
                     args.d_ff,
                     dropout=args.dropout,

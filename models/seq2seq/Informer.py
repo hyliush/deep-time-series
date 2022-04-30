@@ -23,7 +23,7 @@ class Informer(nn.Module):
                                            args.dropout)
         self.dec_embedding = DataEmbedding(args.dec_in, args.d_model, args.embed, args.freq,
                                            args.dropout)
-        Attn = ProbAttention if args.attn=='prob' else FullAttention
+        Attn = ProbAttention if args.enc_attn=='prob' else FullAttention
         # Encoder
         self.encoder = Encoder(
             [
