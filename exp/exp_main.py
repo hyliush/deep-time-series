@@ -37,6 +37,7 @@ class Exp_model(Exp):
     def _get_data(self, file_name, flag):
         if  not hasattr(self.tmp_dataset, "file_name") or self.tmp_dataset.file_name != file_name:
             DataSet = dataset_dict[self.args.dataset]
+            self.args.file_name = file_name
             self.tmp_dataset = DataSet(self.args)
             logger.debug(flag, len(self.tmp_dataset))
             if flag == "train":
@@ -45,7 +46,7 @@ class Exp_model(Exp):
         if flag == 'test':
             drop_last = False; sampler = SubsetSequentialSampler; batch_size = self.args.batch_size//2
         else:
-            drop_last = False; sampler = SubsetRandomSampler; batch_size = self.args.batch_size
+            drop_last = True; sampler = SubsetRandomSampler; batch_size = self.args.batch_size
         if hasattr(self.tmp_dataset, flag+"_idxs"):
             idxs = getattr(self.tmp_dataset, flag+"_idxs")
         else:

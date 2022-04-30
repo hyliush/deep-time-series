@@ -35,7 +35,7 @@ class Exp_Single(Exp_Basic):
         
         train_loader = self._get_data(file_name=self.train_filename, flag='train')
         val_loader = self._get_data(file_name=self.val_filename, flag='val')
-        print_every = len(train_loader)//self.args.print_num if self.args.print_num>0 else np.inf
+        
         val_every = len(train_loader)//self.args.val_num if self.args.val_num>0 else np.inf
         for idx_epoch in range(self.args.train_epochs):
             self.model.train()
@@ -60,12 +60,9 @@ class Exp_Single(Exp_Basic):
                         loss.backward()
                         model_optim.step()
 
-                    if idx_batch % print_every==0:
-                        # logger.info("Epoch: {0}, epoch_train_steps: {1},  | loss: {2:.7f}".format(idx_epoch+1, idx_batch, loss.item()))
-                        self.writer.add_scalar("Loss/train", train_loss, idx_epoch*len(train_loader)+idx_batch)
-
                     if idx_batch % val_every==0:
                         vali_loss, vali_metrics_dict = self.vali(val_loader, criterion)
+                        self.writer.add_scalar("Loss/train", train_loss, idx_epoch*len(train_loader)+idx_batch)
                         self.writer.add_scalar("Loss/val", vali_loss, idx_epoch*len(train_loader)+idx_batch)
                         for key in vali_metrics_dict:
                             self.writer.add_scalar(f"Val_metrics/{key}", vali_metrics_dict[key], idx_epoch*len(train_loader)+idx_batch)

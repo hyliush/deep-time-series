@@ -1,1 +1,1 @@
-from .make_testdata import make_testdata
+from .make_testdata import *

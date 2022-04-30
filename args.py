@@ -31,7 +31,7 @@ parser.add_argument('--start_col', type=int, default=1, help='Index of the start
 parser.add_argument('--train_epochs', type=int, default=100, help='train epochs')
 parser.add_argument('--batch_size', type=int, default=32, help='batch size of train input data')
 parser.add_argument('--activation', type=str, default='gelu',help='activation')
-parser.add_argument('--learning_rate', type=float, default=0.001, help='optimizer learning rate')
+parser.add_argument('--learning_rate', type=float, default=0.0001, help='optimizer learning rate')
 parser.add_argument('--loss', type=str, default='mse',help='loss function')
 parser.add_argument('--lradj', type=str, default='type1',help='adjust learning rate')
 parser.add_argument('--num_workers', type=int, default=0, help='data loader num workers')
@@ -46,7 +46,7 @@ parser.add_argument('--des', type=str, default='test',help='exp description')
 
 # model common
 parser.add_argument('--out_size', type=int, default=7, help='output features size')
-parser.add_argument('--dropout', type=float, default=0.1, help='dropout')
+parser.add_argument('--dropout', type=float, default=0.05, help='dropout')
 
 # seq2seq common
 parser.add_argument('--enc_in', type=int, default=37, help='encoder input size')
@@ -64,7 +64,7 @@ parser.add_argument('--e_layers', type=int, default=2, help='num of encoder laye
 parser.add_argument('--d_layers', type=int, default=1, help='num of decoder layers')
 parser.add_argument('--s_layers', type=str, default='3,2,1', help='num of stack encoder layers')
 parser.add_argument('--d_ff', type=int, default=2048, help='dimension of fcn')
-parser.add_argument('--factor', type=int, default=1, help='probsparse attn factor')
+parser.add_argument('--factor', type=int, default=5, help='probsparse attn factor')
 parser.add_argument('--padding', type=int, default=0, help='padding type')
 parser.add_argument('--distil', action='store_false', help='whether to use distilling in encoder, using this argument means not using distilling', default=True)
 parser.add_argument('--attn', type=str, default='prob', help='attention used in encoder, options:[prob, full]')
@@ -128,8 +128,7 @@ parser.add_argument('--use_multi_gpu', action='store_true', help='use multiple g
 parser.add_argument('--devices', type=str, default='0,1,2,3',help='device ids of multile gpus')
 parser.add_argument('--load', action='store_true', help='load last trained model')
 
-parser.add_argument('--print_num', type=int, default=8, help='print_num in one epoch')
-parser.add_argument('--val_num', type=int, default=6, help='val_num in one epoch')
+parser.add_argument('--val_num', type=int, default=4, help='val_num in one epoch')
 parser.add_argument('--single_file', type=bool, default=True, help='single_file')
 parser.add_argument('--debug', action='store_true', help='whether debug')
 parser.add_argument('--input_params', type=str, nargs="+", default=["x", 'x_mark', 'y', 'y_mark'], help='input_params')
