@@ -9,7 +9,7 @@
 
 &ensp;With limited ability and energy, we only test how well the repo works on a specific dataset. For problems in use, please leave an issue. The repo will be kept updated.
 
-&ensp;See the dev branch for recent updates or the master branch not works.
+&ensp;`See the dev branch for recent updates or the master branch not works`.
 
 
 ## Requirements
