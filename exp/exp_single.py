@@ -123,7 +123,7 @@ class Exp_Single(Exp_Basic):
             trues = test_loader.dataset.inverse_transform(trues)[..., -1:]
         metrics_dict = metric(preds, trues, "Test_metrics/")
         logger.info('mse:{}, mae:{}'.format(metrics_dict["Test_metrics/mse"], metrics_dict["Test_metrics/mae"]))
-        self.writer.add_hparams(hparam_dict={"setting" : self.setting}, metric_dict=metrics_dict)
+        self.writer.add_hparams(hparam_dict=self.params_dict, metric_dict=metrics_dict)
         self.writer.close()
         if save:
             np.save(self.result_path+'pred.npy', preds)

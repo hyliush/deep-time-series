@@ -1,12 +1,12 @@
 from layers.Embed import DataEmbedding_wo_pos, DataEmbedding
 import torch.nn as nn
 from layers.GAU_EncDec import Decoder, Encoder, EncoderLayer, ConvLayer
-from layers.GateAttention import GatedAttentionLayer, GateAttention
+from layers.GateAttention_Family import GateAttentionLayer, GateAttention
 import torch
 from layers.SelfAttention_Family import ProbAttention, FullAttention, AttentionLayer
 from layers.GAU_EncDec import DecoderLayer as DecoderLayer1
 from layers.Transformer_EncDec import DecoderLayer as DecoderLayer2
-class GAU_alpha(nn.Module):
+class Gaformer(nn.Module):
     """GAU-α
     改动：基本模块换成GAU
     链接：https://kexue.fm/archives/9052
@@ -17,15 +17,16 @@ class GAU_alpha(nn.Module):
         self.pred_len = args.pred_len
         self.output_attention = args.output_attention
 
-        self.enc_embedding = DataEmbedding_wo_pos(args.enc_in, args.d_model, args.embed, args.freq, args.dropout)
+        self.enc_embedding = DataEmbedding(args.enc_in, args.d_model, args.embed, args.freq, args.dropout)
 
         # Encoder
         self.encoder = Encoder(
             [
                 EncoderLayer(
-                    GatedAttentionLayer(
+                    GateAttentionLayer(
                         GateAttention(False, attention_dropout=args.dropout, output_attention=args.output_attention), 
-                        args.d_model, args.uv_size, args.qk_size, args.use_bias, args.use_conv
+                        args.d_model, args.uv_size, args.qk_size, args.activation,
+                        args.use_bias, args.use_conv, args.use_aff,
                     ),
                     args.d_model,
                     dropout=args.dropout
@@ -42,11 +43,10 @@ class GAU_alpha(nn.Module):
         # Decoder
         self.dec_embedding = DataEmbedding(args.dec_in, args.d_model, args.embed, args.freq, args.dropout)
         if args.dec_selfattn == 'gate':
-            selfattnlayer = GatedAttentionLayer(
+            selfattnlayer = GateAttentionLayer(
                             GateAttention(True, attention_dropout=args.dropout, output_attention=False),
-                            args.d_model, args.uv_size, args.qk_size, args.use_bias, args.use_conv)
-            self.dec_embedding = DataEmbedding_wo_pos(args.dec_in, args.d_model, args.embed, args.freq,
-                                        args.dropout)
+                            args.d_model, args.uv_size, args.qk_size, args.activation,
+                            args.use_bias, args.use_conv, args.use_aff)
         else:
             Attn = ProbAttention if args.dec_selfattn == "prob" else FullAttention
             selfattnlayer = AttentionLayer(
@@ -55,9 +55,10 @@ class GAU_alpha(nn.Module):
 
         if args.dec_crossattn == "gate":
             "gateAttenLayer 包含FNN, 因此用GAU Decoderlayer 剔除FNN"
-            crossattnlayer = GatedAttentionLayer(
+            crossattnlayer = GateAttentionLayer(
                             GateAttention(False, attention_dropout=args.dropout, output_attention=False),
-                            args.d_model, args.uv_size, args.qk_size, args.use_bias, args.use_conv)
+                            args.d_model, args.uv_size, args.qk_size, args.activation,
+                            args.use_bias, args.use_conv, args.use_aff)
             decoderlayer = DecoderLayer1( selfattnlayer, crossattnlayer, args.d_model, dropout=args.dropout)
         else:
             "不包含FNN，因此用Transformer Decoderlayer"

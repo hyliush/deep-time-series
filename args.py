@@ -73,6 +73,7 @@ parser.add_argument('--mix', action='store_false', help='use mix attention in ge
 parser.add_argument('--distil', action='store_false', help='whether to use distilling in encoder, using this argument means not using distilling', default=True)
 parser.add_argument('--use_conv', action='store_true', help='use conv1d attention in GateAtten')
 parser.add_argument('--use_bias', action='store_true', help='use bias in GateAtten')
+parser.add_argument('--use_aff', action='store_true', help='use aff in GateAtten')
 parser.add_argument('--output_attention', action='store_true', help='whether to output attention in ecoder')
 
 # nonseq2seq comon
@@ -181,3 +182,4 @@ if args.data in data_parser.keys():
     if 'freq' in data_info:
         args.freq = data_info["freq"]
 args.input_size = args.enc_in
+args.test_activation = "softmax"

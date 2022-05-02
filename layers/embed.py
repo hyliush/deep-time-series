@@ -123,9 +123,10 @@ class DataEmbedding(nn.Module):
 
         self.dropout = nn.Dropout(p=dropout)
 
-    def forward(self, x, x_mark):
-        x = self.value_embedding(x) + self.position_embedding(x) + self.temporal_embedding(x_mark)
-        
+    def forward(self, x, x_mark=None):
+        x = self.value_embedding(x) + self.position_embedding(x)
+        if x_mark is not None:
+            x = x + self.temporal_embedding(x_mark)
         return self.dropout(x)
 
 class DataEmbedding_wo_pos(nn.Module):
@@ -133,14 +134,15 @@ class DataEmbedding_wo_pos(nn.Module):
         super(DataEmbedding_wo_pos, self).__init__()
 
         self.value_embedding = TokenEmbedding(c_in=c_in, d_model=d_model)
-        self.position_embedding = PositionalEmbedding(d_model=d_model)
         self.temporal_embedding = TemporalEmbedding(d_model=d_model, embed_type=embed_type,
                                                     freq=freq) if embed_type != 'timeF' else TimeFeatureEmbedding(
             d_model=d_model, embed_type=embed_type, freq=freq)
         self.dropout = nn.Dropout(p=dropout)
 
-    def forward(self, x, x_mark):
-        x = self.value_embedding(x) + self.temporal_embedding(x_mark)
+    def forward(self, x, x_mark=None):
+        x = self.value_embedding(x)
+        if x_mark is not None:
+            x = x + self.temporal_embedding(x_mark)
         return self.dropout(x)
         
 # helper functions
@@ -177,6 +179,7 @@ class RotaryEmbedding(nn.Module):
     def __init__(
         self,
         dim,
+        skip = False,
         custom_freqs = None,
         freqs_for = 'lang',
         theta = 10000,
@@ -197,13 +200,15 @@ class RotaryEmbedding(nn.Module):
             raise ValueError(f'unknown modality {freqs_for}')
 
         self.cache = dict()
-
+        self.skip = skip
         if learned_freq:
             self.freqs = nn.Parameter(freqs)
         else:
             self.register_buffer('freqs', freqs)
 
-    def rotate_queries_or_keys(self, t, seq_dim = -2):
+    def rotate_queries_or_keys(self, t, seq_dim=1):
+        if self.skip:
+            return t
         device = t.device
         seq_len = t.shape[seq_dim]
         # SinusoidalPositionEmbedding

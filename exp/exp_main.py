@@ -14,7 +14,7 @@ import warnings
 warnings.filterwarnings('ignore')
 
 class Exp_model(Exp):
-    def __init__(self, args, setting):
+    def __init__(self, args, setting, params_dict):
         # for multi
         self.fileName_lst = os.listdir(args.data_path)
         # for single
@@ -22,12 +22,13 @@ class Exp_model(Exp):
         [args.file_name]*3 if isinstance(args.file_name, str) else args.file_name
 
         self.tmp_dataset = None
+        self.params_dict = params_dict
         Exp_model.init_process_one_batch(args)
         super().__init__(args, setting)
 
     @classmethod    
     def init_process_one_batch(cls, args):
-        if 'former' in args.model or "gau" in args.model:
+        if 'former' in args.model:
             cls._process_one_batch = _process_one_batch2
         elif args.model == "deepar":
             cls._process_one_batch = _process_one_batch3

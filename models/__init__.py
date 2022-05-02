@@ -7,3 +7,4 @@ from .DeepAR import DeepAR
 from .Lstm import BenchmarkLstm
 from .Mlp import BenchmarkMlp
 from .LSTNet import LSTNet
+from .GAU import GAU, AU

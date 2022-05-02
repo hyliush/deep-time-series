@@ -7,6 +7,15 @@ import os
 from datetime import datetime
 import pandas as pd
 import torch.nn as nn
+import re
+
+def get_params_dict(setting_keys, setting_values, setting=None):
+    if setting is not None:
+        return {"setting": setting}
+    else:
+        keys = ["model", "data"] + [i for i in re.split("_|{}", setting_keys) if len(i)>0]
+        params_dict = dict(zip(keys, setting_values[:-2]))
+        return params_dict
 
 def timer(func):
     def deco(*args, **kwargs):
@@ -168,21 +177,21 @@ def align(tensor, axes, ndim=None):
         indices[i] = slice(None)
     return tensor[indices]
 
-def attention_normalize(a, axis=-1, method='softmax'):
+def attention_normalize(a, dim=-1, method='softmax'):
     """不同的注意力归一化方案
     softmax：常规/标准的指数归一化；
     squared_relu：来自 https://arxiv.org/abs/2202.10447 ；
     softmax_plus：来自 https://kexue.fm/archives/8823 。
     """
     if method == 'softmax':
-        return torch.softmax(a, axis=axis)
+        return torch.softmax(a, dim=dim)
     else:
         mask = (a > -torch.tensor(float("inf")) / 10).type(torch.float)
-        l = torch.maximum(torch.sum(mask, axis=axis, keepdims=True), 1)
+        l = torch.maximum(torch.sum(mask, dim=dim, keepdims=True), torch.tensor(1).to(a.device))
         if method == 'squared_relu':
             return torch.relu(a)**2 / l
         elif method == 'softmax_plus':
-            return torch.softmax(a * torch.log(l) / np.log(512), axis=axis)
+            return torch.softmax(a * torch.log(l) / np.log(512), dim=dim)
     return a
 
 class ScaleOffset(nn.Module):
@@ -202,7 +211,7 @@ class ScaleOffset(nn.Module):
         hidden_activation='linear',
         hidden_initializer='glorot_uniform',
         **kwargs):
-        
+
         super(ScaleOffset, self).__init__(**kwargs)
         self.key_size = key_size
         self.scale = scale
@@ -214,7 +223,7 @@ class ScaleOffset(nn.Module):
             self.beta = nn.Parameter(torch.zeros(self.key_size,))
 
         if self.scale is True:
-            self.gamma = self.beta = nn.Parameter(torch.ones(self.key_size,))
+            self.gamma = nn.Parameter(torch.ones(self.key_size,))
 
         if self.conditional:
             if self.hidden_units is not None:
