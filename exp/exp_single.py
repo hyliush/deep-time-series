@@ -126,8 +126,8 @@ class Exp_Single(Exp_Basic):
         self.writer.add_hparams(hparam_dict=self.params_dict, metric_dict=metrics_dict)
         self.writer.close()
         if save:
-            np.save(self.result_path+'pred.npy', preds)
-            np.save(self.result_path+f'true.npy', trues)
+            np.save(os.path.join(self.result_path, f'preds{self.args.test_year}.npy'), preds)
+            np.save(os.path.join(self.result_path, f'trues{self.args.test_year}.npy'), trues)
         if plot:
             from utils.metrics import CORR
             plot_pred(trues, preds, pred_idx=0, col_idx=-1)

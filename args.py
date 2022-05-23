@@ -6,7 +6,7 @@ parser = argparse.ArgumentParser(description='Time Series Forecasting')
 parser.add_argument('--model', type=str, default='autoformer',help='model of experiment, options: [lstm, \
 mlp, tpa, tcn, trans, gated, informerstack, informerlight(TBD)], autoformer, transformer,\
 edlstm, edgru, edgruattention')
-parser.add_argument('--data', type=str, default='ETTh1', help='only for revising some params related to the data, [ETTh1, Ubiquant]')
+parser.add_argument('--data', type=str, default='Mydata', help='only for revising some params related to the data, [ETTh1, Ubiquant]')
 parser.add_argument('--dataset', type=str, default='Mydata', help='dataset, [ETTh1, Ubiquant]')
 parser.add_argument('--data_path', type=str, default='./data/Mydata/', help='root path of the data file')
 parser.add_argument('--file_name', type=str, default='Mydata.csv', help='file_name')
@@ -131,7 +131,7 @@ parser.add_argument('--use_gpu', type=bool, default=True, help='use gpu')
 parser.add_argument('--gpu', type=int, default=0, help='gpu')
 parser.add_argument('--use_multi_gpu', action='store_true', help='use multiple gpus', default=False)
 parser.add_argument('--devices', type=str, default='0,1,2,3',help='device ids of multile gpus')
-parser.add_argument('--load', action='store_true', help='load last trained model')
+parser.add_argument('--load', default=True, help='load last trained model')
 
 parser.add_argument('--val_num', type=int, default=4, help='val_num in one epoch')
 parser.add_argument('--single_file', type=bool, default=True, help='single_file')
@@ -159,7 +159,7 @@ data_parser = {
     'WTH':{'T':'WetBulbCelsius','M':[12,12,12],'S':[1,1,1],'MS':[12,12,1]},
     'ECL':{'T':'MT_320','M':[321,321,321],'S':[1,1,1],'MS':[321,321,1]},
     'Solar':{'T':'POWER_136','M':[137,137,137],'S':[1,1,1],'MS':[137,137,1]},
-    'Mydata':{'freq':'b', 'T':'rv',"features":"MS", 'MS':[42,42,1],'M':[42,42,42]},
+    'Mydata':{'freq':'b', 'T':'rv',"features":"MS", 'MS':[22,22,1],'M':[22,22,22]},
     "SDWPF":{'freq':'10min', 'T':'Patv',"features":"MS", 'MS':[10,10,1],'M':[10,10,10]},
     'Toy':{'data_path':'./data/ToyData', 'seq_len':96, 'label_len':0, "pred_len":24, "MS":[1,1,1], "T":"s"},
     'oze':{'seq_len':672, 'label_len':1, "pred_len":671, "M":[37,8,8], "T":"s", 'features':"M"}

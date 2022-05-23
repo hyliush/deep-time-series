@@ -50,7 +50,7 @@ class DatasetBase(Dataset):
     def get_idxs2(self, date):
         date = pd.to_datetime(date)
         delta = self.seq_len+self.out_len-1
-        train_date = date[(date>="2010-01-01")&(date<=f"{self.test_year-2}-12-31")][:-delta]
+        train_date = date[(date>="2012-01-01")&(date<=f"{self.test_year-2}-12-31")][:-delta]
         val_date = date[(date>train_date.values[-1]) & (date<=f"{self.test_year-1}-12-31")][:-delta]
         test_date = date[(date>val_date.values[-1]) & (date<=f"{self.test_year}-12-31")][:-delta]
 
