@@ -3,19 +3,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 import math
-class SpatialEmbedding(nn.Module):
-    def __init__(self, c_in, d_model):
-        super(SpatialEmbedding, self).__init__()
-        self.spa_emb = nn.Embedding(c_in, d_model)
-        
-    def forward(self, x):
-        x = x.long()
-        spa_emb = self.spa_emb(x)
-        
-        return spa_emb
 
 class PositionalEmbedding(nn.Module):
-    '''local position'''
     def __init__(self, d_model, max_len=5000):
         super(PositionalEmbedding, self).__init__()
         # Compute the positional encodings once in log space.
@@ -49,9 +38,6 @@ class TokenEmbedding(nn.Module):
         return x
 
 class FixedEmbedding(nn.Module):
-    '''
-    use embedding as weight to transform timestamp features
-    '''
     def __init__(self, c_in, d_model):
         super(FixedEmbedding, self).__init__()
 
@@ -73,15 +59,12 @@ class FixedEmbedding(nn.Module):
 class TemporalEmbedding(nn.Module):
     def __init__(self, d_model, embed_type='fixed', freq='h'):
         super(TemporalEmbedding, self).__init__()
-        '''
-        month, monthday, weekday, hour, minute
-        '''
+
         minute_size = 4; hour_size = 24
         weekday_size = 7; day_size = 32; month_size = 13
-        self.freq = freq
-        
+
         Embed = FixedEmbedding if embed_type=='fixed' else nn.Embedding
-        if self.freq == 't':
+        if freq=='t':
             self.minute_embed = Embed(minute_size, d_model)
         self.hour_embed = Embed(hour_size, d_model)
         self.weekday_embed = Embed(weekday_size, d_model)
@@ -92,10 +75,10 @@ class TemporalEmbedding(nn.Module):
         x = x.long()
         
         minute_x = self.minute_embed(x[:,:,4]) if hasattr(self, 'minute_embed') else 0.
-        hour_x = self.hour_embed(x[:,:,3]) if x.size(-1) >= 4 else 0.
-        weekday_x = self.weekday_embed(x[:,:,2]) if x.size(-1) >= 3 else 0.
-        day_x = self.day_embed(x[:,:,1]) if x.size(-1) >= 2 else 0.
-        month_x = self.month_embed(x[:,:,0]) if x.size(-1) >= 1 else 0.
+        hour_x = self.hour_embed(x[:,:,3])
+        weekday_x = self.weekday_embed(x[:,:,2])
+        day_x = self.day_embed(x[:,:,1])
+        month_x = self.month_embed(x[:,:,0])
         
         return hour_x + weekday_x + day_x + month_x + minute_x
 

@@ -1,6 +1,6 @@
 import torch.nn as nn
 from utils.activation import Swish
-from models.informer.embed import SpatialEmbedding, TemporalEmbedding, TokenEmbedding, FixedEmbedding
+from layers.Embed import SpatialEmbedding, TemporalEmbedding, TokenEmbedding, FixedEmbedding
 
 class Gdnn(nn.Module):
     def __init__(self, args):

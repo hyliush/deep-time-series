@@ -6,6 +6,17 @@ from torch.utils.tensorboard import SummaryWriter
 import os
 from datetime import datetime
 import pandas as pd
+import torch.nn as nn
+import re
+
+def get_params_dict(setting_keys, setting_values, setting=None):
+    if setting is not None:
+        return {"setting": setting}
+    else:
+        keys = ["model", "data"] + [i for i in re.split("_|{}", setting_keys) if len(i)>0]
+        params_dict = dict(zip(keys, setting_values[:-2]))
+        return params_dict
+
 def timer(func):
     def deco(*args, **kwargs):
         # print('\n函数：{_funcname_}开始运行：'.format(_funcname_=func.__name__))
@@ -69,7 +80,7 @@ class EarlyStopping:
             self.save_checkpoint(val_loss, model, path)
         elif score < self.best_score + self.delta:
             self.counter += 1
-            print(f'EarlyStopping counter: {self.counter} out of {self.patience}')
+            print(f'EarlyStopping counter: {self.counter} out of {self.patience}, best_loss:{-self.best_score}, curent_loss:{val_loss}')
             if self.counter >= self.patience:
                 self.early_stop = True
         else:
@@ -152,3 +163,101 @@ def filter_extreme_percentile(train_df, df, min = 0.10,max = 0.90): #百分位�
     min_range, max_range = q.iloc[0],q.iloc[1]
     df.iloc[:] = np.clip(df, min_range, max_range, axis=1)
     return df, min_range, max_range
+
+def align(tensor, axes, ndim=None):
+    """重新对齐tensor（批量版expand_dims）
+    axes：原来的第i维对齐新tensor的第axes[i]维；
+    ndim：新tensor的维度。
+    """
+    assert len(axes) == tensor.dim()
+    assert ndim or min(axes) >= 0
+    ndim = ndim or max(axes) + 1
+    indices = [None] * ndim
+    for i in axes:
+        indices[i] = slice(None)
+    return tensor[indices]
+
+def attention_normalize(a, dim=-1, method='softmax'):
+    """不同的注意力归一化方案
+    softmax：常规/标准的指数归一化；
+    squared_relu：来自 https://arxiv.org/abs/2202.10447 ；
+    softmax_plus：来自 https://kexue.fm/archives/8823 。
+    """
+    if method == 'softmax':
+        return torch.softmax(a, dim=dim)
+    else:
+        mask = (a > -torch.tensor(float("inf")) / 10).type(torch.float)
+        l = torch.maximum(torch.sum(mask, dim=dim, keepdims=True), torch.tensor(1).to(a.device))
+        if method == 'squared_relu':
+            return torch.relu(a)**2 / l
+        elif method == 'softmax_plus':
+            return torch.softmax(a * torch.log(l) / np.log(512), dim=dim)
+    return a
+
+class ScaleOffset(nn.Module):
+    """简单的仿射变换层（最后一维乘上gamma向量并加上beta向量）
+    说明：1、具体操作为最后一维乘上gamma向量并加上beta向量；
+         2、如果直接指定scale和offset，那么直接常数缩放和平移；
+         3、hidden_*系列参数仅为有条件输入时(conditional=True)使用，
+            用于通过外部条件控制beta和gamma。
+    """
+    def __init__(
+        self,
+        key_size,
+        scale=True,
+        offset=True,
+        conditional=False,
+        hidden_units=None,
+        hidden_activation='linear',
+        hidden_initializer='glorot_uniform',
+        **kwargs):
+
+        super(ScaleOffset, self).__init__(**kwargs)
+        self.key_size = key_size
+        self.scale = scale
+        self.offset = offset
+        self.conditional = conditional
+        self.hidden_units = hidden_units
+
+        if self.offset is True:
+            self.beta = nn.Parameter(torch.zeros(self.key_size,))
+
+        if self.scale is True:
+            self.gamma = nn.Parameter(torch.ones(self.key_size,))
+
+        if self.conditional:
+            if self.hidden_units is not None:
+                self.hidden_dense = nn.Sequential(
+                    nn.Linear(self.hidden_units, self.hidden_units, bias=False),
+                    hidden_activation)
+
+            if self.offset is not False and self.offset is not None:
+                self.beta_dense = nn.Linear(self.key_size, self.key_size, bias=False)
+                self.beta_dense.weight = nn.Parameter(torch.zeros(self.key_size, self.size))
+
+            if self.scale is not False and self.scale is not None:
+                self.gamma_dense = nn.Linear(self.key_size, self.key_size, bias=False)
+                self.gamma_dense.weight = nn.Parameter(torch.zeros(self.key_size, self.size))
+
+    def forward(self, inputs):
+        """如果带有条件，则默认以list为输入，第二个是条件
+        """
+        if self.conditional:
+            inputs, conds = inputs
+            if self.hidden_units is not None:
+                conds = self.hidden_dense(conds)
+            conds = align(conds, [0, -1], inputs.dim())
+
+        if self.scale is not False and self.scale is not None:
+            gamma = self.gamma if self.scale is True else self.scale
+            if self.conditional:
+                gamma = gamma + self.gamma_dense(conds)
+            inputs = inputs * gamma
+
+        if self.offset is not False and self.offset is not None:
+            beta = self.beta if self.offset is True else self.offset
+            if self.conditional:
+                beta = beta + self.beta_dense(conds)
+            inputs = inputs + beta
+
+        return inputs

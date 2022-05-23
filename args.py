@@ -6,7 +6,7 @@ parser = argparse.ArgumentParser(description='Time Series Forecasting')
 parser.add_argument('--model', type=str, default='autoformer',help='model of experiment, options: [lstm, \
 mlp, tpa, tcn, trans, gated, informerstack, informerlight(TBD)], autoformer, transformer,\
 edlstm, edgru, edgruattention')
-parser.add_argument('--data', type=str, default='SDWPF', help='only for revising some params related to the data, [ETTh1, Ubiquant]')
+parser.add_argument('--data', type=str, default='Mydata', help='only for revising some params related to the data, [ETTh1, Ubiquant]')
 parser.add_argument('--dataset', type=str, default='Mydata', help='dataset, [ETTh1, Ubiquant]')
 parser.add_argument('--data_path', type=str, default='./data/Mydata/', help='root path of the data file')
 parser.add_argument('--file_name', type=str, default='Mydata.csv', help='file_name')
@@ -31,11 +31,11 @@ parser.add_argument('--start_col', type=int, default=1, help='Index of the start
 parser.add_argument('--train_epochs', type=int, default=100, help='train epochs')
 parser.add_argument('--batch_size', type=int, default=32, help='batch size of train input data')
 parser.add_argument('--activation', type=str, default='gelu',help='activation')
-parser.add_argument('--learning_rate', type=float, default=0.001, help='optimizer learning rate')
+parser.add_argument('--learning_rate', type=float, default=0.0001, help='optimizer learning rate')
 parser.add_argument('--loss', type=str, default='mse',help='loss function')
 parser.add_argument('--lradj', type=str, default='type1',help='adjust learning rate')
 parser.add_argument('--num_workers', type=int, default=0, help='data loader num workers')
-parser.add_argument('--patience', type=int, default=5, help='early stopping patience')
+parser.add_argument('--patience', type=int, default=3, help='early stopping patience')
 parser.add_argument('--use_amp', action='store_true', help='use automatic mixed precision training', default=False)
 parser.add_argument('--itr', type=int, default=2, help='experiments times')
 
@@ -46,7 +46,7 @@ parser.add_argument('--des', type=str, default='test',help='exp description')
 
 # model common
 parser.add_argument('--out_size', type=int, default=7, help='output features size')
-parser.add_argument('--dropout', type=float, default=0.1, help='dropout')
+parser.add_argument('--dropout', type=float, default=0.05, help='dropout')
 
 # seq2seq common
 parser.add_argument('--enc_in', type=int, default=37, help='encoder input size')
@@ -57,16 +57,23 @@ parser.add_argument('--teacher_forcing_ratio', type=float, default=0.5, help='te
 parser.add_argument('--moving_avg', type=int, default=25, help='window size of moving average')
 parser.add_argument('--embed', type=str, default='timeF', help='time features encoding, options:[timeF, fixed, learned]')
 parser.add_argument('--d_model', type=int, default=512, help='dimension of model')
+parser.add_argument('--uv_size', type=int, default=2048, help='dimension of uv')
+parser.add_argument('--qk_size', type=int, default=512, help='dimension of qk')
 parser.add_argument('--n_heads', type=int, default=8, help='num of heads')
 parser.add_argument('--e_layers', type=int, default=2, help='num of encoder layers')
 parser.add_argument('--d_layers', type=int, default=1, help='num of decoder layers')
 parser.add_argument('--s_layers', type=str, default='3,2,1', help='num of stack encoder layers')
 parser.add_argument('--d_ff', type=int, default=2048, help='dimension of fcn')
-parser.add_argument('--factor', type=int, default=1, help='probsparse attn factor')
+parser.add_argument('--factor', type=int, default=5, help='probsparse attn factor')
 parser.add_argument('--padding', type=int, default=0, help='padding type')
-parser.add_argument('--distil', action='store_false', help='whether to use distilling in encoder, using this argument means not using distilling', default=True)
-parser.add_argument('--attn', type=str, default='prob', help='attention used in encoder, options:[prob, full]')
+parser.add_argument('--enc_attn', type=str, default='prob', help='attention used in encoder(only in informer), options:[gate, prob, full]')
+parser.add_argument('--dec_selfattn', type=str, default='full', help='selfattention used in encoder(in gau), options:[gate, prob, full]')
+parser.add_argument('--dec_crossattn', type=str, default='full', help='crossattention used in encoder(in gau), options:[gate, prob, full]')
 parser.add_argument('--mix', action='store_false', help='use mix attention in generative decoder', default=True)
+parser.add_argument('--distil', action='store_false', help='whether to use distilling in encoder, using this argument means not using distilling', default=True)
+parser.add_argument('--use_conv', action='store_true', help='use conv1d attention in GateAtten')
+parser.add_argument('--use_bias', action='store_true', help='use bias in GateAtten')
+parser.add_argument('--use_aff', action='store_true', help='use aff in GateAtten')
 parser.add_argument('--output_attention', action='store_true', help='whether to output attention in ecoder')
 
 # nonseq2seq comon
@@ -124,10 +131,9 @@ parser.add_argument('--use_gpu', type=bool, default=True, help='use gpu')
 parser.add_argument('--gpu', type=int, default=0, help='gpu')
 parser.add_argument('--use_multi_gpu', action='store_true', help='use multiple gpus', default=False)
 parser.add_argument('--devices', type=str, default='0,1,2,3',help='device ids of multile gpus')
-parser.add_argument('--load', type=bool, default=True, help='load last trained model')
+parser.add_argument('--load', default=True, help='load last trained model')
 
-parser.add_argument('--print_num', type=int, default=8, help='print_num in one epoch')
-parser.add_argument('--val_num', type=int, default=6, help='val_num in one epoch')
+parser.add_argument('--val_num', type=int, default=4, help='val_num in one epoch')
 parser.add_argument('--single_file', type=bool, default=True, help='single_file')
 parser.add_argument('--debug', action='store_true', help='whether debug')
 parser.add_argument('--input_params', type=str, nargs="+", default=["x", 'x_mark', 'y', 'y_mark'], help='input_params')
@@ -145,15 +151,15 @@ if args.use_gpu and args.use_multi_gpu:
 
 data_parser = {
     'ETTh1':{'data_path':'./data/ETT/', 'file_name':'ETTh1.csv',"dataset":"ETTh1",
-    'seq_len':96, 'label_len':48, "pred_len":24,
+    "freq":'h', #'seq_len':96, 'label_len':48, "pred_len":24, 
     "features":"M", 'T':'OT','M':[7,7,7],'S':[1,1,1],'MS':[7,7,1]},
     'ETTh2':{'T':'OT','M':[7,7,7],'S':[1,1,1],'MS':[7,7,1]},
-    'ETTm1':{'T':'OT','M':[7,7,7],'S':[1,1,1],'MS':[7,7,1]},
+    'ETTm1':{'T':'OT','M':[7,7,7],'S':[1,1,1],'MS':[7,7,1], "freq":'t'},
     'ETTm2':{'T':'OT','M':[7,7,7],'S':[1,1,1],'MS':[7,7,1]},
     'WTH':{'T':'WetBulbCelsius','M':[12,12,12],'S':[1,1,1],'MS':[12,12,1]},
     'ECL':{'T':'MT_320','M':[321,321,321],'S':[1,1,1],'MS':[321,321,1]},
     'Solar':{'T':'POWER_136','M':[137,137,137],'S':[1,1,1],'MS':[137,137,1]},
-    'Mydata':{'freq':'b', 'T':'rv',"features":"MS", 'MS':[42,42,1],'M':[42,42,42]},
+    'Mydata':{'freq':'b', 'T':'rv',"features":"MS", 'MS':[22,22,1],'M':[22,22,22]},
     "SDWPF":{'freq':'10min', 'T':'Patv',"features":"MS", 'MS':[10,10,1],'M':[10,10,10]},
     'Toy':{'data_path':'./data/ToyData', 'seq_len':96, 'label_len':0, "pred_len":24, "MS":[1,1,1], "T":"s"},
     'oze':{'seq_len':672, 'label_len':1, "pred_len":671, "M":[37,8,8], "T":"s", 'features':"M"}
@@ -176,3 +182,4 @@ if args.data in data_parser.keys():
     if 'freq' in data_info:
         args.freq = data_info["freq"]
 args.input_size = args.enc_in
+args.test_activation = "softmax"

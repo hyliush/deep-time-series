@@ -14,6 +14,7 @@ class Informer(nn.Module):
     """
     def __init__(self, args):
         super(Informer, self).__init__()
+        self.args = args
         self.pred_len = args.pred_len
         self.output_attention = args.output_attention
 
@@ -22,15 +23,15 @@ class Informer(nn.Module):
                                            args.dropout)
         self.dec_embedding = DataEmbedding(args.dec_in, args.d_model, args.embed, args.freq,
                                            args.dropout)
-
+        Attn = ProbAttention if args.enc_attn=='prob' else FullAttention
         # Encoder
         self.encoder = Encoder(
             [
                 EncoderLayer(
                     AttentionLayer(
-                        ProbAttention(False, args.factor, attention_dropout=args.dropout,
+                        Attn(False, args.factor, attention_dropout=args.dropout,
                                       output_attention=args.output_attention),
-                        args.d_model, args.n_heads),
+                        args.d_model, args.n_heads, mix=False),
                     args.d_model,
                     args.d_ff,
                     dropout=args.dropout,
@@ -49,11 +50,11 @@ class Informer(nn.Module):
             [
                 DecoderLayer(
                     AttentionLayer(
-                        ProbAttention(True, args.factor, attention_dropout=args.dropout, output_attention=False),
-                        args.d_model, args.n_heads),
+                        Attn(True, args.factor, attention_dropout=args.dropout, output_attention=False),
+                        args.d_model, args.n_heads, mix=args.mix),
                     AttentionLayer(
-                        ProbAttention(False, args.factor, attention_dropout=args.dropout, output_attention=False),
-                        args.d_model, args.n_heads),
+                        FullAttention(False, args.factor, attention_dropout=args.dropout, output_attention=False),
+                        args.d_model, args.n_heads, mix=False),
                     args.d_model,
                     args.d_ff,
                     dropout=args.dropout,

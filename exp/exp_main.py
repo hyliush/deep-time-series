@@ -14,7 +14,7 @@ import warnings
 warnings.filterwarnings('ignore')
 
 class Exp_model(Exp):
-    def __init__(self, args, setting):
+    def __init__(self, args, setting, params_dict):
         # for multi
         self.fileName_lst = os.listdir(args.data_path)
         # for single
@@ -22,6 +22,7 @@ class Exp_model(Exp):
         [args.file_name]*3 if isinstance(args.file_name, str) else args.file_name
 
         self.tmp_dataset = None
+        self.params_dict = params_dict
         Exp_model.init_process_one_batch(args)
         super().__init__(args, setting)
 
@@ -37,21 +38,22 @@ class Exp_model(Exp):
     def _get_data(self, file_name, flag):
         if  not hasattr(self.tmp_dataset, "file_name") or self.tmp_dataset.file_name != file_name:
             DataSet = dataset_dict[self.args.dataset]
+            self.args.file_name = file_name
             self.tmp_dataset = DataSet(self.args)
             logger.debug(flag, len(self.tmp_dataset))
             if flag == "train":
                 self.dataset = self.tmp_dataset
 
         if flag == 'test':
-            drop_last = False; sampler = SubsetSequentialSampler
+            drop_last = False; sampler = SubsetSequentialSampler; batch_size = self.args.batch_size//2
         else:
-            drop_last = False; sampler = SubsetRandomSampler
+            drop_last = True; sampler = SubsetRandomSampler; batch_size = self.args.batch_size
         if hasattr(self.tmp_dataset, flag+"_idxs"):
             idxs = getattr(self.tmp_dataset, flag+"_idxs")
         else:
             raise("flag error")
 
-        data_loader = DataLoader(self.tmp_dataset, batch_size=self.args.batch_size, sampler=sampler(idxs),
+        data_loader = DataLoader(self.tmp_dataset, batch_size=batch_size, sampler=sampler(idxs),
             num_workers=self.args.num_workers, drop_last=drop_last)
         return data_loader
 

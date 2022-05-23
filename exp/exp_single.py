@@ -35,8 +35,8 @@ class Exp_Single(Exp_Basic):
         
         train_loader = self._get_data(file_name=self.train_filename, flag='train')
         val_loader = self._get_data(file_name=self.val_filename, flag='val')
-        print_every = len(train_loader)//self.args.print_num
-        val_every = len(train_loader)//self.args.val_num
+        
+        val_every = len(train_loader)//self.args.val_num if self.args.val_num>0 else np.inf
         for idx_epoch in range(self.args.train_epochs):
             self.model.train()
             epoch_time = time.time()
@@ -60,12 +60,9 @@ class Exp_Single(Exp_Basic):
                         loss.backward()
                         model_optim.step()
 
-                    if idx_batch % print_every==0:
-                        # logger.info("Epoch: {0}, epoch_train_steps: {1},  | loss: {2:.7f}".format(idx_epoch+1, idx_batch, loss.item()))
-                        self.writer.add_scalar("Loss/train", train_loss, idx_epoch*len(train_loader)+idx_batch)
-
                     if idx_batch % val_every==0:
                         vali_loss, vali_metrics_dict = self.vali(val_loader, criterion)
+                        self.writer.add_scalar("Loss/train", train_loss, idx_epoch*len(train_loader)+idx_batch)
                         self.writer.add_scalar("Loss/val", vali_loss, idx_epoch*len(train_loader)+idx_batch)
                         for key in vali_metrics_dict:
                             self.writer.add_scalar(f"Val_metrics/{key}", vali_metrics_dict[key], idx_epoch*len(train_loader)+idx_batch)
@@ -126,11 +123,11 @@ class Exp_Single(Exp_Basic):
             trues = test_loader.dataset.inverse_transform(trues)[..., -1:]
         metrics_dict = metric(preds, trues, "Test_metrics/")
         logger.info('mse:{}, mae:{}'.format(metrics_dict["Test_metrics/mse"], metrics_dict["Test_metrics/mae"]))
-        self.writer.add_hparams(hparam_dict={"setting" : self.setting}, metric_dict=metrics_dict)
+        self.writer.add_hparams(hparam_dict=self.params_dict, metric_dict=metrics_dict)
         self.writer.close()
         if save:
-            np.save(self.result_path+'pred.npy', preds)
-            np.save(self.result_path+f'true.npy', trues)
+            np.save(os.path.join(self.result_path, f'preds{self.args.test_year}.npy'), preds)
+            np.save(os.path.join(self.result_path, f'trues{self.args.test_year}.npy'), trues)
         if plot:
             from utils.metrics import CORR
             plot_pred(trues, preds, pred_idx=0, col_idx=-1)
@@ -139,6 +136,7 @@ class Exp_Single(Exp_Basic):
             if self.args.pred_len > 1:
                 # labels = test_data.dataset.labels["X"]
                 # labels = "HUFL,HULL,MUFL,MULL,LUFL,LULL,OT".split(',')
+                idx_labels = range(len(labels))
                 fig = map_plot_function(trues, preds, plot_visual_sample, labels, idx_labels, 168)
                 # fig.savefig(f"./img/{self.args.model}_sample.jpg", bbox_inches='tight')
 

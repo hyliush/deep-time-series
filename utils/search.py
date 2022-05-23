@@ -9,15 +9,16 @@ search_params = OrderedDict({
     "attention_size": [12],
 })
 
-def get_args(args, search_params):
-    args_lst = []
-    for _params in itertools.product(*search_params.values()):
-        params = {key: params[idx]
-            for idx, key in enumerate(search_params.keys())}
-        print("--------Search Params---------------", params)
-        
-        for idx, key in enumerate(search_params.keys()):
-            if hasattr(args, key):
-                setattr(args, _params[idx])
-        args_lst.append(args)
-    return args_lst
+def get_args(args, condi_params):
+    if condi_params is None:
+        yield args
+    else:
+        for _params in itertools.product(*condi_params.values()):
+            params = {key: _params[idx]
+                for idx, key in enumerate(condi_params.keys())}
+            print("--------Search Params---------------", params)
+            
+            for idx, key in enumerate(condi_params.keys()):
+                if hasattr(args, key):
+                    setattr(args, key, _params[idx])
+            yield args

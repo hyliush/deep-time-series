@@ -1,8 +1,11 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
+from inspect import isfunction
+from math import pi, log
+from einops import rearrange, repeat
 import math
+
 class SpatialEmbedding(nn.Module):
     def __init__(self, c_in, d_model):
         super(SpatialEmbedding, self).__init__()
@@ -92,10 +95,10 @@ class TemporalEmbedding(nn.Module):
         x = x.long()
         
         minute_x = self.minute_embed(x[:,:,4]) if hasattr(self, 'minute_embed') else 0.
-        hour_x = self.hour_embed(x[:,:,3]) if x.size(-1) >= 4 else 0.
-        weekday_x = self.weekday_embed(x[:,:,2]) if x.size(-1) >= 3 else 0.
-        day_x = self.day_embed(x[:,:,1]) if x.size(-1) >= 2 else 0.
-        month_x = self.month_embed(x[:,:,0]) if x.size(-1) >= 1 else 0.
+        hour_x = self.hour_embed(x[:,:,3])
+        weekday_x = self.weekday_embed(x[:,:,2])
+        day_x = self.day_embed(x[:,:,1])
+        month_x = self.month_embed(x[:,:,0])
         
         return hour_x + weekday_x + day_x + month_x + minute_x
 
@@ -120,9 +123,10 @@ class DataEmbedding(nn.Module):
 
         self.dropout = nn.Dropout(p=dropout)
 
-    def forward(self, x, x_mark):
-        x = self.value_embedding(x) + self.position_embedding(x) + self.temporal_embedding(x_mark)
-        
+    def forward(self, x, x_mark=None):
+        x = self.value_embedding(x) + self.position_embedding(x)
+        if x_mark is not None:
+            x = x + self.temporal_embedding(x_mark)
         return self.dropout(x)
 
 class DataEmbedding_wo_pos(nn.Module):
@@ -130,12 +134,100 @@ class DataEmbedding_wo_pos(nn.Module):
         super(DataEmbedding_wo_pos, self).__init__()
 
         self.value_embedding = TokenEmbedding(c_in=c_in, d_model=d_model)
-        self.position_embedding = PositionalEmbedding(d_model=d_model)
         self.temporal_embedding = TemporalEmbedding(d_model=d_model, embed_type=embed_type,
                                                     freq=freq) if embed_type != 'timeF' else TimeFeatureEmbedding(
             d_model=d_model, embed_type=embed_type, freq=freq)
         self.dropout = nn.Dropout(p=dropout)
 
-    def forward(self, x, x_mark):
-        x = self.value_embedding(x) + self.temporal_embedding(x_mark)
+    def forward(self, x, x_mark=None):
+        x = self.value_embedding(x)
+        if x_mark is not None:
+            x = x + self.temporal_embedding(x_mark)
         return self.dropout(x)
+        
+# helper functions
+def exists(val):
+    return val is not None
+# rotary embedding helper functions
+
+def rotate_half(x):
+    x = rearrange(x, '... (d r) -> ... d r', r = 2)
+    x1, x2 = x.unbind(dim = -1)
+    x = torch.stack((-x2, x1), dim = -1)
+    return rearrange(x, '... d r -> ... (d r)')
+
+def apply_rotary_emb(freqs, t, start_index = 0):
+    freqs = freqs.to(t)
+    rot_dim = freqs.shape[-1]
+    end_index = start_index + rot_dim
+    assert rot_dim <= t.shape[-1], f'feature dimension {t.shape[-1]} is not of sufficient size to rotate in all the positions {rot_dim}'
+    t_left, t, t_right = t[..., :start_index], t[..., start_index:end_index], t[..., end_index:]
+    t = (t * freqs.cos()) + (rotate_half(t) * freqs.sin())
+    return torch.cat((t_left, t, t_right), dim = -1)
+
+# learned rotation helpers
+
+def apply_learned_rotations(rotations, t, start_index = 0, freq_ranges = None):
+    if exists(freq_ranges):
+        rotations = torch.einsum('..., f -> ... f', rotations, freq_ranges)
+        rotations = rearrange(rotations, '... r f -> ... (r f)')
+
+    rotations = repeat(rotations, '... n -> ... (n r)', r = 2)
+    return apply_rotary_emb(rotations, t, start_index = start_index)
+
+class RotaryEmbedding(nn.Module):
+    def __init__(
+        self,
+        dim,
+        skip = False,
+        custom_freqs = None,
+        freqs_for = 'lang',
+        theta = 10000,
+        max_freq = 10,
+        num_freqs = 1,
+        learned_freq = False
+    ):
+        super().__init__()
+        if exists(custom_freqs):
+            freqs = custom_freqs
+        elif freqs_for == 'lang':
+            freqs = 1. / (theta ** (torch.arange(0, dim, 2)[:(dim // 2)].float() / dim))
+        elif freqs_for == 'pixel':
+            freqs = torch.linspace(1., max_freq / 2, dim // 2) * pi
+        elif freqs_for == 'constant':
+            freqs = torch.ones(num_freqs).float()
+        else:
+            raise ValueError(f'unknown modality {freqs_for}')
+
+        self.cache = dict()
+        self.skip = skip
+        if learned_freq:
+            self.freqs = nn.Parameter(freqs)
+        else:
+            self.register_buffer('freqs', freqs)
+
+    def rotate_queries_or_keys(self, t, seq_dim=1):
+        if self.skip:
+            return t
+        device = t.device
+        seq_len = t.shape[seq_dim]
+        # SinusoidalPositionEmbedding
+        freqs = self.forward(lambda: torch.arange(seq_len, device = device), cache_key = seq_len)
+        return apply_rotary_emb(freqs, t)
+
+    def forward(self, t, cache_key = None):
+        if exists(cache_key) and cache_key in self.cache:
+            return self.cache[cache_key]
+
+        if isfunction(t):
+            t = t()
+
+        freqs = self.freqs
+
+        freqs = torch.einsum('..., f -> ... f', t.type(freqs.dtype), freqs)
+        freqs = repeat(freqs, '... n -> ... (n r)', r = 2)
+
+        if exists(cache_key):
+            self.cache[cache_key] = freqs
+
+        return freqs
