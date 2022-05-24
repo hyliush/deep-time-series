@@ -1,0 +1,11 @@
+/checkpoints
+/results
+/cache
+/runs
+/img
+/data
+/test.py
+/evaluation.ipynb
+/modeltest.py
+*.pyc
+./__pycache__
