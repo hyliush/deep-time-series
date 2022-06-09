@@ -160,7 +160,7 @@ data_parser = {
     'ECL':{'T':'MT_320','M':[321,321,321],'S':[1,1,1],'MS':[321,321,1]},
     'Solar':{'T':'POWER_136','M':[137,137,137],'S':[1,1,1],'MS':[137,137,1]},
     'Mydata':{'freq':'b', 'T':'rv',"features":"MS", 'MS':[22,22,1],'M':[22,22,22]},
-    'google':{"features":"MS", 'MS':[2,2,1],'M':[2,2,2]},
+    'google':{"features":"MS", 'MS':[2,2,1],'M':[2,2,2], "S":[1,1,1]},
     "SDWPF":{'freq':'10min', 'T':'Patv',"features":"MS", 'MS':[10,10,1],'M':[10,10,10]},
     'Toy':{'data_path':'./data/ToyData', 'seq_len':96, 'label_len':0, "pred_len":24, "MS":[1,1,1], "T":"s"},
     'oze':{'seq_len':672, 'label_len':1, "pred_len":671, "M":[37,8,8], "T":"s", 'features':"M"}

@@ -162,7 +162,7 @@ def filter_extreme_3sigma(train_df, df, n=3): #3 sigma
     df.iloc[:] = np.clip(df, min_range, max_range, axis=1)
     return df, min_range, max_range
 
-def filter_extreme_percentile(train_df, df, min = 0.10,max = 0.90): #百分位法
+def filter_extreme_percentile(train_df, df, min = 0.05,max = 0.95): #百分位法
     q = train_df.quantile([min,max])
     min_range, max_range = q.iloc[0],q.iloc[1]
     df.iloc[:] = np.clip(df, min_range, max_range, axis=1)
@@ -179,6 +179,14 @@ def load_obj(path):
     f.close()
     return obj
 
+def write_template(path):
+    with open(path, 'w') as f:
+        for i in range(10):
+            string = ""
+            _=f.write(string+"\n")
+        string_lst = []
+        f.writelines([string+"\n" for string in string_lst])
+        
 def align(tensor, axes, ndim=None):
     """重新对齐tensor（批量版expand_dims）
     axes：原来的第i维对齐新tensor的第axes[i]维；

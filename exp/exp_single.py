@@ -135,6 +135,7 @@ class Exp_Single(Exp_Basic):
         if plot:
             from utils.metrics import CORR
             from sklearn.metrics import r2_score
+            CORR(trues.flatten(), preds.flatten())
             fig = plot_pred(trues, preds, pred_idx=0, col_idx=-1)
             fig.savefig(f"./img/{self.args.model}_{self.args.dataset}_horizon{self.args.horizon}.jpg", bbox_inches='tight')
 

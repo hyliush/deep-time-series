@@ -1,7 +1,7 @@
 from models.MultiHeadGAU import MultiHeadGAU
 from models.seq2seq import Informer, Autoformer, Transformer, GruAttention, Gru, Lstm, Gaformer
 from models import Gdnn, TCN, TPA, Trans, DeepAR, BenchmarkLstm, BenchmarkMlp, LSTNet, GAU, AU
-from utils.data_loader import Dataset_ETT_hour, Dataset_ETT_minute, Dataset_Custom, Dataset_Pred, GoogleDataset1, SDWPFDataSet, MyDataSet, ToyDataset, GoogleDataset
+from utils.data import Dataset_ETT_hour, Dataset_ETT_minute, Dataset_Custom, Dataset_Pred, GoogleDataset1, SDWPFDataSet, MyDataSet, ToyDataset, GoogleDataset
 from models.informer1.model import Informer as Infomer1
 from models.seq2seq.MultiHeadGaformer import MultiHeadGaformer
 dataset_dict = {

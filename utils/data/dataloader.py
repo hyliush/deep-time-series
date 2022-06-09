@@ -1,14 +1,12 @@
-from torch import Tensor, Generator
 from typing import TypeVar, List, Optional, Tuple, Sequence
-from torch import default_generator
 from torch.utils.data import Dataset, Subset
-T_co = TypeVar('T_co', covariant=True)
-T = TypeVar('T')
 from torch._utils import _accumulate
 from torch import randperm
 import torch
 from torch.utils.data import Sampler
 
+T_co = TypeVar('T_co', covariant=True)
+T = TypeVar('T')
 class SubsetSequentialSampler(Sampler[int]):
     r"""Samples elements Sequentially from a given list of indices, without replacement.
 

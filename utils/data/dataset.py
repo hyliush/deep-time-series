@@ -2,8 +2,7 @@ import os
 import numpy as np
 import pandas as pd
 import torch
-from torch.utils.data import Dataset, DataLoader
-# from sklearn.preprocessing import StandardScaler
+from torch.utils.data import Dataset
 from fastNLP import cache_results
 from utils.tools import StandardScaler, timer
 from utils.timefeatures import time_features
@@ -592,14 +591,24 @@ class SDWPFDataSet(DatasetBase):
 class GoogleDataset(DatasetBase):
     def __init__(self, args):
         super().__init__(args)
-        self.val_size, self.test_size = 0.2, 0.2
+        self.val_size, self.test_size = 0.1, 0.2
         self.__read_data__()
 
     def __read_data__(self):
-        df = pd.read_csv("./data/combined_trace_noIO.csv", index_col=0)
+        df = pd.read_csv("./data/all_combined_trace_noIO.csv", index_col=0)
         df = df.reindex(columns=["assigned memory usage", "mean CPU usage rate"])
-        self.train_idxs, self.val_idxs, self.test_idxs = self.get_idxs1(len(df), 0)
 
+        # method 1
+        # sample_id_lst = [np.arange(len(df))[df["id"]==i] for i in df["id"].unique()]
+        # _tmp = Parallel(n_jobs=-1)(delayed(self.get_idxs1)(len(x), x[0], False) for x in sample_id_lst)
+        # train_idxs, val_idxs, test_idxs = zip(*_tmp)
+        # self.train_idxs, self.val_idxs, self.test_idxs = np.concatenate(train_idxs), np.concatenate(val_idxs), np.concatenate(test_idxs)
+        # df = df.drop(columns=["id"])
+        # df_filter, min_range, max_range = filter_extreme(df.iloc[:, :2], type="MAD")
+        # df_filter["id"] = df["id"]
+        # df = df_filter.copy()
+        self.train_idxs, self.val_idxs, self.test_idxs = self.get_idxs1(len(df), 0, False)
+        
         self.scaler = StandardScaler()
         if self.scale:
             train_data = df.iloc[self.train_idxs]
@@ -631,64 +640,38 @@ class GoogleDataset(DatasetBase):
 class GoogleDataset1(DatasetBase):
     def __init__(self, args):
         super().__init__(args)
-        self.val_size, self.test_size = 0.2, 0.2
+        self.val_size, self.test_size = 0.1, 0.2
         self.__read_data__()
 
     def __read_data__(self):
-        df = pd.read_csv("./data/combined_trace_noIO.csv", index_col=0)
+        df = pd.read_csv("./data/all_combined_trace_noIO.csv", index_col=0)
         df = df.reindex(columns=["assigned memory usage", "mean CPU usage rate"])
-        self.X, self.y = self.prepare_data(df, self.seq_len)
 
-    def normalise_zero_base(self, df):
-        """ Normalise dataframe column-wise to reflect changes with
-            respect to first entry.
-        """
-        return df / df.iloc[0] - 1
-    def extract_window_data(self, df, window=8, zero_base=True):
-        """ Convert dataframe to overlapping sequences/windows of
-            length `window`.
-        """
-        window_data = []
-        for idx in range(len(df) - window):
-            tmp = df[idx: (idx + window)].copy()
-            if zero_base:
-                tmp = self.normalise_zero_base(tmp)
-            window_data.append(tmp.values)
-        return np.array(window_data)
-
-    def prepare_data(self, df, window=8, zero_base=True, test_size=0.2):
-        """ Prepare data for LSTM. """
-        # train test split
-        test_size = int(len(df)*test_size)
-        train_data, val_data, test_data \
-            = df[:(len(df)-2*test_size)], df[(len(df)-2*test_size):(len(df)-test_size)], df[-test_size:]
+        self.train_idxs, self.val_idxs, self.test_idxs = self.get_idxs1(len(df), 0, False)
         
-        # extract window data
-        X_train = self.extract_window_data(train_data, window, zero_base)
-        X_val = self.extract_window_data(val_data, window, zero_base)
-        X_test = self.extract_window_data(test_data, window, zero_base)
-        
-        # extract targets
-        y_train = train_data['mean CPU usage rate'][window:].values
-        y_val = val_data['mean CPU usage rate'][window:].values
-        y_test = test_data['mean CPU usage rate'][window:].values
-        if zero_base:
-            y_train = y_train / train_data['mean CPU usage rate'][:-window].values - 1
-            y_val = y_val / val_data['mean CPU usage rate'][:-window].values - 1
-            y_test = y_test / test_data['mean CPU usage rate'][:-window].values - 1
-        X = np.concatenate([X_train, X_val, X_test], axis=0)
-        y = np.concatenate([y_train, y_val, y_test], axis=0).reshape(-1, 1, 1)
-        a = len(X_train)
-        b = len(X_val)
-        c = len(X_test)
-        self.train_idxs, self.val_idxs, self.test_idxs \
-        = np.arange(a).tolist(), np.arange(a, a+b).tolist(), np.arange(a+b, a+b+c).tolist()
-        return X, y
+        self.scaler = StandardScaler()
+        if self.scale:
+            train_data = df.iloc[self.train_idxs]
+            self.scaler.fit(train_data.values)
+            data = self.scaler.transform(df.values)
+        else:
+            data = data.values
+        self.data_x = data
 
+        if self.inverse:
+            self.data_y = df.values
+        else:
+            self.data_y = data
     def __getitem__(self, index):
-        seq_x = self.X[index]
-        seq_y = self.y[index]
-        return dict(zip(["x", "y"],[seq_x, seq_y]))
+        s_begin = index
+        s_end = s_begin + self.seq_len
+        r_begin = s_end - self.label_len + self.horizon-1
+        r_end = r_begin + self.label_len + self.pred_len
 
-    def __len__(self):
-        return len(self.X)
+        seq_x = self.data_x[s_begin:s_end]
+        if self.inverse:
+            seq_y = np.concatenate([self.data_x[r_begin:r_begin+self.label_len], self.data_y[r_begin+self.label_len:r_end]], 0)
+        else:
+            seq_y = self.data_y[r_begin:r_end]
+
+        return dict(zip(["x", "y"],[seq_x, seq_y]))

@@ -13,18 +13,24 @@ import numpy as np
 # args.output_attention = False
 # args.des = "test_tmpdata"
 # args.file_name = "Mydata.csv"
-args.model = "transformer"
-args.seq_len, args.label_len, args.pred_len = 80, 20, 40
-args.dataset = "google"
 # args.horizon = 1
-# args.input_params = ["x"]
-# args.learning_rate = 0.001
-# args.lradj = "type10"
 params = OrderedDict({
     "horizon":np.arange(1, 41,dtype=int).tolist()
 })
-params = None
-args.patience = 3
+args.model = "lstm"
+args.seq_len, args.label_len, args.pred_len = 80, 0, 1
+args.dataset = "google"
+# params = None
+
+# args.model = "lstm"
+# args.seq_len, args.label_len, args.pred_len = 5, 0, 1
+# args.dataset = "google"
+args.input_params = ["x"]
+args.learning_rate = 0.001
+# args.lradj = "type10"
+# args.patience = 10
+# args.val_num = -1
+
 args.do_predict = True
 # args.out_inverse = True
 # args.debug = True
