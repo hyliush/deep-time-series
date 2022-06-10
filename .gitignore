@@ -1,0 +1,15 @@
+/checkpoints
+/results
+/cache
+/runs
+/img
+/data
+/test.py
+/evaluation.ipynb
+/modeltest.py
+/ewt.ipynb
+/ewt
+*.pyc
+./__pycache__
+.ipynb_checkpoints
+.vscode
