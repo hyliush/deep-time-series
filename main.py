@@ -6,53 +6,38 @@ from utils.search import get_args
 from utils.tools import get_params_dict
 from collections import OrderedDict
 import numpy as np
-
-# args.model = "tcn"
-# args.load = True
-# args.seq_len, args.label_len, args.pred_len = 144, 36, 288
-# args.output_attention = False
-# args.des = "test_tmpdata"
-# args.file_name = "Mydata.csv"
-# args.horizon = 1
-params = OrderedDict({
-    "horizon":np.arange(1, 41,dtype=int).tolist()
-})
-args.model = "lstm"
-args.seq_len, args.label_len, args.pred_len = 80, 0, 1
-args.dataset = "google"
-# params = None
-
+# LSTM
 # args.model = "lstm"
-# args.seq_len, args.label_len, args.pred_len = 5, 0, 1
-# args.dataset = "google"
-args.input_params = ["x"]
-args.learning_rate = 0.001
+# args.seq_len, args.label_len, args.pred_len = 80, 0, 1
+# args.dataset = "google1"
+# args.input_params = ["x"]
+# args.learning_rate = 0.001
 # args.lradj = "type10"
-# args.patience = 10
-# args.val_num = -1
-
-args.do_predict = True
-# args.out_inverse = True
-# args.debug = True
-# args.distil = False
 # params = OrderedDict({
-#     "use_conv":[True, False],
-#     "use_bias":[True, False],
-#     "use_aff":[True, False],
+#     "horizon":np.arange(1, 21,dtype=int).tolist(),
+#     'target':["mean CPU usage rate","mean CPU usage rate0","mean CPU usage rate1", "mean CPU usage rate2"]
 # })
-# args.qk_size = args.qk_size//args.n_heads
-# args.uv_size = args.uv_size//args.n_heads
-# args.debug = False
-# args.activation = "swish"
-# args.des = "addp"
-# args.do_predict = True
+
+# informer, autoformer, transformer
+args.seq_len, args.label_len, args.pred_len = 80, 10, 20
+args.dataset = "google1"
+params = OrderedDict({
+    'model': ["informer", "transformer", "autoformer"],
+    'target':["mean CPU usage rate","mean CPU usage rate0", "mean CPU usage rate1", "mean CPU usage rate2"]
+})
+
+args.patience = 3
+args.do_predict = False
+args.out_inverse = True
+
 for args in get_args(args, params):
     logger.info(args)
     for ii in range(args.itr):
         # setting record of experiments
-        setting_keys = '{}_{}_ty{}_ft{}_sl{}_ll{}_pl{}_is{}_os{}_hn{}_bs{}_lr{}_{}_{}'
+        args.des = args.target
+        setting_keys = '{}_{}_ft{}_sl{}_ll{}_pl{}_is{}_os{}_hn{}_bs{}_lr{}_{}_{}'
         setting_values=[
-                    args.model, args.dataset, args.test_year, args.features, 
+                    args.model, args.dataset, args.features, 
                     args.seq_len, args.label_len, args.pred_len,
                     args.input_size, args.out_size, args.horizon,
                     args.batch_size, args.learning_rate,
@@ -79,10 +64,10 @@ for args in get_args(args, params):
             print('>>>>>>>start training : {}>>>>>>>>>>>>>>>>>>>>>>>>>>'.format(setting))
             exp.train()
             print('>>>>>>>testing : {}<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<'.format(setting))
-            exp.test(plot=False)
+            exp.test(plot=False, save=True)
         else:
             print('>>>>>>>predicting : {}<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<'.format(setting))
-            exp.test(load=args.load, plot=False, writer=False, save=True)
+            exp.test(load=args.load, plot=True, writer=False, save=True)
 
         torch.cuda.empty_cache()
         break

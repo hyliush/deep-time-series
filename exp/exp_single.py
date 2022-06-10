@@ -104,7 +104,12 @@ class Exp_Single(Exp_Basic):
 
     def test(self, load=False, plot=True, save=False, writer=True):
         # test承接train之后模型，为保证单独使用test，增加load参数
-        test_loader = self._get_data(file_name=self.test_filename, flag='test')
+        # test_loader = self._get_data(file_name=self.test_filename, flag='test')
+        from utils.constants import dataset_dict
+        DataSet = dataset_dict[self.args.dataset]
+        self.tmp_dataset = DataSet(self.args)
+        test_loader = torch.utils.data.DataLoader(self.tmp_dataset, batch_size=self.args.batch_size,
+        drop_last=False)
         if load:
             best_model_path = self.model_path+'/'+'checkpoint.pth'
             self.model.load_state_dict(torch.load(best_model_path))
@@ -130,13 +135,14 @@ class Exp_Single(Exp_Basic):
             self.writer.close()
 
         if save:
-            save_obj(os.path.join(self.result_path, "true_pred.pkl"), [trues, preds])
+            save_obj(os.path.join(self.result_path, f"true_pred.pkl"), [trues, preds])
 
         if plot:
             from utils.metrics import CORR
             from sklearn.metrics import r2_score
             CORR(trues.flatten(), preds.flatten())
             fig = plot_pred(trues, preds, pred_idx=0, col_idx=-1)
+            return fig
             fig.savefig(f"./img/{self.args.model}_{self.args.dataset}_horizon{self.args.horizon}.jpg", bbox_inches='tight')
 
             if self.args.pred_len > 1:

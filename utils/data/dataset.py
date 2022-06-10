@@ -615,7 +615,7 @@ class GoogleDataset(DatasetBase):
             self.scaler.fit(train_data.values)
             data = self.scaler.transform(df.values)
         else:
-            data = data.values
+            data = df.values
         self.data_x = data
 
         if self.inverse:
@@ -644,8 +644,8 @@ class GoogleDataset1(DatasetBase):
         self.__read_data__()
 
     def __read_data__(self):
-        df = pd.read_csv("./data/all_combined_trace_noIO.csv", index_col=0)
-        df = df.reindex(columns=["assigned memory usage", "mean CPU usage rate"])
+        df = pd.read_csv("./data/data.csv", index_col=0)
+        df = df[[self.target]]
 
         self.train_idxs, self.val_idxs, self.test_idxs = self.get_idxs1(len(df), 0, False)
         
@@ -655,7 +655,7 @@ class GoogleDataset1(DatasetBase):
             self.scaler.fit(train_data.values)
             data = self.scaler.transform(df.values)
         else:
-            data = data.values
+            data = df.values
         self.data_x = data
 
         if self.inverse:
