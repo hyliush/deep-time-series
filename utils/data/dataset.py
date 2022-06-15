@@ -644,7 +644,7 @@ class GoogleDataset1(DatasetBase):
         self.__read_data__()
 
     def __read_data__(self):
-        df = pd.read_csv("./data/data.csv", index_col=0)
+        df = pd.read_csv(f"./data/{self.args.file_name}.csv", index_col=0)
         df = df[[self.target]]
 
         self.train_idxs, self.val_idxs, self.test_idxs = self.get_idxs1(len(df), 0, False)

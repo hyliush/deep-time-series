@@ -6,29 +6,30 @@ from utils.search import get_args
 from utils.tools import get_params_dict
 from collections import OrderedDict
 import numpy as np
+args.dataset = "google1"
+args.file_name = "53ea38cpu" #"5f5533cpu", "53ea38cpu","mean CPU usage rate", "assigned memory usage"
+args.patience = 3
+args.do_predict = True
+args.out_inverse = True
+
 # LSTM
 # args.model = "lstm"
 # args.seq_len, args.label_len, args.pred_len = 80, 0, 1
-# args.dataset = "google1"
 # args.input_params = ["x"]
 # args.learning_rate = 0.001
 # args.lradj = "type10"
 # params = OrderedDict({
 #     "horizon":np.arange(1, 21,dtype=int).tolist(),
-#     'target':["mean CPU usage rate","mean CPU usage rate0","mean CPU usage rate1", "mean CPU usage rate2"]
+#     # 分别预测原始信号和三个分量
+#     'target':[args.file_name] + [f"{args.file_name}{i}" for i in range(3)]
 # })
 
 # informer, autoformer, transformer
 args.seq_len, args.label_len, args.pred_len = 80, 10, 20
-args.dataset = "google1"
 params = OrderedDict({
-    'model': ["informer", "transformer", "autoformer"],
-    'target':["mean CPU usage rate","mean CPU usage rate0", "mean CPU usage rate1", "mean CPU usage rate2"]
+    'model': ["autoformer", "informer", "transformer"],
+    'target':[args.file_name] + [f"{args.file_name}{i}" for i in range(3)]
 })
-
-args.patience = 3
-args.do_predict = False
-args.out_inverse = True
 
 for args in get_args(args, params):
     logger.info(args)
