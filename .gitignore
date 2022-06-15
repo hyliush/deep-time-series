@@ -14,3 +14,7 @@
 .ipynb_checkpoints
 .vscode
 /savefig
+/layers/embed.py
+/models/gdnn.py
+/models/lstm.py
+/models/mlp.py
