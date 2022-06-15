@@ -6,16 +6,17 @@ parser = argparse.ArgumentParser(description='Time Series Forecasting')
 parser.add_argument('--model', type=str, default='autoformer',help='model of experiment, options: [lstm, \
 mlp, tpa, tcn, trans, gated, informerstack, informerlight(TBD)], autoformer, transformer,\
 edlstm, edgru, edgruattention')
-parser.add_argument('--data', type=str, default='google', help='only for revising some params related to the data, [ETTh1, Ubiquant]')
-parser.add_argument('--dataset', type=str, default='google', help='dataset, [ETTh1, Ubiquant]')
+parser.add_argument('--data', type=str, default='Mydata', help='only for revising some params related to the data, [ETTh1, Ubiquant]')
+parser.add_argument('--dataset', type=str, default='Mydata', help='dataset, [ETTh1, Ubiquant]')
 parser.add_argument('--data_path', type=str, default='./data/Mydata/', help='root path of the data file')
-parser.add_argument('--file_name', type=str, default='Mydata.csv', help='file_name')
+parser.add_argument('--file_name', type=str, default='Mydata_partrv_softmax20.csv', help='file_name')
 parser.add_argument('--criterion', type=str, default='mse', help='loss function')    
 
 # data
 parser.add_argument('--features', type=str, default='MS', help='forecasting task, options:[M, S, MS]; M:multivariate predict multivariate, S:univariate predict univariate, MS:multivariate predict univariate')
 # if features == "MS" or "S", need to provide target and target_pos
-parser.add_argument('--target', type=str, default='OT', help='target feature in S or MS task')
+parser.add_argument('--target', type=str, default='rv', help='target feature in S task')
+parser.add_argument('--start_col', type=int, default=1, help='Index of the start column of the variables')
 parser.add_argument('--target_pos', type=int, default=-1, help='target feature position')
 parser.add_argument('--cols', type=str, nargs='+', help='certain cols from the data files as the input features')
 parser.add_argument('--freq', type=str, default='h', help='freq for time features encoding, options:[s:secondly, t:minutely, h:hourly, d:daily, b:business days, w:weekly, m:monthly], you can also use more detailed freq like 15min or 3h')
@@ -26,7 +27,6 @@ parser.add_argument('--horizon', type=int, default=1, help='predict timeseries h
 parser.add_argument('--inverse', action='store_true', help='inverse output data')
 parser.add_argument('--scale', default=True, type=bool, help='scale input data')
 parser.add_argument('--out_inverse', action='store_true', help='inverse output data')
-parser.add_argument('--start_col', type=int, default=1, help='Index of the start column of the variables')
 # training
 parser.add_argument('--train_epochs', type=int, default=100, help='train epochs')
 parser.add_argument('--batch_size', type=int, default=32, help='batch size of train input data')
@@ -45,7 +45,7 @@ parser.add_argument('--do_predict', action='store_true', help='whether to predic
 parser.add_argument('--des', type=str, default='test',help='exp description')
 
 # model common
-parser.add_argument('--out_size', type=int, default=7, help='output features size')
+parser.add_argument('--out_size', type=int, default=1, help='output features size')
 parser.add_argument('--dropout', type=float, default=0.05, help='dropout')
 
 # seq2seq common
@@ -159,7 +159,7 @@ data_parser = {
     'WTH':{'T':'WetBulbCelsius','M':[12,12,12],'S':[1,1,1],'MS':[12,12,1]},
     'ECL':{'T':'MT_320','M':[321,321,321],'S':[1,1,1],'MS':[321,321,1]},
     'Solar':{'T':'POWER_136','M':[137,137,137],'S':[1,1,1],'MS':[137,137,1]},
-    'Mydata':{'freq':'b', 'T':'rv',"features":"MS", 'MS':[22,22,1],'M':[22,22,22]},
+    'Mydata':{'freq':'b', 'T':'rv',"features":"MS"},
     'google':{"features":"S", 'MS':[2,2,1],'M':[2,2,2], "S":[1,1,1]},
     "SDWPF":{'freq':'10min', 'T':'Patv',"features":"MS", 'MS':[10,10,1],'M':[10,10,10]},
     'Toy':{'data_path':'./data/ToyData', 'seq_len':96, 'label_len':0, "pred_len":24, "MS":[1,1,1], "T":"s"},
@@ -169,7 +169,7 @@ data_parser = {
 if args.data in data_parser.keys():
     data_info = data_parser[args.data]
     args.features = data_info.get("features") or args.features
-    args.enc_in, args.dec_in, args.out_size = data_info[args.features]
+    # args.enc_in, args.dec_in, args.out_size = data_info.get(args.features)
     args.data_path = data_info.get("data_path") or args.data_path
     args.file_name = data_info.get("file_name") or args.file_name
     args.dataset = data_info.get("dataset") or args.dataset

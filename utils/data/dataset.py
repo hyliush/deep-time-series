@@ -287,8 +287,9 @@ class MyDataSet(DatasetBase):
             train_idxs, val_idxs, test_idxs = zip(*_tmp)
             train_idxs, val_idxs, test_idxs = np.concatenate(train_idxs), np.concatenate(val_idxs), np.concatenate(test_idxs)
 
-            df_raw = df_raw.drop(columns=["stock_id", "weekday", "time_id", 
-            "holiday_name", "holiday_tag", "holiday_tag_cumsum", "industry"])
+            # df_raw = df_raw.drop(columns=["stock_id", "weekday", "time_id", 
+            # "holiday_name", "holiday_tag", "holiday_tag_cumsum", "industry"])
+            df_raw = df_raw[self.cols]
             df_raw = df_raw.rename(columns={"Date":"date"})
             if isinstance(self.features, str):
                 if self.features=='M' or self.features=='MS':

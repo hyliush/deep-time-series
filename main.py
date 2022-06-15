@@ -6,39 +6,58 @@ from utils.search import get_args
 from utils.tools import get_params_dict
 from collections import OrderedDict
 import numpy as np
-args.dataset = "google1"
-args.file_name = "53ea38cpu" #"5f5533cpu", "53ea38cpu","mean CPU usage rate", "assigned memory usage"
 args.patience = 3
 args.do_predict = True
 args.out_inverse = True
 
 # LSTM
-# args.model = "lstm"
-# args.seq_len, args.label_len, args.pred_len = 80, 0, 1
-# args.input_params = ["x"]
-# args.learning_rate = 0.001
-# args.lradj = "type10"
-# params = OrderedDict({
-#     "horizon":np.arange(1, 21,dtype=int).tolist(),
-#     # 分别预测原始信号和三个分量
-#     'target':[args.file_name] + [f"{args.file_name}{i}" for i in range(3)]
-# })
+args.model = "lstm"
+args.seq_len, args.label_len, args.pred_len = 80, 0, 1
+args.input_params = ["x"]
+args.learning_rate = 0.001
+args.lradj = "type10"
+
+base_cols = ["Date", 'rv5', 'rv20']
+ret_cols = ['retplus', 'retminus', 'retnight', 'ret',
+       'retVariance5', 'retplusVariance5', 'retminusVariance5', 'retnightVariance5', 
+       'retSkewness5', 'retKurtosis5', 
+       'retVariance20', 'retplusVariance20', 'retminusVariance20', 'retnightVariance20',
+       'retSkewness20', 'retKurtosis20']
+other_rv_cols = ['rv_market', 'rv_industry', 'cos_sim_rv']
+
+args.des = "base"
+if args.des == "base":
+    args.cols = base_cols
+if args.des == "ret":
+    args.cols = base_cols + ret_cols
+if args.des == "market":
+    args.cols = base_cols + [f"rv_market{i}" for i in ['', 5, 20]]
+if args.des == "industry":
+    args.cols = base_cols + [f"rv_industry{i}" for i in ['', 5, 20]]
+if args.des == "cos":
+    args.cols = base_cols + [f"cos_sim_rv{i}" for i in ['', 5, 20]]
+args.cols += ["rv"]
+params = OrderedDict({
+    "horizon":np.arange(1, 2,dtype=int).tolist()
+})
+tmplen = len(args.cols) - 1
+args.enc_in, args.dec_in, args.input_size, args.out_size = \
+tmplen, tmplen, tmplen, 1
 
 # informer, autoformer, transformer
-args.seq_len, args.label_len, args.pred_len = 80, 10, 20
-params = OrderedDict({
-    'model': ["autoformer", "informer", "transformer"],
-    'target':[args.file_name] + [f"{args.file_name}{i}" for i in range(3)]
-})
+# args.seq_len, args.label_len, args.pred_len = 80, 10, 20
+# params = OrderedDict({
+#     'model': ["autoformer", "informer", "transformer"],
+#     'target':[args.file_name] + [f"{args.file_name}{i}" for i in range(3)]
+# })
 
 for args in get_args(args, params):
     logger.info(args)
     for ii in range(args.itr):
         # setting record of experiments
-        args.des = args.target
-        setting_keys = '{}_{}_ft{}_sl{}_ll{}_pl{}_is{}_os{}_hn{}_bs{}_lr{}_{}_{}'
+        setting_keys = '{}_{}_ft{}_ty{}_sl{}_ll{}_pl{}_is{}_os{}_hn{}_bs{}_lr{}_{}_{}'
         setting_values=[
-                    args.model, args.dataset, args.features, 
+                    args.model, args.dataset, args.features, args.test_year,
                     args.seq_len, args.label_len, args.pred_len,
                     args.input_size, args.out_size, args.horizon,
                     args.batch_size, args.learning_rate,
