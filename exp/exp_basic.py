@@ -1,31 +1,40 @@
 from torch import optim
-from utils.loss import Normal_loss
-import torch.nn as nn
 import torch
 import os
-from utils.loss import OZELoss
 from torch.utils.tensorboard import SummaryWriter
 from datetime import datetime
-from utils.tools import Writer
+from utils.tools import Writer, EarlyStopping
 import inspect
+from utils.constants import criterion_dict
+from utils.metrics import point_metric, distribution_metric
 
 class Exp_Basic(object):
     def __init__(self, args, setting):
         self.args = args
         self.setting = setting
+        self.prefix = "predict" if self.args.do_predict else "train"
         self._init_path(setting)
         self.device = self._acquire_device()
         self.model = self._build_model().to(self.device)
+        self.criterion =  criterion_dict[self.args.criterion]
+        self.model_optim = self._select_optimizer()
         self.input_params = args.input_params or inspect.signature(self.model.forward).parameters.keys()
         self.target_param = args.target_param
         self.writer = SummaryWriter(log_dir = os.path.join(self.run_path,
-            '{}'.format(str(datetime.now().strftime('%Y-%m-%d %H-%M-%S'))))) if not args.debug else Writer()
+            f"{self.prefix}_{datetime.now().strftime('%Y-%m-%d %H-%M-%S')}")) if not args.debug else Writer()
         # self.writer = SummaryWriter(log_dir = self.run_path)
+        self.early_stopping = EarlyStopping(patience=self.args.patience, verbose=True)
+        if self.args.criterion ==  "mse":
+            self.metric = point_metric
+            self.show_metrics = ["mse", "r2"]
+        else:
+            self.metric = distribution_metric
+            self.show_metrics = ["rho50", "rho90"]
 
     def _init_path(self, setting):
         self.model_path = os.path.join(f"./checkpoints/{self.args.dataset}/", setting)
         self.result_path = os.path.join(f"./results/{self.args.dataset}/", setting)
-        self.run_path = os.path.join(f"./runs/{self.args.dataset}/", setting)
+        self.run_path = os.path.join(f"./runs/{self.args.dataset}/{self.prefix}/", setting)
         if not self.args.debug:
             if not os.path.exists(self.model_path):
                 os.makedirs(self.model_path)
@@ -40,15 +49,6 @@ class Exp_Basic(object):
         model_optim = optim.Adam(self.model.parameters(), lr=self.args.learning_rate)
         return model_optim
     
-    def _select_criterion(self):
-        if self.args.criterion == "mse":
-            criterion =  nn.MSELoss()
-        if self.args.criterion == "normal":
-            criterion = Normal_loss
-        if self.args.criterion == "oze":
-            criterion = OZELoss(alpha=0.3)
-        return criterion
-
     def _move2device(self, obj):
         if isinstance(obj, torch.Tensor):
             return obj.float().to(self.device)
@@ -83,8 +83,9 @@ class Exp_Basic(object):
             outputs = outputs[0]
         if self.args.inverse:
             outputs = self.dataset.inverse_transform(outputs)
-        f_dim = [self.args.target_pos] if self.args.features=='MS' else ...
+        f_dim = [-1] if self.args.features=='MS' else ...
         batch_y = batch_y[:,-self.args.pred_len:,f_dim]
+        # probabilistic 
         outputs = outputs[:,-self.args.pred_len:,f_dim]
         return outputs, batch_y
 

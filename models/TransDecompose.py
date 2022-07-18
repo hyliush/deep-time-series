@@ -2,7 +2,7 @@ import math
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
+from layers.Decompose import series_decomp
 
 class PositionalEncoding(nn.Module):
 
@@ -24,10 +24,10 @@ class PositionalEncoding(nn.Module):
         return self.dropout(x)
 
 
-class Trans(nn.Module):
+class TransDecompose(nn.Module):
 
     def __init__(self, args):
-        super(Trans, self).__init__()
+        super(TransDecompose, self).__init__()
         input_size = args.input_size
         trans_hidden_size = args.trans_hidden_size
         trans_kernel_size = args.trans_kernel_size
@@ -41,14 +41,24 @@ class Trans(nn.Module):
         self.transformer_layer = nn.TransformerEncoderLayer(d_model=trans_hidden_size, nhead=n_trans_head)
         self.transformer = nn.TransformerEncoder(self.transformer_layer, num_layers=trans_n_layers)
         self.fc = nn.Linear(trans_hidden_size, out_size)
-
         self.kernel_size = trans_kernel_size
 
+        moving_avg = 25
+        self.decomp = series_decomp(moving_avg)
+        self.projection = nn.Conv1d(in_channels=input_size, out_channels=out_size, kernel_size=3, stride=1, padding=1,
+                    padding_mode='circular', bias=False)
+        self.out_proj2 = nn.Linear(args.seq_len, args.pred_len)
+
     def forward(self, x):
+        x, trend = self.decomp(x)
         x = x.transpose(1, 2)
         x = F.pad(x, (self.kernel_size-1,0))
         x = self.conv(x).permute(2, 0, 1)
         x = self.pos_encoder(x)
         x = self.transformer(x).transpose(0, 1)[:, -1:]
         output = self.fc(x)
-        return output
+
+        residual_trend = self.projection(trend.permute(0, 2, 1))
+        residual_trend = self.out_proj2(residual_trend).transpose(1, 2)
+
+        return output + residual_trend

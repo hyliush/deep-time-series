@@ -85,3 +85,26 @@ class OZELoss(nn.Module):
             delta_T = delta_T.mean(dim=(1))
 
         return torch.log(1 + delta_T) + self.alpha * torch.log(1 + delta_Q)
+
+class QuantileLoss(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.q = torch.reshape(torch.tensor([0.1, 0.5, 0.9]), (1, 3)).to("cuda")
+        self.zero = torch.tensor(0.0).to("cuda")
+        self.one = torch.tensor(1.0).to("cuda")
+    def forward(self, y_pred, y_true):  
+        y_true = y_true.unsqueeze(dim=-1)
+        e = torch.subtract(y_true, y_pred)
+        L = torch.multiply(self.q, torch.maximum(self.zero, e)) + torch.multiply(self.one-self.q, torch.maximum(self.zero, -e))
+        return torch.mean(L)
+
+import math
+class GaussianLoss(nn.Module):
+    '''negative log-likelihood'''
+    def __init__(self):
+        super().__init__()
+    def forward(self, y_pred, y_true, softZero=1e-4):
+        mu, sigma = y_pred[..., 0], y_pred[..., 1]
+        logGaussian =  -torch.log(2*math.pi*(sigma**2)+softZero)/2 -(y_true- mu)**2/(2*(sigma**2)+softZero)
+        res = -torch.sum(logGaussian, axis= 0)
+        return torch.mean(res)

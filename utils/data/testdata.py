@@ -8,6 +8,8 @@ def make_costumizeddata(batch_size, seq_len, label_len, pred_len, enc_in, dec_in
     return x_enc, x_mark_enc, x_dec, x_mark_dec
 
 def make_testdata(args):
+    if not hasattr(args, "freq"):
+        args.freq = "b"
     fd = freq_map[args.freq]
     x_enc = torch.randn(args.batch_size, args.seq_len, args.enc_in)
     x_mark_enc = torch.randn(args.batch_size, args.seq_len, fd)

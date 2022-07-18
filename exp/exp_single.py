@@ -1,9 +1,14 @@
 import os
 import torch
 import numpy as np
-from utils.metrics import metric
+import torch.nn as nn
+from utils.data.dataloader import SubsetSequentialSampler
+from utils.constants import dataset_dict
+from utils.data import Dataset_Custom
 from utils import logger
-from utils.tools import EarlyStopping, adjust_learning_rate, save_obj
+from datetime import datetime
+from utils.tools import dict2string
+from utils.tools import adjust_learning_rate, save_obj
 import time
 from tqdm import tqdm
 from exp.exp_basic import Exp_Basic
@@ -22,14 +27,8 @@ class Exp_Single(Exp_Basic):
         best_model_path = self.model_path+'/'+'checkpoint.pth'
         # 读取上次训练模型
         if self.args.load:
-            if "checkpoint.pth" in self.model_path:
-                logger.info("---------------------load last trained model--------------------------")
-                self.model.load_state_dict(torch.load(best_model_path))
-
-        early_stopping = EarlyStopping(patience=self.args.patience, verbose=True)
-        
-        model_optim = self._select_optimizer()
-        criterion =  self._select_criterion()
+            print("---------------------load last trained model--------------------------")
+            self.model.load_state_dict(torch.load(best_model_path))
 
         if self.args.use_amp:
             scaler = torch.cuda.amp.GradScaler()
@@ -42,47 +41,45 @@ class Exp_Single(Exp_Basic):
             self.model.train()
             epoch_time = time.time()
 
-            running_loss = 0
-            with tqdm(total=len(train_loader), desc=f"[Epoch {idx_epoch+1:3d}/{self.args.train_epochs}]") as pbar:
-                for idx_batch, batch in enumerate(train_loader, 1):
-                    model_optim.zero_grad()
-                    batch_out= self.process_one_batch(batch)
-                    loss = criterion(*batch_out)
-                    running_loss += loss.item()
+            running_loss, train_loss = 0, 0
+            pbar = tqdm(train_loader, total=len(train_loader), 
+                desc=f"[Epoch {idx_epoch+1:3d}/{self.args.train_epochs}]")
+            for idx_batch, batch in enumerate(pbar, 1):
+                self.model_optim.zero_grad()
+                batch_out= self.process_one_batch(batch)
+                loss = self.criterion(*batch_out)
+                running_loss += loss.item()
+                
+                train_loss = running_loss/idx_batch
+                pbar.postfix=f"loss={train_loss:.4f}"
+                if self.args.use_amp:
+                    scaler.scale(loss).backward()
+                    scaler.step(self.model_optim)
+                    scaler.update()
+                else:
+                    loss.backward()
+                    self.model_optim.step()
+
+                if idx_batch % val_every==0:
+                    vali_loss, vali_metrics_dict = self.vali(val_loader)
+                    self.writer.add_scalar("Loss/train", train_loss, idx_epoch*len(train_loader)+idx_batch)
+                    self.writer.add_scalar("Loss/val", vali_loss, idx_epoch*len(train_loader)+idx_batch)
+                    for key in vali_metrics_dict:
+                        self.writer.add_scalar(f"Val_metrics/{key}", vali_metrics_dict[key], idx_epoch*len(train_loader)+idx_batch)
                     
-                    train_loss = running_loss/idx_batch
-                    pbar.set_postfix({'loss': train_loss})
-                    pbar.update()
-                    if self.args.use_amp:
-                        scaler.scale(loss).backward()
-                        scaler.step(model_optim)
-                        scaler.update()
-                    else:
-                        loss.backward()
-                        model_optim.step()
+                    logger.info(f"Epoch: {idx_epoch+1} Step:{idx_batch}| Train Loss: {train_loss:.5f} Vali Loss: {vali_loss:.5f} cost time: {(time.time()-epoch_time)/60:.3f} "+dict2string(vali_metrics_dict, self.show_metrics))
+            # earlystop
+            self.early_stopping(vali_loss, self.model, self.model_path)
+            if self.early_stopping.early_stop:
+                logger.info("Early stopping")
+                break
 
-                    if idx_batch % val_every==0:
-                        vali_loss, vali_metrics_dict = self.vali(val_loader, criterion)
-                        self.writer.add_scalar("Loss/train", train_loss, idx_epoch*len(train_loader)+idx_batch)
-                        self.writer.add_scalar("Loss/val", vali_loss, idx_epoch*len(train_loader)+idx_batch)
-                        for key in vali_metrics_dict:
-                            self.writer.add_scalar(f"Val_metrics/{key}", vali_metrics_dict[key], idx_epoch*len(train_loader)+idx_batch)
-
-                        logger.info("Epoch: {} Step:{}| Train Loss: {:.7f} Vali Loss: {:.7f} Mse:{:.4f} cost time: {}".format(
-                            idx_epoch + 1, idx_batch, train_loss, vali_loss, vali_metrics_dict["mse"], (time.time()-epoch_time)/60))
-
-                vali_loss, vali_metrics_dict = self.vali(val_loader, criterion)
-                early_stopping(vali_loss, self.model, self.model_path)
-                if early_stopping.early_stop:
-                    logger.info("Early stopping")
-                    break
-
-                adjust_learning_rate(model_optim, idx_epoch+1, self.args)
+            adjust_learning_rate(self.model_optim, idx_epoch+1, self.args)
         self.model.load_state_dict(torch.load(best_model_path))
         
         return self.model
 
-    def vali(self, val_loader, criterion):
+    def vali(self, val_loader):
         # 区别于_test, 不需要保存和loss测度
         self.model.eval()
         
@@ -90,29 +87,32 @@ class Exp_Single(Exp_Basic):
         running_loss = 0
         for idx_batch, batch in enumerate(val_loader, 1):
             pred, true = self.process_one_batch(batch)
+            running_loss += self.criterion(pred, true)
+
             pred, true = pred.detach().cpu(), true.detach().cpu()
             preds.append(pred); trues.append(true)
-            
-            running_loss += criterion(pred, true)
 
         preds, trues = np.concatenate(preds), np.concatenate(trues)
         loss = running_loss/len(val_loader)
-        metrics_dict = metric(preds, trues)
+        metrics_dict = self.metric(preds, trues)
 
         self.model.train()
         return loss, metrics_dict
 
-    def test(self, load=False, plot=True, save=False, writer=True):
+    def test(self, plot=True, save=False, writer=True):
         # test承接train之后模型，为保证单独使用test，增加load参数
-        # test_loader = self._get_data(file_name=self.test_filename, flag='test')
-        from utils.constants import dataset_dict
-        DataSet = dataset_dict[self.args.dataset]
-        self.tmp_dataset = DataSet(self.args)
-        test_loader = torch.utils.data.DataLoader(self.tmp_dataset, batch_size=self.args.batch_size,
-        drop_last=False)
-        if load:
-            best_model_path = self.model_path+'/'+'checkpoint.pth'
-            self.model.load_state_dict(torch.load(best_model_path))
+        test_loader = self._get_data(file_name=self.test_filename, flag='test')
+        # DataSet = dataset_dict.get(self.args.dataset, Dataset_Custom)
+        # self.tmp_dataset = DataSet(self.args)
+        # if self.args.dataset == "mydata":
+        #     idxs = self.tmp_dataset.train_idxs.tolist() + self.tmp_dataset.val_idxs.tolist() + self.tmp_dataset.test_idxs.tolist()
+        #     test_loader = torch.utils.data.DataLoader(self.tmp_dataset, batch_size=self.args.batch_size,
+        #     drop_last=False, sampler=SubsetSequentialSampler(sorted(idxs)))
+        # else:
+        #     test_loader = torch.utils.data.DataLoader(self.tmp_dataset, batch_size=self.args.batch_size,
+        #     drop_last=False)
+        best_model_path = self.model_path+'/'+'checkpoint.pth'
+        self.model.load_state_dict(torch.load(best_model_path))
 
         self.model.eval()
         preds_lst, trues_lst = [], []
@@ -125,10 +125,17 @@ class Exp_Single(Exp_Basic):
         logger.debug('test shape:{} {}'.format(preds.shape, trues.shape))
         
         if self.args.out_inverse:
-            preds = test_loader.dataset.inverse_transform(preds)[..., -1:]
-            trues = test_loader.dataset.inverse_transform(trues)[..., -1:]
-        metrics_dict = metric(preds, trues, "Test_metrics/")
-        logger.info('mse:{}, mae:{}'.format(metrics_dict["Test_metrics/mse"], metrics_dict["Test_metrics/mae"]))
+            preds = test_loader.dataset.inverse_transform(preds)[:,:, -1:]
+            trues = test_loader.dataset.inverse_transform(trues)[:,:, -1:]
+        metrics_dict = self.metric(preds, trues, "Test_metrics/")
+        logger.info(dict2string(metrics_dict, [f"Test_metrics/{i}" for i in self.show_metrics]))
+
+        f = open(f"./results/{self.args.dataset}/result.txt", 'a')
+        f.write(datetime.now().strftime("%Y-%m-%d %H:%M:%S") +self.setting + "  \n")
+        f.write(dict2string(metrics_dict, [f"Test_metrics/{i}" for i in self.show_metrics]))
+        f.write('\n')
+        f.write('\n')
+        f.close()
 
         if writer:
             self.writer.add_hparams(hparam_dict=self.params_dict, metric_dict=metrics_dict)

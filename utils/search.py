@@ -9,7 +9,7 @@ search_params = OrderedDict({
     "attention_size": [12],
 })
 
-def get_args(args, condi_params):
+def product_args(args, condi_params):
     if condi_params is None:
         yield args
     else:

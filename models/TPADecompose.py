@@ -1,7 +1,7 @@
-from unicodedata import bidirectional
 import torch
 from torch import nn
 import torch.nn.functional as F
+from layers.Decompose import series_decomp
 # explaination https://zhuanlan.zhihu.com/p/59172441?from_voters_page=true
 
 
@@ -30,7 +30,7 @@ class TPA_Attention(nn.Module):
         return self.Whv(vh)
 
 
-class TPA(nn.Module):
+class TPADecompose(nn.Module):
     def __init__(self, args):
         
         '''
@@ -40,7 +40,7 @@ class TPA(nn.Module):
             out_size: need to be predicted series, last out_size series
             default pred_len = 1 
         '''
-        super(TPA, self).__init__()
+        super(TPADecompose, self).__init__()
         input_size, seq_len, tpa_hidden_size, tpa_n_layers, tpa_ar_len, out_size = \
                 args.input_size,\
                 args.seq_len,\
@@ -59,6 +59,12 @@ class TPA(nn.Module):
 
         self.ar = nn.Linear(self.ar_len, args.pred_len) # 当预测多个序列时，实际上共享了AR参数了，一种解决办法，设置多个ar层分别处理不同序列
 
+        moving_avg = 25
+        self.decomp = series_decomp(moving_avg)
+        self.projection = nn.Conv1d(in_channels=input_size, out_channels=out_size, kernel_size=3, stride=1, padding=1,
+                    padding_mode='circular', bias=False)
+        self.out_proj2 = nn.Linear(args.seq_len, args.pred_len)
+
     def forward(self, x):
         # batch_size, seq_len, input_size = x.size()
         if self.args.importance:
@@ -67,13 +73,16 @@ class TPA(nn.Module):
             x = x.transpose(1, 2)
             x = x.to(torch.device("cuda"))
 
+        x, trend = self.decomp(x)
         px = F.relu(self.input_proj(x))
         hs, (ht, _) = self.lstm(px) # hs 最后一层，所有步， batch_size * seq_len * hidden_size
-        # ht = ht.view(-1, 2, ht.shape[-2], ht.shape[-1])
-        # ht = ht[-1].view(ht.shape[-2], -1)
         ht = ht[-1] # 最后一层，最后一步的hidden_state, batch_size * hidden_size
         final_h = self.att(hs, ht)  # 最后一步的ht'， fig2
         ar_out = self.ar(x[:, -self.ar_len:, [-1]].transpose(1, 2))[:, :, 0]
         out = self.out_proj(final_h) + ar_out
         out = out.unsqueeze(1) # add timesereis dim 
-        return out
+
+        residual_trend = self.projection(trend.permute(0, 2, 1))
+        residual_trend = self.out_proj2(residual_trend).transpose(1, 2)
+
+        return out+residual_trend

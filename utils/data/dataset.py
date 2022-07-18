@@ -4,14 +4,13 @@ import pandas as pd
 import torch
 from torch.utils.data import Dataset
 from fastNLP import cache_results
-from utils.tools import StandardScaler, timer
 from utils.timefeatures import time_features
 from joblib import Parallel, delayed
 import warnings
 warnings.filterwarnings('ignore')
 import random 
 from datetime import datetime, timedelta
-from utils.tools import filter_extreme
+from utils.tools import filter_extreme, save_obj, StandardScaler, timer
 import json
 from typing import Optional
 
@@ -27,14 +26,17 @@ class DatasetBase(Dataset):
         self.inverse = args.inverse
         self.freq = args.freq
         self.cols = args.cols
-        self.horizon = args.horizon
-        self.out_len = max(self.horizon, self.pred_len)
-        self.timeenc = 0 if args.embed!='timeF' else 1
+        self.date_col = args.date_col
         self.start_col = args.start_col
+        self.horizon = args.horizon
+        # 未来预测的长度
+        self.out_len = max(self.horizon, self.pred_len)
+        # seq_len+out_len为一个样本的长度，-1是因为该样本可用
+        self.delta = self.seq_len+self.out_len-1
+        self.timeenc = 0 if args.embed!='timeF' else 1
         
     def get_idxs1(self, total_len, start_point, shuffle=False):
-        # TODO 替换
-        length = total_len - self.seq_len - self.out_len + 1
+        length = total_len - self.delta
         test_size = int(length*self.test_size) if isinstance(self.test_size, float) else self.test_size
         val_size = int(length*self.val_size) if isinstance(self.val_size, float) else self.val_size
 
@@ -51,18 +53,51 @@ class DatasetBase(Dataset):
         test_idxs = np.arange(border1s[2], border2s[2])
         return train_idxs, val_idxs, test_idxs
 
-    def get_idxs2(self, date):
+    def get_idxs2(self, date, span=None):
         date = pd.to_datetime(date)
-        delta = self.seq_len+self.out_len-1
-        train_date = date[(date>="2012-01-01")&(date<=f"{self.test_year-2}-12-31")][:-delta]
-        val_date = date[(date>train_date.values[-1]) & (date<=f"{self.test_year-1}-12-31")][:-delta]
-        test_date = date[(date>val_date.values[-1]) & (date<=f"{self.test_year}-12-31")][:-delta]
+        if span:
+            # max_span 4
+            start_date = f"{self.test_year-2-min(span, 4)+1}-01-01"
+        else:
+            start_date = "2012-01-01"
+        train_date = date[(date>=start_date)&(date<=f"{self.test_year-2}-12-31")][:-self.delta]
+        val_date = date[(date>train_date.values[-1]) & (date<=f"{self.test_year-1}-12-31")][:-self.delta]
+        test_date = date[(date>val_date.values[-1]) & (date<=f"{self.test_year}-12-31")][:-self.delta]
 
         train_idxs  = date.index[np.where(date.isin(train_date))[0]];
         val_idxs = date.index[np.where(date.isin(val_date))[0]]
         test_idxs = date.index[np.where(date.isin(test_date))[0]]
 
         return train_idxs, val_idxs, test_idxs
+
+    def reindex_col(self, df):
+        '''
+        df.columns: ['date', ...(other features), target feature]
+        '''
+        # cols = list(df_raw.columns); 
+        if self.cols:
+            cols=self.cols.copy()
+        else:
+            cols = list(df.columns)
+        if self.target:
+            # 如果有target，意味着需要重排cols
+            cols.remove(self.target)
+            cols = cols + [self.target]
+
+        df = df[cols]
+        return df
+        
+    def generate_datefeature(self, df):
+        '''如果有date_col，则生成date特征'''
+        if self.date_col:
+            df = df.rename(columns={self.date_col:"date"})
+            df_stamp = df[["date"]]
+            df_stamp["date"] = pd.to_datetime(df_stamp["date"])
+            data_stamp = time_features(df_stamp, timeenc=self.timeenc, freq=self.freq)
+        else:
+            data_stamp = None
+        return data_stamp
+
     def __getitem__(self, index):
         s_begin = index
         s_end = s_begin + self.seq_len
@@ -74,13 +109,16 @@ class DatasetBase(Dataset):
             seq_y = np.concatenate([self.data_x[r_begin:r_begin+self.label_len], self.data_y[r_begin+self.label_len:r_end]], 0)
         else:
             seq_y = self.data_y[r_begin:r_end]
-        seq_x_mark = self.data_stamp[s_begin:s_end]
-        seq_y_mark = self.data_stamp[r_begin:r_end]
 
-        return dict(zip(["x", "y", "x_mark", "y_mark"],[seq_x, seq_y, seq_x_mark, seq_y_mark]))
+        if self.data_stamp is not None:
+            seq_x_mark = self.data_stamp[s_begin:s_end]
+            seq_y_mark = self.data_stamp[r_begin:r_end]
+            return dict(zip(["x", "y", "x_mark", "y_mark"],[seq_x, seq_y, seq_x_mark, seq_y_mark]))
+        else:
+            return dict(zip(["x", "y"],[seq_x, seq_y]))
     
     def __len__(self):
-        return len(self.data_x) - self.seq_len- self.out_len + 1
+        return len(self.data_x) - self.delta
 
     def inverse_transform(self, data):
         return self.scaler.inverse_transform(data)
@@ -93,12 +131,14 @@ class Dataset_ETT_hour(DatasetBase):
     def __read_data__(self):
         self.scaler = StandardScaler()
         df_raw = pd.read_csv(os.path.join(self.data_path, self.file_name))
+        df_raw = self.reindex_col(df_raw)
+        self.data_stamp = self.generate_datefeature(df_raw)
 
-        border1s = [0, 12*30*24 - self.seq_len, 12*30*24+4*30*24 - self.seq_len]
+        border1s = [0, 12*30*24, 12*30*24+4*30*24]
         border2s = [12*30*24, 12*30*24+4*30*24, 12*30*24+8*30*24]
-        self.train_idxs = np.arange(border1s[0], border2s[0]-self.seq_len-self.pred_len+1)
-        self.val_idxs = np.arange(border1s[1], border2s[1]-self.seq_len-self.pred_len+1)
-        self.test_idxs = np.arange(border1s[2], border2s[2]-self.seq_len-self.pred_len+1)
+        self.train_idxs = np.arange(border1s[0], border2s[0]-self.delta)
+        self.val_idxs = np.arange(border1s[1], border2s[1]-self.delta)
+        self.test_idxs = np.arange(border1s[2], border2s[2]-self.delta)
 
         if self.features=='M' or self.features=='MS':
             cols_data = df_raw.columns[self.start_col:]
@@ -114,10 +154,6 @@ class Dataset_ETT_hour(DatasetBase):
         else:
             data = df_data.values
             
-        df_stamp = df_raw[['date']]
-        df_stamp['date'] = pd.to_datetime(df_stamp.date)
-        self.data_stamp = time_features(df_stamp, timeenc=self.timeenc, freq=self.freq)
-
         self.data_x = data
         if self.inverse:
             self.data_y = df_data.values
@@ -132,12 +168,14 @@ class Dataset_ETT_minute(DatasetBase):
     def __read_data__(self):
         self.scaler = StandardScaler()
         df_raw = pd.read_csv(os.path.join(self.data_path, self.file_name))
+        df_raw = self.reindex_col(df_raw)
+        self.data_stamp = self.generate_datefeature(df_raw)
 
-        border1s = [0, 12*30*24*4 - self.seq_len, 12*30*24*4+4*30*24*4 - self.seq_len]
+        border1s = [0, 12*30*24*4, 12*30*24*4+4*30*24*4]
         border2s = [12*30*24*4, 12*30*24*4+4*30*24*4, 12*30*24*4+8*30*24*4]
-        self.train_idxs = np.arange(border1s[0], border2s[0]-self.seq_len)
-        self.val_idxs = np.arange(border1s[1], border2s[1]-self.seq_len)
-        self.test_idxs = np.arange(border1s[2], border2s[2]-self.seq_len)
+        self.train_idxs = np.arange(border1s[0], border2s[0]-self.delta)
+        self.val_idxs = np.arange(border1s[1], border2s[1]-self.delta)
+        self.test_idxs = np.arange(border1s[2], border2s[2]-self.delta)
         
         if self.features=='M' or self.features=='MS':
             cols_data = df_raw.columns[self.start_col:]
@@ -152,46 +190,27 @@ class Dataset_ETT_minute(DatasetBase):
         else:
             data = df_data.values
             
-        df_stamp = df_raw[['date']]
-        df_stamp['date'] = pd.to_datetime(df_stamp.date)
-        data_stamp = time_features(df_stamp, timeenc=self.timeenc, freq=self.freq)
-        
         self.data_x = data
         if self.inverse:
             self.data_y = df_data.values
         else:
             self.data_y = data
-        self.data_stamp = data_stamp
 
 class Dataset_Custom(DatasetBase):
     def __init__(self, args):
         super().__init__(args)
-        self.__read_data__()
+        self.val_size, self.test_size = 0.1, 0.2
         self.__read_data__()
 
     def __read_data__(self):
         self.scaler = StandardScaler()
         df_raw = pd.read_csv(os.path.join(self.data_path,
                                           self.file_name))
-        '''
-        df_raw.columns: ['date', ...(other features), target feature]
-        '''
-        # cols = list(df_raw.columns); 
-        if self.cols:
-            cols=self.cols.copy()
-            cols.remove(self.target)
-        else:
-            cols = list(df_raw.columns); cols.remove(self.target); cols.remove('date')
-        df_raw = df_raw[['date']+cols+[self.target]]
+        df_raw = self.reindex_col(df_raw)
+        self.data_stamp = self.generate_datefeature(df_raw)
 
-        num_train = int(len(df_raw)*0.7)
-        num_test = int(len(df_raw)*0.2)
-        num_vali = len(df_raw) - num_train - num_test
-        border1s = [0, num_train-self.seq_len, len(df_raw)-num_test-self.seq_len]
-        border2s = [num_train, num_train+num_vali, len(df_raw)]
-        self.train_idxs = np.arange(border1s[0], border2s[0]-self.seq_len)
-        self.val_idxs = np.arange(border1s[1], border2s[1]-self.seq_len)
-        self.test_idxs = np.arange(border1s[2], border2s[2]-self.seq_len)
+        self.train_idxs, self.val_idxs, self.test_idxs = \
+            self.get_idxs1(len(df_raw), 0, False)
         
         if self.features=='M' or self.features=='MS':
             cols_data = df_raw.columns[self.start_col:]
@@ -200,22 +219,17 @@ class Dataset_Custom(DatasetBase):
             df_data = df_raw[[self.target]]
 
         if self.scale:
-            train_data = df_data[border1s[0]:border2s[0]]
+            train_data = df_data.iloc[self.train_idxs]
             self.scaler.fit(train_data.values)
             data = self.scaler.transform(df_data.values)
         else:
             data = df_data.values
             
-        df_stamp = df_raw[['date']]
-        df_stamp['date'] = pd.to_datetime(df_stamp.date)
-        data_stamp = time_features(df_stamp, timeenc=self.timeenc, freq=self.freq)
-
         self.data_x = data
         if self.inverse:
             self.data_y = df_data.values
         else:
             self.data_y = data
-        self.data_stamp = data_stamp
 
 class Dataset_Pred(DatasetBase):
     def __init__(self, args):
@@ -276,21 +290,21 @@ class MyDataSet(DatasetBase):
     def __read_data__(self):
         @timer
         @cache_results(_cache_fp=None)
-        def _get_data(shuffle=False):
-            self.scaler = StandardScaler()
+        def _get_data(shuffle=False, span=None):
             # @cache_results(os.path.join(self.data_path, self.file_name[:-4], '.pkl'))
             df_raw = pd.read_csv(os.path.join(self.data_path, self.file_name))
             date_lst = [df_raw["Date"][df_raw["stock_id"]==i] 
                         for i in df_raw["stock_id"].unique()]
-            _tmp = Parallel(n_jobs=-1)(delayed(self.get_idxs2)(date) for date in date_lst)
+            _tmp = Parallel(n_jobs=-1)(delayed(self.get_idxs2)(date, span) for date in date_lst)
 
             train_idxs, val_idxs, test_idxs = zip(*_tmp)
             train_idxs, val_idxs, test_idxs = np.concatenate(train_idxs), np.concatenate(val_idxs), np.concatenate(test_idxs)
-
-            # df_raw = df_raw.drop(columns=["stock_id", "weekday", "time_id", 
-            # "holiday_name", "holiday_tag", "holiday_tag_cumsum", "industry"])
-            df_raw = df_raw[self.cols]
+            
+            self.scaler = StandardScaler()
+            df_raw = self.reindex_col(df_raw)
             df_raw = df_raw.rename(columns={"Date":"date"})
+            df_stamp = self.generate_datefeature(df_raw)
+
             if isinstance(self.features, str):
                 if self.features=='M' or self.features=='MS':
                     cols_data = df_raw.columns[self.start_col:]
@@ -304,43 +318,18 @@ class MyDataSet(DatasetBase):
                 data = self.scaler.transform(df_data.values)
             else:
                 data = df_data.values
-            df_stamp = df_raw[['date']]
-            df_stamp['date'] = pd.to_datetime(df_stamp.date)
-            df_stamp = time_features(df_stamp, timeenc=self.timeenc, freq=self.freq)
 
             if self.inverse:
                 data_y = df_data.values
             else:
                 data_y = data
             return self.scaler, df_stamp, data, data_y, train_idxs, val_idxs, test_idxs
+
         shuffle = False
         self.scaler, self.data_stamp, self.data_x, self.data_y, \
         self.train_idxs, self.val_idxs, self.test_idxs = \
-        _get_data(shuffle=shuffle, _cache_fp=os.path.join('./cache', 
-        f"{self.file_name[:-4]}_{self.args.dataset}_sl{self.seq_len}_pl{self.pred_len}_ty{self.test_year}_hn{self.horizon}_sf{int(shuffle)}.pkl"))
-        
-    def __getitem__(self, index):
-        s_begin = index
-        s_end = s_begin + self.seq_len
-        r_begin = s_end - self.label_len + self.horizon-1
-        r_end = r_begin + self.label_len + self.pred_len
-
-        seq_x = self.data_x[s_begin:s_end]
-        if self.inverse:
-            # encoder输入data_x,保持scaler，decoder输入data_y
-            seq_y = np.concatenate([self.data_x[r_begin:r_begin+self.label_len], self.data_y[r_begin+self.label_len:r_end]], 0)
-        else:
-            seq_y = self.data_y[r_begin:r_end]
-        seq_x_mark = self.data_stamp[s_begin:s_end]
-        seq_y_mark = self.data_stamp[r_begin:r_end]
-        
-        return dict(zip(["x", "y", "x_mark", "y_mark"],[seq_x, seq_y, seq_x_mark, seq_y_mark]))
-    
-    def __len__(self):
-        return len(self.data_x) - self.seq_len- self.out_len + 1
-
-    def inverse_transform(self, data):
-        return self.scaler.inverse_transform(data)
+        _get_data(shuffle=shuffle, span=4, _cache_fp=os.path.join('./cache', 
+        f"{self.file_name[:-4]}_{self.args.dataset}_sl{self.seq_len}_pl{self.pred_len}_ty{self.test_year}_hn{self.horizon}_sf{int(shuffle)}_{self.args.des}_span4.pkl"))
 
 
 class MyDataSetGate(Dataset):
@@ -565,54 +554,29 @@ class SDWPFDataSet(DatasetBase):
         self.train_idxs, self.val_idxs, self.test_idxs = \
         _get_data(shuffle=shuffle, _cache_fp=os.path.join('./cache', 
         f"{self.file_name[:-4]}_{self.args.dataset}_sl{self.seq_len}_pl{self.pred_len}_hn{self.horizon}_sf{int(shuffle)}.pkl"))
-        
-    def __getitem__(self, index):
-        s_begin = index
-        s_end = s_begin + self.seq_len
-        r_begin = s_end - self.label_len + self.horizon-1
-        r_end = r_begin + self.label_len + self.pred_len
 
-        seq_x = self.data_x[s_begin:s_end]
-        if self.inverse:
-            # encoder输入data_x,保持scaler，decoder输入data_y
-            seq_y = np.concatenate([self.data_x[r_begin:r_begin+self.label_len], self.data_y[r_begin+self.label_len:r_end]], 0)
-        else:
-            seq_y = self.data_y[r_begin:r_end]
-        seq_x_mark = self.data_stamp[s_begin:s_end]
-        seq_y_mark = self.data_stamp[r_begin:r_end]
-        
-        return dict(zip(["x", "y", "x_mark", "y_mark"],[seq_x, seq_y, seq_x_mark, seq_y_mark]))
-    
-    def __len__(self):
-        return len(self.data_x) - self.seq_len- self.out_len + 1
 
-    def inverse_transform(self, data):
-        return self.scaler.inverse_transform(data)
-
-class GoogleDataset(DatasetBase):
+class MyDataset1(DatasetBase):
     def __init__(self, args):
         super().__init__(args)
         self.val_size, self.test_size = 0.1, 0.2
         self.__read_data__()
 
     def __read_data__(self):
-        df = pd.read_csv("./data/all_combined_trace_noIO.csv", index_col=0)
-        df = df.reindex(columns=["assigned memory usage", "mean CPU usage rate"])
+        df = pd.read_csv(f"./data/{self.args.file_name}.csv", index_col=0)
+        df = df[["stock_id"]+[self.target]]
 
-        # method 1
-        # sample_id_lst = [np.arange(len(df))[df["id"]==i] for i in df["id"].unique()]
-        # _tmp = Parallel(n_jobs=-1)(delayed(self.get_idxs1)(len(x), x[0], False) for x in sample_id_lst)
-        # train_idxs, val_idxs, test_idxs = zip(*_tmp)
-        # self.train_idxs, self.val_idxs, self.test_idxs = np.concatenate(train_idxs), np.concatenate(val_idxs), np.concatenate(test_idxs)
-        # df = df.drop(columns=["id"])
-        # df_filter, min_range, max_range = filter_extreme(df.iloc[:, :2], type="MAD")
-        # df_filter["id"] = df["id"]
-        # df = df_filter.copy()
-        self.train_idxs, self.val_idxs, self.test_idxs = self.get_idxs1(len(df), 0, False)
-        
+        sample_id_lst = [np.arange(len(df))[df["stock_id"]==i] 
+                    for i in df["stock_id"].unique()]
+        _tmp = Parallel(n_jobs=-1)(delayed(self.get_idxs1)(len(x), x[0], False) for x in sample_id_lst)
+
+        train_idxs, val_idxs, test_idxs = zip(*_tmp)
+        self.train_idxs, self.val_idxs, self.test_idxs = np.concatenate(train_idxs), np.concatenate(val_idxs), np.concatenate(test_idxs)
+        save_obj(f"./save_file/idxs{self.out_len}.pkl", [self.train_idxs, self.val_idxs, self.test_idxs])
+        df = df.drop(columns=["stock_id"])
         self.scaler = StandardScaler()
         if self.scale:
-            train_data = df.iloc[self.train_idxs]
+            train_data = df#.iloc[self.train_idxs]
             self.scaler.fit(train_data.values)
             data = self.scaler.transform(df.values)
         else:
@@ -645,7 +609,7 @@ class GoogleDataset1(DatasetBase):
         self.__read_data__()
 
     def __read_data__(self):
-        df = pd.read_csv(f"./data/{self.args.file_name}.csv", index_col=0)
+        df = pd.read_csv(os.path.join(self.args.data_path, f"{self.args.file_name}"), index_col=0)
         df = df[[self.target]]
 
         self.train_idxs, self.val_idxs, self.test_idxs = self.get_idxs1(len(df), 0, False)

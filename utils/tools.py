@@ -16,6 +16,7 @@ def get_params_dict(setting_keys, setting_values, setting=None):
     else:
         keys = ["model", "data"] + [i for i in re.split("_|{}", setting_keys) if len(i)>0]
         params_dict = dict(zip(keys, setting_values[:-2]))
+        params_dict["des"] = setting_values[-2]
         return params_dict
 
 def timer(func):
@@ -72,23 +73,23 @@ class EarlyStopping:
         self.patience = patience
         self.verbose = verbose
         self.counter = 0
-        self.best_score = None
+        self.min_loss = None
         self.early_stop = False
         self.val_loss_min = np.Inf
         self.delta = delta
 
     def __call__(self, val_loss, model, path):
-        score = -val_loss # 越大越好
-        if self.best_score is None:
-            self.best_score = score
+        if self.min_loss is None:
+            self.min_loss = val_loss
             self.save_checkpoint(val_loss, model, path)
-        elif score < self.best_score + self.delta:
+        # elif loss > self.min_loss + self.delta:
+        elif abs((val_loss-self.min_loss)/self.min_loss)<=0.01:
             self.counter += 1
-            print(f'EarlyStopping counter: {self.counter} out of {self.patience}, best_loss:{-self.best_score}, curent_loss:{val_loss}')
+            print(f'EarlyStopping counter: {self.counter} out of {self.patience}, best_loss:{self.min_loss}, curent_loss:{val_loss}')
             if self.counter >= self.patience:
                 self.early_stop = True
-        else:
-            self.best_score = score
+        elif val_loss<self.min_loss:
+            self.min_loss = val_loss
             self.save_checkpoint(val_loss, model, path)
             self.counter = 0
 
@@ -103,6 +104,13 @@ class dotdict(dict):
     __getattr__ = dict.get
     __setattr__ = dict.__setitem__
     __delattr__ = dict.__delitem__
+
+def dict2string(dict, key_lst=None):
+    if key_lst is not None:
+        string_lst = ["{}:{:.5f}".format(key, dict.get(key)) for key in key_lst if dict.get(key) is not None]
+    else:
+        string_lst = ["{}:{:.5f}".format(key, value) for key, value in dict.items()]
+    return  " ".join(string_lst)
 
 class StandardScaler():
     def __init__(self):
@@ -284,3 +292,28 @@ class ScaleOffset(nn.Module):
             inputs = inputs + beta
 
         return inputs
+
+def get_cols(des, notw=False, notm=False):
+    base_cols = ["Date", 'rv5', 'rv20']
+    ret_cols = ['retplus', 'retminus', 'retnight', 'ret',
+        'retVariance5', 'retplusVariance5', 'retminusVariance5', 'retnightVariance5', 
+        'retSkewness5', 'retKurtosis5', 
+        'retVariance20', 'retplusVariance20', 'retminusVariance20', 'retnightVariance20',
+        'retSkewness20', 'retKurtosis20']
+    # other_rv_cols = ['rv_market', 'rv_industry', 'cos_sim_rv']
+    if des == "base":
+        cols = base_cols
+    if des == "ret":
+        cols = base_cols + ret_cols
+    if des == "market":
+        cols = base_cols + [f"rv_market{i}" for i in ['', 5, 20]]
+    if des == "industry":
+        cols = base_cols + [f"rv_industry{i}" for i in ['', 5, 20]]
+    if des == "cos":
+        cols = base_cols + [f"cos_sim_rv{i}" for i in ['', 5, 20]]
+    cols += ["rv"]
+    if notw: 
+        cols = [col for col in cols if "5" not in col]
+    if notm: 
+        cols = [col for col in cols if "20" not in col]
+    return cols

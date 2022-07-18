@@ -6,3 +6,5 @@ from .EDLstm import Lstm
 from .EDGruAttention import GruAttention
 from .Gaformer import Gaformer
 from .MultiHeadGaformer import MultiHeadGaformer
+from .TransformerDecompose import TransformerDecompose
+from .InformerDecompose import InformerDecompose

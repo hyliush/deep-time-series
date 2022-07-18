@@ -1,4 +1,3 @@
-from exp.exp_multi import Exp_Multi
 from exp.exp_single import Exp_Single
 from utils import logger
 from torch.utils.data import SubsetRandomSampler
@@ -9,7 +8,8 @@ import torch.nn as nn
 import os
 from args import args
 from utils.constants import model_dict, dataset_dict
-Exp = Exp_Single if args.single_file else Exp_Multi
+from utils.data import Dataset_Custom
+Exp = Exp_Single
 import warnings
 warnings.filterwarnings('ignore')
 
@@ -37,7 +37,7 @@ class Exp_model(Exp):
 
     def _get_data(self, file_name, flag):
         if  not hasattr(self.tmp_dataset, "file_name") or self.tmp_dataset.file_name != file_name:
-            DataSet = dataset_dict[self.args.dataset]
+            DataSet = dataset_dict.get(self.args.dataset, Dataset_Custom)
             self.args.file_name = file_name
             self.tmp_dataset = DataSet(self.args)
             logger.debug(flag, len(self.tmp_dataset))
@@ -106,41 +106,3 @@ def _process_one_batch3(self, batch):
         mu_sigma_lst.append(mu_sigma)
     mu_sigma_batch = torch.stack(mu_sigma_lst, dim=0)
     return mu_sigma_batch.permute(1, 0, 2), labels_batch.unsqueeze(dim=-1).permute(1, 0, 2)
-
-# oze
-# def _get_data(self, file_name, flag):
-#     from data.data_loader import OzeDataset
-#     DATASET_PATH = r'D:\IDEA\Spatial-temporal\transformer-series\data\dataset1.npz'
-#     LABELS_PATH = r'D:\IDEA\Spatial-temporal\transformer-series\data\labels.json'
-#     BATCH_SIZE = 2
-#     NUM_WORKERS = 0
-#     dataset = OzeDataset(DATASET_PATH, LABELS_PATH)
-
-#     # Split between train, validation and test
-#     self.dataset_train, self.dataset_val, self.dataset_test = random_split(
-#         dataset, (5500, 1000, 1000), generator=torch.Generator().manual_seed(42))
-    
-#     self.dataloader_train = DataLoader(self.dataset_train,
-#                                 batch_size=BATCH_SIZE,
-#                                 shuffle=True,
-#                                 num_workers=NUM_WORKERS,
-#                                 pin_memory=False
-#                                 )
-
-#     self.dataloader_val = DataLoader(self.dataset_val,
-#                                 batch_size=BATCH_SIZE,
-#                                 shuffle=True,
-#                                 num_workers=NUM_WORKERS
-#                                 )
-
-#     self.dataloader_test = DataLoader(self.dataset_test,
-#                                 batch_size=BATCH_SIZE,
-#                                 shuffle=False,
-#                                 num_workers=NUM_WORKERS
-#                                 )
-#     if flag == "train":
-#         return self.dataset_train, self.dataloader_train
-#     if flag == "val":
-#         return self.dataset_val, self.dataloader_val
-#     if flag == "test":
-#         return self.dataset_test, self.dataloader_test

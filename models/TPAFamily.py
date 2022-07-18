@@ -1,9 +1,21 @@
-from unicodedata import bidirectional
 import torch
 from torch import nn
 import torch.nn.functional as F
+from utils.activation import SoftRelu
+from layers.Decompose import series_decomp
 # explaination https://zhuanlan.zhihu.com/p/59172441?from_voters_page=true
 
+class BaseTPA(nn.Module):
+    def __init__(self):
+        super().__init__()
+    def main_forward(self, x):
+        px = F.relu(self.input_proj(x))
+        hs, (ht, _) = self.lstm(px) # hs 最后一层，所有步， batch_size * seq_len * hidden_size
+        # ht = ht.view(-1, 2, ht.shape[-2], ht.shape[-1])
+        # ht = ht[-1].view(ht.shape[-2], -1)
+        ht = ht[-1] # 最后一层，最后一步的hidden_state, batch_size * hidden_size
+        final_h = self.att(hs, ht)  # 最后一步的ht'， fig2
+        return final_h
 
 class TPA_Attention(nn.Module):
     def __init__(self, seq_len, tpa_hidden_size):
@@ -30,7 +42,7 @@ class TPA_Attention(nn.Module):
         return self.Whv(vh)
 
 
-class TPA(nn.Module):
+class TPA(BaseTPA):
     def __init__(self, args):
         
         '''
@@ -59,21 +71,42 @@ class TPA(nn.Module):
 
         self.ar = nn.Linear(self.ar_len, args.pred_len) # 当预测多个序列时，实际上共享了AR参数了，一种解决办法，设置多个ar层分别处理不同序列
 
+        if self.args.decompose:
+            self.decomp = series_decomp(self.args.moving_avg)
+            self.trend_layer = nn.Sequential(
+                nn.Conv1d(in_channels=input_size, out_channels=tpa_hidden_size, 
+                        kernel_size=3, stride=1, padding=1,
+                        padding_mode='circular', bias=False),
+                nn.Linear(args.seq_len, args.pred_len),
+                nn.GELU()
+                        )
+        if self.args.criterion == "gaussian":
+            self.n_params = 2
+            self.activation = SoftRelu()
+        elif self.args.criterion == "quantile":
+            self.n_params = 3
+        else:
+            self.n_params = 1
+        self.output_layer = nn.Linear(tpa_hidden_size, self.n_params*self.args.out_size)
+
     def forward(self, x):
-        # batch_size, seq_len, input_size = x.size()
         if self.args.importance:
             if not isinstance(x, torch.Tensor):
                 x = torch.from_numpy(x)
             x = x.transpose(1, 2)
             x = x.to(torch.device("cuda"))
 
-        px = F.relu(self.input_proj(x))
-        hs, (ht, _) = self.lstm(px) # hs 最后一层，所有步， batch_size * seq_len * hidden_size
-        # ht = ht.view(-1, 2, ht.shape[-2], ht.shape[-1])
-        # ht = ht[-1].view(ht.shape[-2], -1)
-        ht = ht[-1] # 最后一层，最后一步的hidden_state, batch_size * hidden_size
-        final_h = self.att(hs, ht)  # 最后一步的ht'， fig2
-        ar_out = self.ar(x[:, -self.ar_len:, [-1]].transpose(1, 2))[:, :, 0]
-        out = self.out_proj(final_h) + ar_out
-        out = out.unsqueeze(1) # add timesereis dim 
-        return out
+        if self.args.decompose:
+            season, trend = self.decomp(x)
+            season_out = self.main_forward(season)
+            trend_out = self.trend_layer(trend.transpose(1, 2)).transpose(1, 2)
+            out = trend_out + season_out
+        else:
+            out = self.main_forward(x)
+            
+        output = self.output_layer(out).view(-1, self.args.pred_len, self.args.out_size, self.n_params)
+        if self.args.criterion == "guassian":
+            output[...,-1] = self.activation(output[...,-1])
+        if self.args.criterion == "mse":
+            output = output.squeeze(dim=-1)
+        return output
