@@ -8,7 +8,7 @@ from .LSTMFamily import LSTM
 from .TCNFamily import TCN
 from .TPAFamily import TPA
 from .TransFamily import  Trans
-from .DeepAR import DeepARe
+from .DeepAR import DeepAR
 from .MLP import MLP
 from .LSTNet import LSTNet
 from .GAU import GAU, AU
