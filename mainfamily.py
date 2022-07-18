@@ -25,7 +25,7 @@ args.cols = ["date", "wti", "DJIA_vix", "Three_Component_Index", "TWEXB"]
 
 args.seq_len, args.label_len, args.pred_len = 50, 0, 1
 args.data_path = "./data/ToyData"
-args.data_path = "/kaggle/input"
+args.data_path = "/kaggle/input/toydata/ToyData"
 args.target = "series"
 args.cols = ["series"]
 
