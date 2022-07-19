@@ -24,8 +24,8 @@ args.seq_len, args.label_len, args.pred_len = 60, 0, 1
 args.cols = ["date", "wti", "DJIA_vix", "Three_Component_Index", "TWEXB"]
 
 args.seq_len, args.label_len, args.pred_len = 50, 0, 1
-args.data_path = "./data/ToyData"
-# args.data_path = "/kaggle/input/toydata/ToyData"
+# args.data_path = "./data/ToyData"
+args.data_path = "/kaggle/input/toydata/ToyData"
 args.target = "series"
 args.cols = ["series"]
 
@@ -36,8 +36,7 @@ HORIZON = 1
 params = OrderedDict({
     "dataset" : ["toy_random_increase", "toy_stair_random", "toy_stair_increase"],
     "horizon":np.arange(1, HORIZON+10,dtype=int).tolist(), #预测horizon
-    # "model":["lstm", "tcn", "tpa", "trans"],
-    "model":["trans","tpa"],
+    "model":["lstm", "tcn", "tpa", "trans"],
     "decompose":[True, False],
     "features":["S"],
     "criterion": ["quantile", "gaussian", "mse"]
