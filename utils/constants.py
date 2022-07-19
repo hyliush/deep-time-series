@@ -1,7 +1,7 @@
 from models.MultiHeadGAU import MultiHeadGAU
 from models.seq2seq import Informer, Autoformer, Transformer, GruAttention, Gru, Lstm, Gaformer, TransformerDecompose, InformerDecompose
 from models import Gdnn, TCN, TPA, Trans, DeepAR, MLP, LSTNet, GAU, AU, TCNDecompose, TPADecompose, LSTMDecompose, TransDecompose, AR, LSTM
-from utils.data import Dataset_ETT_hour, Dataset_ETT_minute, Dataset_Custom, Dataset_Pred, GoogleDataset1, SDWPFDataSet, MyDataSet, ToyDataset, MyDataset1
+from utils.data import Dataset_ETT_hour, Dataset_ETT_minute, Dataset_Custom, Dataset_Pred, MyDataSet, ToyDataset, MyDataset1
 from models.informer1.model import Informer as Infomer1
 from models.seq2seq.MultiHeadGaformer import MultiHeadGaformer
 from utils.loss import GaussianLoss, OZELoss, QuantileLoss,Normal_loss
@@ -16,7 +16,6 @@ dataset_dict = {
 'Solar':Dataset_Custom,
 'custom':Dataset_Custom,
 'Mydata':MyDataSet,
-"SDWPF":SDWPFDataSet,
 'Toy': ToyDataset,
 "google1":Dataset_Custom,
 # "oil":GoogleDataset1,

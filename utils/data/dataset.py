@@ -485,77 +485,6 @@ class ToyDataset(DatasetBase):
     def inverse_transform(self, x):
         return x
 
-class SDWPFDataSet(DatasetBase):
-    def __init__(self, args):
-        super().__init__(args)
-        self.test_size = 15*24*6
-        self.val_size = 16*24*6
-        self.__read_data__()
-
-    def __read_data__(self):
-        @timer
-        @cache_results(_cache_fp=None)
-        def _get_data(shuffle=False):
-            self.scaler = StandardScaler()
-            # @cache_results(os.path.join(self.data_path, self.file_name[:-4], '.pkl'))
-            df_raw = pd.read_csv(os.path.join(self.data_path, self.file_name))
-            def get_date(k):
-                cur_date = "2020-01-01"
-                one_day = timedelta(days=k-1)
-                return str(datetime.strptime(cur_date, '%Y-%m-%d') + one_day)[:10]
-            df_raw['Day'] = df_raw['Day'].apply(lambda x: get_date(x))
-
-            def cols_concat(df, con_list):
-                name = 'date'
-                df[name] = df[con_list[0]].astype(str)
-                for item in con_list[1:]:
-                    df[name] = df[name] + ' ' + df[item].astype(str)
-                return df
-
-            df_raw = cols_concat(df_raw, ["Day", "Tmstamp"])
-            df_raw = df_raw[['TurbID', 'date', 'Wspd', 'Wdir', 'Etmp', 'Itmp', 'Ndir', 'Pab1', 'Pab2', 'Pab3', 'Prtv', 'Patv']]
-            df_raw['date'] = pd.to_datetime(df_raw['date'])
-
-            # method 1
-            sample_id_lst = [np.arange(len(df_raw))[df_raw["TurbID"]==i] 
-                        for i in df_raw["TurbID"].unique()]
-            _tmp = Parallel(n_jobs=-1)(delayed(self.get_idxs1)(len(x), x[0], shuffle) for x in sample_id_lst)
-            train_idxs, val_idxs, test_idxs = zip(*_tmp)
-            train_idxs, val_idxs, test_idxs = np.concatenate(train_idxs), np.concatenate(val_idxs), np.concatenate(test_idxs)
-            df_raw = df_raw.drop(columns=["TurbID"])
-
-            if isinstance(self.features, str):
-                if self.features=='M' or self.features=='MS':
-                    cols_data = df_raw.columns[self.start_col:]
-                    df_data = df_raw[cols_data]
-                elif self.features=='S':
-                    df_data = df_raw[[self.target]]
-            pd.set_option('mode.chained_assignment', None)
-            df_data.replace(to_replace=np.nan, value=0, inplace=True)
-
-            if self.scale:
-                train_data = df_data.iloc[train_idxs]
-                df_data, min_range, max_range = filter_extreme(df_data, "MAD", train_df = train_data)
-
-                self.scaler.fit(df_data.iloc[train_idxs].values)
-                data = self.scaler.transform(df_data.values)
-            else:
-                data = df_data.values
-            df_stamp = df_raw[['date']]
-            df_stamp = time_features(df_stamp, timeenc=self.timeenc, freq=self.freq)
-
-            if self.inverse:
-                data_y = df_data.values
-            else:
-                data_y = data
-            return self.scaler, min_range, max_range, df_stamp, data, data_y, train_idxs, val_idxs, test_idxs
-        shuffle = False
-        self.scaler, self.min_range, self.max_range, self.data_stamp, self.data_x, self.data_y, \
-        self.train_idxs, self.val_idxs, self.test_idxs = \
-        _get_data(shuffle=shuffle, _cache_fp=os.path.join('./cache', 
-        f"{self.file_name[:-4]}_{self.args.dataset}_sl{self.seq_len}_pl{self.pred_len}_hn{self.horizon}_sf{int(shuffle)}.pkl"))
-
-
 class MyDataset1(DatasetBase):
     def __init__(self, args):
         super().__init__(args)
@@ -577,46 +506,6 @@ class MyDataset1(DatasetBase):
         self.scaler = StandardScaler()
         if self.scale:
             train_data = df#.iloc[self.train_idxs]
-            self.scaler.fit(train_data.values)
-            data = self.scaler.transform(df.values)
-        else:
-            data = df.values
-        self.data_x = data
-
-        if self.inverse:
-            self.data_y = df.values
-        else:
-            self.data_y = data
-    def __getitem__(self, index):
-        s_begin = index
-        s_end = s_begin + self.seq_len
-        r_begin = s_end - self.label_len + self.horizon-1
-        r_end = r_begin + self.label_len + self.pred_len
-
-        seq_x = self.data_x[s_begin:s_end]
-        if self.inverse:
-            seq_y = np.concatenate([self.data_x[r_begin:r_begin+self.label_len], self.data_y[r_begin+self.label_len:r_end]], 0)
-        else:
-            seq_y = self.data_y[r_begin:r_end]
-
-        return dict(zip(["x", "y"],[seq_x, seq_y]))
-
-
-class GoogleDataset1(DatasetBase):
-    def __init__(self, args):
-        super().__init__(args)
-        self.val_size, self.test_size = 0.1, 0.2
-        self.__read_data__()
-
-    def __read_data__(self):
-        df = pd.read_csv(os.path.join(self.args.data_path, f"{self.args.file_name}"), index_col=0)
-        df = df[[self.target]]
-
-        self.train_idxs, self.val_idxs, self.test_idxs = self.get_idxs1(len(df), 0, False)
-        
-        self.scaler = StandardScaler()
-        if self.scale:
-            train_data = df.iloc[self.train_idxs]
             self.scaler.fit(train_data.values)
             data = self.scaler.transform(df.values)
         else:
