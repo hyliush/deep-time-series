@@ -3,7 +3,7 @@ import torch
 import os
 from torch.utils.tensorboard import SummaryWriter
 from datetime import datetime
-from utils.tools import Writer, EarlyStopping
+from utils.tools import Writer, EarlyStopping, EarlyStopping2
 import inspect
 from utils.constants import criterion_dict
 from utils.metrics import point_metric, distribution_metric
@@ -25,11 +25,13 @@ class Exp_Basic(object):
         # self.writer = SummaryWriter(log_dir = self.run_path)
         self.early_stopping = EarlyStopping(patience=self.args.patience, verbose=True)
         if self.args.criterion ==  "mse":
-            self.metric = point_metric
+            self.metrics = point_metric
             self.show_metrics = ["rmse", "r2"]
+            self.earlystop_metrics = "rmse"
         else:
-            self.metric = distribution_metric
+            self.metrics = distribution_metric
             self.show_metrics = ["rho50", "rho90"]
+            self.earlystop_metrics = "rho50"
 
     def _init_path(self, setting):
         self.model_path = os.path.join(f"./checkpoints/{self.args.dataset}/", setting)

@@ -2,8 +2,8 @@ import math
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from utils.activation import SoftRelu
 from layers.Decompose import series_decomp
+from utils.activation import SoftRelu
 
 class PositionalEncoding(nn.Module):
     def __init__(self, d_model, dropout=0.1, max_len=5000):
@@ -44,7 +44,6 @@ class Trans(BaseTrans):
         seq_len = args.seq_len
         n_trans_head = args.trans_n_heads
         trans_n_layers = args.trans_n_layers
-        out_size = args.out_size
         self.kernel_size = trans_kernel_size
 
         self.conv = nn.Conv1d(input_size, trans_hidden_size, kernel_size=trans_kernel_size)
@@ -86,7 +85,7 @@ class Trans(BaseTrans):
             out = self.main_forward(x)
             
         output = self.output_layer(out).view(-1, self.args.pred_len, self.args.out_size, self.n_params)
-        if self.args.criterion == "guassian":
+        if self.args.criterion == "gaussian":
             output[...,-1] = self.activation(output[...,-1])
         if self.args.criterion == "mse":
             output = output.squeeze(dim=-1)

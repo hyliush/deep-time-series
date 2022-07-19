@@ -73,6 +73,40 @@ class EarlyStopping:
         self.patience = patience
         self.verbose = verbose
         self.counter = 0
+        self.best_metrics = None
+        self.early_stop = False
+        self.val_metrics = np.Inf
+        self.delta = delta
+
+    def __call__(self, metrics, model, path):
+        # metrics 越小越好
+        if self.best_metrics is None:
+            self.best_metrics = metrics
+            self.save_checkpoint(metrics, model, path)
+        # elif loss > self.best_metrics + self.delta:
+        elif abs((metrics-self.best_metrics)/self.best_metrics)<=0.01 or metrics>self.best_metrics:
+            self.counter += 1
+            print(f'EarlyStopping counter: {self.counter} out of {self.patience}, best_metrics:{self.best_metrics:.5f}, curent_metrics:{metrics:.5f}')
+            if self.counter >= self.patience:
+                self.early_stop = True
+        else:
+            self.best_metrics = metrics
+            self.save_checkpoint(metrics, model, path)
+            self.counter = 0
+
+    def save_checkpoint(self, metrics, model, path):
+        if self.verbose:
+            print(f'Validation metrics decreased ({self.val_metrics:.6f} --> {metrics:.6f}).  Saving model ...')
+        torch.save(model.state_dict(), path+'/'+'checkpoint.pth')
+        self.val_metrics = metrics
+
+
+class EarlyStopping2:
+    '''根据loss'''
+    def __init__(self, patience=7, verbose=False, delta=0):
+        self.patience = patience
+        self.verbose = verbose
+        self.counter = 0
         self.min_loss = None
         self.early_stop = False
         self.val_loss_min = np.Inf
@@ -111,6 +145,9 @@ def dict2string(dict, key_lst=None):
     else:
         string_lst = ["{}:{:.5f}".format(key, value) for key, value in dict.items()]
     return  " ".join(string_lst)
+
+def addkeystring(_dict, costumized=""):
+    return dict(zip([costumized+key for key in _dict.keys()], _dict.values()))
 
 class StandardScaler():
     def __init__(self):

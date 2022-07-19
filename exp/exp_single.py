@@ -7,8 +7,7 @@ from utils.constants import dataset_dict
 from utils.data import Dataset_Custom
 from utils import logger
 from datetime import datetime
-from utils.tools import dict2string
-from utils.tools import adjust_learning_rate, save_obj
+from utils.tools import dict2string, adjust_learning_rate, save_obj, addkeystring
 import time
 from tqdm import tqdm
 from exp.exp_basic import Exp_Basic
@@ -43,7 +42,7 @@ class Exp_Single(Exp_Basic):
 
             running_loss, train_loss = 0, 0
             pbar = tqdm(train_loader, total=len(train_loader), 
-                desc=f"[Epoch {idx_epoch+1:3d}/{self.args.train_epochs}]")
+                desc=f"[Epoch {idx_epoch+1:3d}/{self.args.train_epochs}]", disable=not self.args.tqdm)
             for idx_batch, batch in enumerate(pbar, 1):
                 self.model_optim.zero_grad()
                 batch_out= self.process_one_batch(batch)
@@ -67,9 +66,9 @@ class Exp_Single(Exp_Basic):
                     for key in vali_metrics_dict:
                         self.writer.add_scalar(f"Val_metrics/{key}", vali_metrics_dict[key], idx_epoch*len(train_loader)+idx_batch)
                     
-                    logger.info(f"Epoch: {idx_epoch+1} Step:{idx_batch}| Train Loss: {train_loss:.5f} Vali Loss: {vali_loss:.5f} cost time: {(time.time()-epoch_time)/60:.3f} "+dict2string(vali_metrics_dict, self.show_metrics))
-            # earlystop
-            self.early_stopping(vali_loss, self.model, self.model_path)
+                    logger.info(f"Epoch: {idx_epoch+1} Step:{idx_batch}| Train Loss: {train_loss:.5f} Vali Loss: {vali_loss:.5f} cost time: {(time.time()-epoch_time)/60:.3f} Val_metrics "+dict2string(vali_metrics_dict, self.show_metrics))
+            # earlystop 
+            self.early_stopping(vali_metrics_dict[self.earlystop_metrics], self.model, self.model_path)
             if self.early_stopping.early_stop:
                 logger.info("Early stopping")
                 break
@@ -79,6 +78,7 @@ class Exp_Single(Exp_Basic):
         
         return self.model
 
+    @torch.no_grad()
     def vali(self, val_loader):
         # 区别于_test, 不需要保存和loss测度
         self.model.eval()
@@ -94,12 +94,13 @@ class Exp_Single(Exp_Basic):
 
         preds, trues = np.concatenate(preds), np.concatenate(trues)
         loss = running_loss/len(val_loader)
-        metrics_dict = self.metric(preds, trues)
+        metrics_dict = self.metrics(preds, trues)
 
         self.model.train()
         return loss, metrics_dict
 
-    def test(self, plot=True, save=False, writer=True):
+    @torch.no_grad()
+    def test(self, plot=True, save=False, writer=True, load=True):
         # test承接train之后模型，为保证单独使用test，增加load参数
         test_loader = self._get_data(file_name=self.test_filename, flag='test')
         # DataSet = dataset_dict.get(self.args.dataset, Dataset_Custom)
@@ -111,8 +112,9 @@ class Exp_Single(Exp_Basic):
         # else:
         #     test_loader = torch.utils.data.DataLoader(self.tmp_dataset, batch_size=self.args.batch_size,
         #     drop_last=False)
-        best_model_path = self.model_path+'/'+'checkpoint.pth'
-        self.model.load_state_dict(torch.load(best_model_path))
+        if load:
+            best_model_path = self.model_path+'/'+'checkpoint.pth'
+            self.model.load_state_dict(torch.load(best_model_path))
 
         self.model.eval()
         preds_lst, trues_lst = [], []
@@ -127,18 +129,18 @@ class Exp_Single(Exp_Basic):
         if self.args.out_inverse:
             preds = test_loader.dataset.inverse_transform(preds)[:,:, -1:]
             trues = test_loader.dataset.inverse_transform(trues)[:,:, -1:]
-        metrics_dict = self.metric(preds, trues, "Test_metrics/")
-        logger.info(dict2string(metrics_dict, [f"Test_metrics/{i}" for i in self.show_metrics]))
+        metrics_dict = self.metrics(preds, trues)
+        logger.info(dict2string(metrics_dict, self.show_metrics))
 
         f = open(f"./results/{self.args.dataset}/result.txt", 'a')
         f.write(datetime.now().strftime("%Y-%m-%d %H:%M:%S") +self.setting + "  \n")
-        f.write(dict2string(metrics_dict, [f"Test_metrics/{i}" for i in self.show_metrics]))
+        f.write(dict2string(metrics_dict, self.show_metrics))
         f.write('\n')
         f.write('\n')
         f.close()
 
         if writer:
-            self.writer.add_hparams(hparam_dict=self.params_dict, metric_dict=metrics_dict)
+            self.writer.add_hparams(hparam_dict=self.params_dict, metric_dict=addkeystring(metrics_dict, "Test_metrics/"))
             self.writer.close()
 
         if save:

@@ -62,7 +62,7 @@ def rhoRisk(pred,true,rho):
     denominator = np.sum(true)
     return diff/denominator
 
-def distribution_metric(pred, true, costumized=''):
+def distribution_metric(pred, true):
     '''高斯分布，最后一维为均值方差
     分位数分布，最后一维为0.1， 0.5， 0.9分位数'''
     if pred.shape[-1] == 2:
@@ -76,13 +76,13 @@ def distribution_metric(pred, true, costumized=''):
     # The evaluation metrics
     rho50 = rhoRisk(PredQ50.reshape(-1,), true.reshape(-1,), 0.5)
     rho90 = rhoRisk(PredQ90.reshape(-1,), true.reshape(-1,), 0.9)
-    return dict(zip([costumized+i for i in ("rho50","rho90")], (rho50, rho90)))
+    return dict(zip(("rho50","rho90"), (rho50, rho90)))
 
-def point_metric(pred, true, costumized=''):
+def point_metric(pred, true):
     mae = MAE(pred, true)
     mse = MSE(pred, true)
     rmse = RMSE(pred, true)
     mape = MAPE(pred, true)
     mspe = MSPE(pred, true)
     
-    return dict(zip([costumized+i for i in ("mae","mse","rmse","mape","mspe")], (mae,mse,rmse,mape,mspe)))
+    return dict(zip(("mae","mse","rmse","mape","mspe"), (mae,mse,rmse,mape,mspe)))

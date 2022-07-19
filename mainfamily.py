@@ -8,9 +8,10 @@ from collections import OrderedDict
 import numpy as np
 
 args.patience = 3 # earlystop
-args.do_predict = False 
+args.do_predict = False
 args.out_inverse = True
 args.debug = False
+args.tqdm = False
 
 args.input_params = ["x"] #指定模型的输入
 args.learning_rate = 0.001
@@ -36,10 +37,10 @@ HORIZON = 1
 params = OrderedDict({
     "dataset" : ["toy_random_increase", "toy_stair_random", "toy_stair_increase"],
     "horizon":np.arange(1, HORIZON+10,dtype=int).tolist(), #预测horizon
-    "model":["tpa", "trans", "lstm", "tcn"],
+    "model":["trans", "tpa", "lstm", "tcn"],
     "decompose":[True, False],
     "features":["S"],
-    "criterion": ["quantile", "gaussian", "mse"]
+    "criterion": ["gaussian", "quantile", "mse"]
 })
 
 # informer, autoformer, transformer

@@ -140,6 +140,7 @@ parser.add_argument('--input_params', type=str, nargs="+", default=["x", 'x_mark
 parser.add_argument('--target_param', type=str, default="y", help='target_params')
 parser.add_argument('--test_year', type=int, default=2017, help='test year')
 parser.add_argument('--importance', type=bool, default=False, help='importance')
+parser.add_argument('--tqdm', type=bool, default=True, help='tqdm')
 args = parser.parse_args()
 
 args.use_gpu = True if torch.cuda.is_available() and args.use_gpu else False

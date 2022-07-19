@@ -89,9 +89,10 @@ class OZELoss(nn.Module):
 class QuantileLoss(nn.Module):
     def __init__(self):
         super().__init__()
-        self.q = torch.reshape(torch.tensor([0.1, 0.5, 0.9]), (1, 3)).to("cuda")
-        self.zero = torch.tensor(0.0).to("cuda")
-        self.one = torch.tensor(1.0).to("cuda")
+        device = torch.device("cuda") if torch.cuda.is_available else torch.device("cpu")
+        self.q = torch.reshape(torch.tensor([0.1, 0.5, 0.9]), (1, 3)).to(device)
+        self.zero = torch.tensor(0.0).to(device)
+        self.one = torch.tensor(1.0).to(device)
     def forward(self, y_pred, y_true):  
         y_true = y_true.unsqueeze(dim=-1)
         e = torch.subtract(y_true, y_pred)
@@ -105,6 +106,10 @@ class GaussianLoss(nn.Module):
         super().__init__()
     def forward(self, y_pred, y_true, softZero=1e-4):
         mu, sigma = y_pred[..., 0], y_pred[..., 1]
-        logGaussian =  -torch.log(2*math.pi*(sigma**2)+softZero)/2 -(y_true- mu)**2/(2*(sigma**2)+softZero)
-        res = -torch.sum(logGaussian, axis= 0)
+        logGaussian =  torch.log(2*math.pi*(sigma**2)+softZero)/2 + (y_true- mu)**2/(2*(sigma**2)+softZero)
+        res = torch.sum(logGaussian, axis= 0)
         return torch.mean(res)
+
+    # nn.NLLLoss()
+    # import torch.nn.functional as F
+    # F.nll_loss()

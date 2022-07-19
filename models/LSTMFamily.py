@@ -2,6 +2,7 @@ from torch import nn as nn
 import torch
 from layers.Decompose import series_decomp
 from utils.activation import SoftRelu
+
 class BaseLSTM(nn.Module):
     def __init__(self):
         super().__init__()
@@ -54,7 +55,7 @@ class LSTM(BaseLSTM):
             out = self.main_forward(x)
             
         output = self.output_layer(out).view(-1, self.args.pred_len, self.args.out_size, self.n_params)
-        if self.args.criterion == "guassian":
+        if self.args.criterion == "gaussian":
             output[...,-1] = self.activation(output[...,-1])
         if self.args.criterion == "mse":
             output = output.squeeze(dim=-1)

@@ -67,9 +67,9 @@ class TPA(BaseTPA):
                             num_layers=tpa_n_layers, batch_first=True)
         self.att = TPA_Attention(seq_len, tpa_hidden_size)
         
-        self.out_proj = nn.Linear(tpa_hidden_size, out_size) #多变量预测，改为pred_len，则为多步预测
+        # self.out_proj = nn.Linear(tpa_hidden_size, out_size) #多变量预测，改为pred_len，则为多步预测
 
-        self.ar = nn.Linear(self.ar_len, args.pred_len) # 当预测多个序列时，实际上共享了AR参数了，一种解决办法，设置多个ar层分别处理不同序列
+        # self.ar = nn.Linear(self.ar_len, args.pred_len) # 当预测多个序列时，实际上共享了AR参数了，一种解决办法，设置多个ar层分别处理不同序列
 
         if self.args.decompose:
             self.decomp = series_decomp(self.args.moving_avg)
@@ -105,7 +105,7 @@ class TPA(BaseTPA):
             out = self.main_forward(x)
             
         output = self.output_layer(out).view(-1, self.args.pred_len, self.args.out_size, self.n_params)
-        if self.args.criterion == "guassian":
+        if self.args.criterion == "gaussian":
             output[...,-1] = self.activation(output[...,-1])
         if self.args.criterion == "mse":
             output = output.squeeze(dim=-1)
