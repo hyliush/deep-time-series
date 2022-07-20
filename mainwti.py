@@ -17,26 +17,21 @@ args.input_params = ["x"] #指定模型的输入
 args.learning_rate = 0.001
 args.lradj = "type10" # 不调整学习率
 args.date_col = ""
-
-args.seq_len, args.label_len, args.pred_len = 50, 0, 1
-# args.data_path = "./data/ToyData"
-args.data_path = "/kaggle/input/toydata/ToyData"
-args.target = "series"
-args.cols = ["series"]
-
-# args.cols = ["date", "0", "1", "2", "3", "4", "5", "6", "OT"]
-# args.cols = ["date","HUFL","HULL","MUFL","MULL","LUFL","LULL","OT"]
-
+args.data_path = "./data/oil"
+# args.data_path = "/kaggle/input/wtimulti"
+args.target = "wti"
+args.seq_len, args.label_len, args.pred_len = 60, 0, 1
+args.cols = ["date", "wti", "DJIA_vix", "Three_Component_Index", "TWEXB"]
 HORIZON = 1
 params = OrderedDict({
-    "dataset" : ["toy_stair_increase"],# "toy_stair_random", "toy_stair_increase"],
-    # "dataset" : ["toy_random_random"],
+    "dataset":["wtimulti"],
     "horizon":np.arange(1, HORIZON+10,dtype=int).tolist(), #预测horizon
     "model":["trans", "tpa", "lstm", "tcn"],
     "decompose":[True, False],
-    "features":["S"],
+    "features":["MS", "S"],
     "criterion": ["gaussian", "quantile", "mse"]
 })
+
 
 # informer, autoformer, transformer
 # args.seq_len, args.label_len, args.pred_len = 96, 48, 24
