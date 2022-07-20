@@ -35,7 +35,7 @@ args.cols = ["series"]
 
 HORIZON = 1
 params = OrderedDict({
-    "dataset" : ["toy_random_increase"],# "toy_stair_random", "toy_stair_increase"],
+    "dataset" : ["toy_stair_random"],# "toy_stair_random", "toy_stair_increase"],
     # "dataset" : ["toy_random_random"],
     "horizon":np.arange(1, HORIZON+10,dtype=int).tolist(), #预测horizon
     "model":["trans", "tpa", "lstm", "tcn"],
