@@ -127,8 +127,12 @@ class Exp_Single(Exp_Basic):
         logger.debug('test shape:{} {}'.format(preds.shape, trues.shape))
         
         if self.args.out_inverse:
-            preds = test_loader.dataset.inverse_transform(preds)[:,:, -1:]
-            trues = test_loader.dataset.inverse_transform(trues)[:,:, -1:]
+            f_dim = [-1] if self.args.features=='MS' else ...
+            if self.args.criterion == "mse":
+                preds = test_loader.dataset.inverse_transform(preds)[:,:, f_dim]
+            else:
+                preds = test_loader.dataset.inverse_transform(preds.swapaxes(-1,-2)).swapaxes(-1,-2)[:,:, f_dim]
+            trues = test_loader.dataset.inverse_transform(trues)[:,:, f_dim]
         metrics_dict = self.metrics(preds, trues)
         logger.info(dict2string(metrics_dict, self.show_metrics))
 
