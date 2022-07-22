@@ -58,7 +58,7 @@ class Trans(BaseTrans):
                         kernel_size=3, stride=1, padding=1,
                         padding_mode='circular', bias=False),
                 nn.Linear(args.seq_len, args.pred_len),
-                nn.GELU()
+                # nn.GELU()
                         )
         if self.args.criterion == "gaussian":
             self.n_params = 2

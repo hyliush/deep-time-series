@@ -28,7 +28,7 @@ params = OrderedDict({
     "horizon":np.arange(1, HORIZON+10,dtype=int).tolist(), #预测horizon
     "model":["trans", "tpa", "lstm", "tcn"],
     "decompose":[True, False],
-    "features":["MS", "S"],
+    "features":["MS"],
     "criterion": ["gaussian", "quantile", "mse"]
 })
 

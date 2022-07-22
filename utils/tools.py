@@ -117,12 +117,12 @@ class EarlyStopping2:
             self.min_loss = val_loss
             self.save_checkpoint(val_loss, model, path)
         # elif loss > self.min_loss + self.delta:
-        elif abs((val_loss-self.min_loss)/self.min_loss)<=0.01:
+        elif abs((val_loss-self.min_loss)/self.min_loss)<=0.01 or val_loss>self.min_loss:
             self.counter += 1
             print(f'EarlyStopping counter: {self.counter} out of {self.patience}, best_loss:{self.min_loss}, curent_loss:{val_loss}')
             if self.counter >= self.patience:
                 self.early_stop = True
-        elif val_loss<self.min_loss:
+        else:
             self.min_loss = val_loss
             self.save_checkpoint(val_loss, model, path)
             self.counter = 0

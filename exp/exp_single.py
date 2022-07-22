@@ -67,7 +67,7 @@ class Exp_Single(Exp_Basic):
                         self.writer.add_scalar(f"Val_metrics/{key}", vali_metrics_dict[key], idx_epoch*len(train_loader)+idx_batch)
                     
                     logger.info(f"Epoch: {idx_epoch+1} Step:{idx_batch}| Train Loss: {train_loss:.5f} Vali Loss: {vali_loss:.5f} cost time: {(time.time()-epoch_time)/60:.3f} Val_metrics "+dict2string(vali_metrics_dict, self.show_metrics))
-            # earlystop 
+            # earlystop vali_metrics_dict[self.earlystop_metrics]
             self.early_stopping(vali_metrics_dict[self.earlystop_metrics], self.model, self.model_path)
             if self.early_stopping.early_stop:
                 logger.info("Early stopping")

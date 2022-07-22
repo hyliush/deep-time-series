@@ -19,8 +19,8 @@ args.lradj = "type10" # 不调整学习率
 args.date_col = ""
 
 args.seq_len, args.label_len, args.pred_len = 50, 0, 1
-# args.data_path = "./data/ToyData"
-args.data_path = "/kaggle/input/toydata/ToyData"
+args.data_path = "./data/ToyData"
+# args.data_path = "/kaggle/input/toydata/ToyData"
 args.target = "series"
 args.cols = ["series"]
 
@@ -30,12 +30,12 @@ args.cols = ["series"]
 HORIZON = 1
 params = OrderedDict({
     "dataset" : ["toy_stair_increase"],# "toy_stair_random", "toy_stair_increase"],
+    "criterion": ["mse", "gaussian", "quantile"],
     # "dataset" : ["toy_random_random"],
-    "horizon":np.arange(1, HORIZON+10,dtype=int).tolist(), #预测horizon
-    "model":["trans", "tpa", "lstm", "tcn"],
-    "decompose":[True, False],
+    "model":["lstm","trans", "tpa", "tcn"],
+    "decompose":[True],
     "features":["S"],
-    "criterion": ["gaussian", "quantile", "mse"]
+    "horizon":np.arange(1, HORIZON+10,dtype=int).tolist(), #预测horizon
 })
 
 # informer, autoformer, transformer

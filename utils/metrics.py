@@ -60,7 +60,7 @@ def rhoRisk(pred,true,rho):
     assert len(pred) == len(true)
     diff = -np.sum((pred-true)*(rho*(pred<=true)-(1-rho)*(pred>true)))
     denominator = np.sum(true)
-    return diff/denominator
+    return diff/abs(denominator)
 
 def distribution_metric(pred, true):
     '''高斯分布，最后一维为均值方差

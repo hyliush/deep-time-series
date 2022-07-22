@@ -27,7 +27,7 @@ class LSTM(BaseLSTM):
                         kernel_size=3, stride=1, padding=1,
                         padding_mode='circular', bias=False),
                 nn.Linear(args.seq_len, args.pred_len),
-                nn.GELU()
+                # nn.GELU()
                         )
 
         if self.args.criterion == "gaussian":
@@ -38,7 +38,7 @@ class LSTM(BaseLSTM):
         else:
             self.n_params = 1
         self.output_layer = nn.Linear(hidden_size, self.n_params*self.args.out_size)
-
+        # self.output_layer = nn.Linear(hidden_size, self.args.out_size)
     def forward(self, x):
         if self.args.importance:
             if not isinstance(x, torch.Tensor):
@@ -49,6 +49,7 @@ class LSTM(BaseLSTM):
         if self.args.decompose:
             season, trend = self.decomp(x)
             season_out = self.main_forward(season)
+            # season_out = self.output_layer(season_out)
             trend_out = self.trend_layer(trend.transpose(1, 2)).transpose(1, 2)
             out = trend_out + season_out
         else:
