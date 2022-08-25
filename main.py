@@ -60,8 +60,13 @@ for args in get_args(args, params):
 
         logger.info('Args in experiment:{}'.format(setting))
         # set experiments
+        # args.dataset = 'ETTh1'
+        # args.data = 'ETTh1'
+        # args.data_path = './data/ETT/'
+        # args.file_name = 'ETTh1.csv'
         exp = Exp_model(args, setting, params_dict)
-        
+
+
         if not args.do_predict:
             print('>>>>>>>start training : {}>>>>>>>>>>>>>>>>>>>>>>>>>>'.format(setting))
             exp.train()
