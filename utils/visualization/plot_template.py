@@ -1,36 +1,37 @@
 import plotly.graph_objects as go
 import plotly
 import matplotlib.pyplot as plt
-plt.rcParams['font.sans-serif']=['SimHei']
-plt.rcParams['axes.unicode_minus']=False
+plt.rcParams['font.sans-serif'] = ['SimHei']
+plt.rcParams['axes.unicode_minus'] = False
 plt.style.reload_library()
 # plt.style.use(['science','no-latex'])
-myparams = {
-   'axes.labelsize': 6,
-   'xtick.labelsize': 6,
-    'lines.markersize' : 4.5,
-   'ytick.labelsize': 6,
-   'lines.linewidth': 1,
-   'legend.fontsize': 6,
-    "axes.titlesize": 14,
-    "figure.titlesize": 14,
-   'font.family': 'Times New Roman',
-      'figure.figsize': '7,7',  #图片尺寸
-    'mathtext.fontset':'stix',
-    'savefig.dpi':100,
-    'figure.dpi':100
-}
-plt.rcParams.update(myparams)  #更新自己的设置
+# myparams = {
+#    'axes.labelsize': 6,
+#    'xtick.labelsize': 6,
+#     'lines.markersize' : 4.5,
+#    'ytick.labelsize': 6,
+#    'lines.linewidth': 1,
+#    'legend.fontsize': 6,
+#     "axes.titlesize": 14,
+#     "figure.titlesize": 14,
+#    'font.family': 'Times New Roman',
+#       'figure.figsize': '7,7',  #图片尺寸
+#     'mathtext.fontset':'stix',
+#     'savefig.dpi':100,
+#     'figure.dpi':100
+# }
+# plt.rcParams.update(myparams)  #更新自己的设置
 
-def plotly_line(df, show=True, jupyter_show=False, file_name=None):
+def plotly_line(df, mode_lst=["lines", "markers"], show=True, jupyter_show=False, file_name=None):
     '''
     x:df.index 
     y:iter df.columns
     file_name: save if not None
     '''
+    mode = "+".join(mode_lst)
     lst = []
     for col in df.columns:
-        trace = go.Scatter(x=df.index, y=df[col], mode ="lines+markers", name=col)
+        trace = go.Scatter(x=df.index, y=df[col], mode = mode, name=col)
         lst.append(trace)
     layout = go.Layout(xaxis=dict(title=""), yaxis=dict(title=""))
     fig = go.Figure(data=lst, layout=layout)
