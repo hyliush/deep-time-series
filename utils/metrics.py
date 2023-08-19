@@ -1,6 +1,5 @@
 import numpy as np
 import scipy.stats as st
-
 def RSE(pred, true):
     return np.sqrt(np.sum((true-pred)**2)) / np.sqrt(np.sum((true-true.mean())**2))
 
@@ -86,3 +85,9 @@ def point_metric(pred, true):
     mspe = MSPE(pred, true)
     
     return dict(zip(("mae","mse","rmse","mape","mspe"), (mae,mse,rmse,mape,mspe)))
+
+
+def classification_metric(pred, true):
+    pred_label = np.where(pred>0.5, 1, 0)
+    acc = -1 * (pred_label==true).mean()
+    return dict(zip(("acc",), (acc,)))

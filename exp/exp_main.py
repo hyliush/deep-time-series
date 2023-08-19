@@ -36,6 +36,7 @@ class Exp_model(Exp):
             cls._process_one_batch = _process_one_batch1
 
     def _get_data(self, file_name, flag):
+        # 判断是否为第一次加载，不常用，一般都是第一次记载
         if  not hasattr(self.tmp_dataset, "file_name") or self.tmp_dataset.file_name != file_name:
             DataSet = dataset_dict.get(self.args.dataset, Dataset_Custom)
             self.args.file_name = file_name
@@ -67,11 +68,12 @@ class Exp_model(Exp):
         return model
 
 def _process_one_batch1(self, batch):
+    '''非seq2seq模型'''
     outputs = self.model(*[batch.get(param) for param in self.input_params])
     return outputs, batch.get(self.target_param)
 
 def _process_one_batch2(self, batch):
-    # TODO
+    '''seq2seq模型'''
     batch_x, batch_x_mark, batch_y, batch_y_mark = \
         [batch.get(param) for param in self.input_params]
     # decoder input

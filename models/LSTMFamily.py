@@ -9,14 +9,15 @@ class BaseLSTM(nn.Module):
 
     def main_forward(self, x):
         lstm_out, _ = self.lstm(x.float())
-        lstm_out = self.dropout(lstm_out[:,-1:,:])
+        lstm_out = self.dropout(lstm_out)
         return lstm_out
 
 class LSTM(BaseLSTM):
     def __init__(self, args):
         super().__init__()
         self.args = args
-        input_size, hidden_size, out_size, num_layers = args.input_size, args.lstm_hidden_size, args.out_size, args.lstm_n_layers
+        input_size, hidden_size, out_size, num_layers = args.input_size, 1, \
+            args.out_size, args.lstm_n_layers
         self.lstm = nn.LSTM(input_size, hidden_size, num_layers=num_layers, batch_first=True)
         self.dropout = nn.Dropout(0.2)
 
@@ -53,9 +54,12 @@ class LSTM(BaseLSTM):
             trend_out = self.trend_layer(trend.transpose(1, 2)).transpose(1, 2)
             out = trend_out + season_out
         else:
-            out = self.main_forward(x)
-            
-        output = self.output_layer(out).view(-1, self.args.pred_len, self.args.out_size, self.n_params)
+            out = self.main_forward(x[..., :-1])
+        import torch.nn.functional as F
+        weight = F.softmax(out, dim=1)
+        output = torch.multiply(weight, x[..., -1:]).sum(dim=1).unsqueeze(dim=1)
+        output = F.sigmoid(output)
+        # output = self.output_layer(out).view(-1, self.args.pred_len, self.args.out_size, self.n_params)
         if self.args.criterion == "gaussian":
             output[...,-1] = self.activation(output[...,-1])
         if self.args.criterion == "mse":

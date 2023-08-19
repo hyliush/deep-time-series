@@ -6,7 +6,7 @@ from datetime import datetime
 from utils.tools import Writer, EarlyStopping, EarlyStopping2
 import inspect
 from utils.constants import criterion_dict
-from utils.metrics import point_metric, distribution_metric
+from utils.metrics import point_metric, distribution_metric, classification_metric
 
 class Exp_Basic(object):
     def __init__(self, args, setting):
@@ -24,14 +24,20 @@ class Exp_Basic(object):
             f"{self.prefix}_{datetime.now().strftime('%Y-%m-%d %H-%M-%S')}")) if not args.debug else Writer()
         # self.writer = SummaryWriter(log_dir = self.run_path)
         self.early_stopping = EarlyStopping(patience=self.args.patience, verbose=True)
-        if self.args.criterion ==  "mse":
-            self.metrics = point_metric
-            self.show_metrics = ["rmse", "r2"]
-            self.earlystop_metrics = "rmse"
+
+        if self.args.criterion == "bce":
+            self.metrics = classification_metric
+            self.show_metrics = ["acc"]
+            self.earlystop_metrics = "acc"
         else:
-            self.metrics = distribution_metric
-            self.show_metrics = ["rho50", "rho90"]
-            self.earlystop_metrics = "rho50"
+            if self.args.criterion ==  "mse":
+                self.metrics = point_metric
+                self.show_metrics = ["rmse", "r2"]
+                self.earlystop_metrics = "rmse"
+            else:
+                self.metrics = distribution_metric
+                self.show_metrics = ["rho50", "rho90"]
+                self.earlystop_metrics = "rho50"
 
     def _init_path(self, setting):
         self.model_path = os.path.join(f"./checkpoints/{self.args.dataset}/", setting)

@@ -16,7 +16,7 @@ def product_args(args, condi_params):
         for _params in itertools.product(*condi_params.values()):
             params = {key: _params[idx]
                 for idx, key in enumerate(condi_params.keys())}
-            print("--------Search Params---------------", params)
+            print("--------Search Params---------------", "\n", params)
             
             for idx, key in enumerate(condi_params.keys()):
                 if hasattr(args, key):

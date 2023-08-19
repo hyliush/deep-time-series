@@ -2,32 +2,34 @@ import argparse
 import torch
 parser = argparse.ArgumentParser(description='Time Series Forecasting')
 
+#  ------------------------- DATA AND TASK--------------------------------
 # basic
 parser.add_argument('--model', type=str, default='autoformer',help='model of experiment, options: [lstm, \
 mlp, tpa, tcn, trans, gated, informerstack, informerlight(TBD)], autoformer, transformer,\
 edlstm, edgru, edgruattention')
-parser.add_argument('--data', type=str, default='google', help='only for revising some params related to the data, [ETTh1, Ubiquant]')
-parser.add_argument('--dataset', type=str, default='Mydata', help='dataset, [ETTh1, Ubiquant]')
+parser.add_argument('--data', type=str, default='default',
+                    help='A dict for revising some params related to the data. AlL related arguments can be set by the `data[dict]`. See `data_parser` below')
+
+#  arguments, which decide how to use data, can be set in utils.data.dataset.py manually.
+#  最重要是写好dataset.py里的类，确定如何加载数据__getitem__，同时要生成self.train_idx,self.test_idx,self.val_idx
+#  至于下面这些参数如何写并不重要
+parser.add_argument('--dataset', type=str, default='Mydata', help='chose a dataset class to load data.(See utils.constants.py)')
 parser.add_argument('--data_path', type=str, default='./data/Mydata/', help='root path of the data file')
 parser.add_argument('--file_name', type=str, default='Mydata_partrv_softmax20.csv', help='file_name')
-parser.add_argument('--criterion', type=str, default='mse', help='loss function')    
-
-# data
-parser.add_argument('--features', type=str, default='MS', help='forecasting task, options:[M, S, MS]; M:multivariate predict multivariate, S:univariate predict univariate, MS:multivariate predict univariate')
-# if features == "MS" or "S", need to provide target and target_pos
+# if features == "MS" or "S", need to set `target1 and the predicted label must be the last column.
 parser.add_argument('--target', type=str, default='rv', help='target feature in S task')
 parser.add_argument('--start_col', type=int, default=1, help='Index of the start column of the continuous variables')
 parser.add_argument('--date_col', type=str, default="date", help='date column name')
 parser.add_argument('--cols', type=str, nargs='+', help='certain cols from the data files as the input features')
 parser.add_argument('--freq', type=str, default='d', help='freq for time features encoding, options:[s:secondly, t:minutely, h:hourly, d:daily, b:business days, w:weekly, m:monthly], you can also use more detailed freq like 15min or 3h')
-parser.add_argument('--seq_len', type=int, default=60, help='input sequence length of Informer encoder')
-parser.add_argument('--label_len', type=int, default=10, help='start token length of Informer decoder')
-parser.add_argument('--pred_len', type=int, default=20, help='prediction sequence length')
-parser.add_argument('--horizon', type=int, default=1, help='predict timeseries horizon-th in head.When many2many, means from 1(default) to pred_len')
+parser.add_argument('--features', type=str, default='MS', help='forecasting task, options:[M, S, MS]; M:multivariate predict multivariate, S:univariate predict univariate, MS:multivariate predict univariate')
 parser.add_argument('--inverse', action='store_true', help='inverse output data')
 parser.add_argument('--scale', default=True, type=bool, help='scale input data')
 parser.add_argument('--out_inverse', action='store_true', help='inverse output data')
-# training
+parser.add_argument('--horizon', type=int, default=1, help='predict timeseries horizon-th in head.When many2many, means from 1(default) to pred_len')
+
+#  ------------------------- TRAIN --------------------------------
+parser.add_argument('--criterion', type=str, default='mse', help='loss function')
 parser.add_argument('--train_epochs', type=int, default=100, help='train epochs')
 parser.add_argument('--batch_size', type=int, default=32, help='batch size of train input data')
 parser.add_argument('--activation', type=str, default='gelu',help='activation')
@@ -37,14 +39,20 @@ parser.add_argument('--num_workers', type=int, default=0, help='data loader num 
 parser.add_argument('--patience', type=int, default=3, help='early stopping patience')
 parser.add_argument('--use_amp', action='store_true', help='use automatic mixed precision training', default=False)
 parser.add_argument('--itr', type=int, default=1, help='experiments times')
-
 # Informer decoder input: concat[start token series(label_len), zero padding series(pred_len)]
 # Informer decoder input: concat[start token series(label_len), zero padding series(pred_len)]
 parser.add_argument('--do_predict', action='store_true', help='whether to predict unseen future data')
 parser.add_argument('--des', type=str, default='test',help='exp description')
 
+#  ------------------------- MODEL SETTING--------------------------------
 # model common
 parser.add_argument('--out_size', type=int, default=1, help='output features size')
+parser.add_argument('--seq_len', type=int, default=60, help='input sequence length of Informer encoder')
+parser.add_argument('--label_len', type=int, default=10, help='start token length of Informer decoder')
+parser.add_argument('--pred_len', type=int, default=20, help='prediction sequence length')
+parser.add_argument('--input_params', type=str, nargs="+", default=["x", 'x_mark', 'y', 'y_mark'], help='input_params')
+parser.add_argument('--target_param', type=str, default="y", help='target_params')
+parser.add_argument('--test_year', type=int, default=2017, help='test year')
 parser.add_argument('--dropout', type=float, default=0.05, help='dropout')
 
 # seq2seq common
@@ -136,9 +144,6 @@ parser.add_argument('--load', default=False, help='load last trained model')
 parser.add_argument('--val_num', type=int, default=1, help='val_num in one epoch')
 parser.add_argument('--single_file', type=bool, default=True, help='single_file')
 parser.add_argument('--debug', action='store_true', help='whether debug')
-parser.add_argument('--input_params', type=str, nargs="+", default=["x", 'x_mark', 'y', 'y_mark'], help='input_params')
-parser.add_argument('--target_param', type=str, default="y", help='target_params')
-parser.add_argument('--test_year', type=int, default=2017, help='test year')
 parser.add_argument('--importance', type=bool, default=False, help='importance')
 parser.add_argument('--tqdm', type=bool, default=True, help='tqdm')
 args = parser.parse_args()
@@ -170,7 +175,6 @@ data_parser = {
     "features":"MS", "T":"OT", "MS":[8,8,1],"S":[1, 1, 1]}
 }
 
-args.data = "google"
 if args.data in data_parser.keys():
     data_info = data_parser[args.data]
     args.features = data_info.get("features") or args.features

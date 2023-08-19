@@ -36,6 +36,11 @@ class DatasetBase(Dataset):
         self.timeenc = 0 if args.embed!='timeF' else 1
         
     def get_idxs1(self, total_len, start_point, shuffle=False):
+        '''对某个个体数据集，如某只股票，按比例划分，
+        total_len:个体的样本集数量
+        start_point:个体在全部数据集中的开始点，如果只有一个个体，应取0
+        shuffle：是否打乱个体数据集顺序
+        '''
         length = total_len - self.delta
         test_size = int(length*self.test_size) if isinstance(self.test_size, float) else self.test_size
         val_size = int(length*self.val_size) if isinstance(self.val_size, float) else self.val_size
@@ -54,6 +59,7 @@ class DatasetBase(Dataset):
         return train_idxs, val_idxs, test_idxs
 
     def get_idxs2(self, date, span=None):
+        '''按年份划分数据集'''
         date = pd.to_datetime(date)
         if span:
             # max_span 4
@@ -332,56 +338,6 @@ class MyDataSet(DatasetBase):
         f"{self.file_name[:-4]}_{self.args.dataset}_sl{self.seq_len}_pl{self.pred_len}_ty{self.test_year}_hn{self.horizon}_sf{int(shuffle)}_{self.args.des}_span4.pkl"))
 
 
-class MyDataSetGate(Dataset):
-    def __init__(self, args):
-        super().__init__(args)
-        self.test_size = 60
-        self.__read_data__()
-
-    def __read_data__(self):
-        self.scaler = StandardScaler()
-        df_raw = pd.read_csv(os.path.join(self.data_path, self.file_name))
-        length = len(df_raw)-self.seq_len-self.pred_len+1
-        cut_point1, cut_point2 = length-3*self.test_size, length-2*self.test_size
-        border1s = [0, cut_point1, cut_point2]
-        border2s = [cut_point1, cut_point2, length]
-        self.train_idxs = np.arange(border1s[0], border2s[0])
-        self.val_idxs = np.arange(border1s[1], border2s[1])
-        self.test_idxs = np.arange(border1s[2], border2s[2])
-
-        # spatial
-        self.data_spatial = df_raw[["stock_id"]].values
-        
-        df_raw = df_raw.drop(columns=["stock_id", "target", "weekday", "time_id", "holiday_name", "holiday_tag", "holiday_tag_cumsum"])
-        df_raw = df_raw.rename(columns={"Date":"date"})
-        
-        if isinstance(self.features, list):
-            df_data = df_raw[self.features]
-        if isinstance(self.features, str):
-            if self.features=='M' or self.features=='MS':
-                cols_data = df_raw.columns[self.start_col:]
-                df_data = df_raw[cols_data]
-            elif self.features=='S':
-                df_data = df_raw[[self.target]]
-
-        if self.scale:
-            train_data = df_data[border1s[0]:border2s[0]]
-            self.scaler.fit(train_data.values)
-            data = self.scaler.transform(df_data.values)
-        else:
-            data = df_data.values
-        # temporal
-        df_stamp = df_raw[['date']]
-        df_stamp['date'] = pd.to_datetime(df_stamp.date)
-        data_stamp = time_features(df_stamp, timeenc=self.timeenc, freq=self.freq)
-        self.data_stamp = data_stamp
-        
-        self.data_x = data
-        if self.inverse:
-            self.data_y = df_data.values
-        else:
-            self.data_y = data
-
 class OzeDataset(Dataset):
     def __init__(self,
                  dataset_path: str,
@@ -463,27 +419,24 @@ class OzeDataset(Dataset):
         return self._x.shape[0]
 
 
-class ToyDataset(DatasetBase):
+class StockSalienceDataset(DatasetBase):
     def __init__(self, args):
         super().__init__(args)
-        self.test_size = 60
         self.__read_data__()
         
     def __read_data__(self):
-        data = np.load("./data/ToyData/data.npz", allow_pickle=True)
-        self.data_x, self.data_y = data[self.flag]
-
+        import pickle
+        def load_obj(file_name, save_path="./"):
+            with open(os.path.join(save_path, f"{file_name}"), "rb") as f:
+                obj = pickle.load(f)
+            return obj
+        self.xy_lst = load_obj("xy_lst", "./data/stock/")
+        self.train_idxs, self.val_idxs, self.test_idxs = load_obj("idx", "./data/stock/")
     def __getitem__(self, index):
-        if self.label_len>0:
-            y = np.concatenate([self.data_x[index][-self.label_len:], self.data_y[index]], axis=0)
-        else:
-            y = self.data_y[index]
-        return {"x":self.data_x[index], "y":self.data_y[index]}
+        return {"x":self.xy_lst[index][0].values, "y":np.array(self.xy_lst[index][1][:, [-1]],
+                                                               dtype=int)}
     def __len__(self):
-        return len(self.data_x)
-
-    def inverse_transform(self, x):
-        return x
+        return len(self.xy_lst)
 
 class MyDataset1(DatasetBase):
     def __init__(self, args):
